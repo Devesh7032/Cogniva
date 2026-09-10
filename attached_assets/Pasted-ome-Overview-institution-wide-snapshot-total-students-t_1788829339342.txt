@@ -1,0 +1,15 @@
+ome / Overview — institution-wide snapshot: total students, total faculty, overall attendance %, at-risk student count, quick AI-generated summary ("Attendance dropped 3% across 2nd-year CS this month")
+Institution-Wide Risk Radar — aggregated at-risk students across all departments/classes, sortable/filterable by department, year, risk severity
+Department & Class Analytics — performance comparison across departments, sections, batches (grade distribution, attendance trends, pass/fail rates)
+Faculty Performance & Engagement Overview — which faculty/classes have highest at-risk counts, intervention response rates (are faculty acting on flagged students?), engagement metrics
+Explain Panel (institution level) — drill into why a department/class is trending down (aggregated factor breakdown, not just a red number)
+User & Access Management — manage student/faculty accounts, roles, permissions (role-based access control mentioned in your PDF's Security section)
+System-wide Notices & Announcements — publish institution-level notices, track reach/engagement across departments
+Examination & Academic Calendar Management — manage exam schedules, academic calendar, syllabus completion tracking across departments
+Intervention Tracking Dashboard — institution-wide view of flagged students → actions taken → outcomes (closing the loop: detect → recommend → act → result)
+Predictive Trends & Early-Warning Reports — institution-level projections ("if current trend continues, X% of 2nd-years may fall below attendance threshold by semester end")
+Data Integration & Source Health — status of connected data sources (LMS, attendance system, exam system) — shows the "modular architecture over existing systems" claim from your PDF is real, even if simulated
+Reports & Export — generate downloadable reports (department-wise, semester-wise) for accreditation/management review
+Privacy & Governance Panel — data access logs, consent/permission settings (parents' visibility, etc.) — reflects your PDF's "Security, Privacy & Governance" block directly
+What-If / Policy Simulator (admin version) — simulate institution-level changes ("if attendance threshold changed to 80%, how many more students flagged") — strong technical differentiator
+Ask Cogniva (Admin mode) — chat assistant answering institution-wide questions ("which department has the highest dropout risk this semester")

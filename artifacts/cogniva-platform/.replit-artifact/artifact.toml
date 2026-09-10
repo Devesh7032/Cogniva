@@ -1,0 +1,28 @@
+kind = "web"
+previewPath = "/"
+title = "Cogniva Student Intelligence Platform"
+description = "A polished role-based student journey intelligence prototype for college students, faculty, and administrators. It turns academic, attendance, workload, and goal signals into explainable, actionable guidance."
+version = "1.0.0"
+id = "artifacts/cogniva-platform"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 23899
+
+[services.development]
+run = "pnpm --filter @workspace/cogniva-platform run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/cogniva-platform", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/cogniva-platform/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "23899"
+BASE_PATH = "/"

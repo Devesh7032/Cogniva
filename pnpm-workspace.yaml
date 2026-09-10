@@ -154,4 +154,6 @@ overrides:
   esbuild: "0.27.3"
 
 allowBuilds:
+  '@google/genai': set this to true or false
   esbuild: true
+  protobufjs: set this to true or false

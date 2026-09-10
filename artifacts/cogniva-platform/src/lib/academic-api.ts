@@ -725,6 +725,71 @@ export async function fetchStudentMembers(yearStr?: string, deptCode?: string, s
   }
 }
 
+export interface StudentContext {
+  authUserId?: string;
+  studentId: string;
+  registerNumber: string;
+  name: string;
+  email: string;
+  sectionId: string;
+  sectionName: string;
+  departmentId: string;
+  department: string;
+  year: string;
+  semester: string;
+  academicYear: string;
+}
+
+export async function getCurrentStudentContext(userEmailOrRegno?: string | null): Promise<StudentContext> {
+  const defaultContext: StudentContext = {
+    authUserId: undefined,
+    studentId: 'stud_csec_001',
+    registerNumber: '2024CSE001',
+    name: 'Aditya Varma',
+    email: userEmailOrRegno && userEmailOrRegno.includes('@') ? userEmailOrRegno.toLowerCase().trim() : 'student001@cogniva.edu',
+    sectionId: 'CSE-C',
+    sectionName: 'CSE-C',
+    departmentId: 'CSE',
+    department: 'CSE',
+    year: 'Second Year',
+    semester: '4',
+    academicYear: 'Second Year'
+  };
+
+  if (!userEmailOrRegno) return defaultContext;
+
+  try {
+    const studs = await fetchStudentMembers();
+    const target = userEmailOrRegno.trim().toLowerCase();
+    const me = studs.find((s) => {
+      const sEmail = (s.email || '').toLowerCase();
+      const sReg = (s.regno || '').toLowerCase();
+      return sEmail === target || sReg === target || (target.includes('@') && sReg && target.includes(sReg));
+    });
+
+    if (me) {
+      return {
+        authUserId: me.id,
+        studentId: me.id,
+        registerNumber: me.regno,
+        name: me.name,
+        email: me.email,
+        sectionId: me.section || 'CSE-C',
+        sectionName: me.section || 'CSE-C',
+        departmentId: me.department || 'CSE',
+        department: me.department || 'CSE',
+        year: me.year || 'Second Year',
+        semester: me.semester || '4',
+        academicYear: me.year || 'Second Year'
+      };
+    }
+  } catch (err) {
+    console.warn('getCurrentStudentContext fetch exception:', err);
+  }
+
+  return defaultContext;
+}
+
 export async function updateStudentMember(id: string, updates: Partial<StudentMember>): Promise<{ success: boolean; error?: string }> {
   try {
     const { error } = await supabase
@@ -1353,99 +1418,105 @@ function saveLocalStores() {
       localStorage.setItem('cogniva_assignments', JSON.stringify(localAssignments));
       localStorage.setItem('cogniva_submissions', JSON.stringify(localAssignmentSubmissions));
       localStorage.setItem('cogniva_assignment_statuses', JSON.stringify(localStudentAssignmentStatuses));
+      localStorage.setItem('cogniva_local_notices_v1', JSON.stringify(localNotices));
     } catch {}
   }
 }
 
 // Load initial localStorage caches
-if (typeof window !== 'undefined') {
-  try {
-    const savedAtt = localStorage.getItem('cogniva_attendance');
-    if (savedAtt) {
-      const parsed = JSON.parse(savedAtt);
-      if (Array.isArray(parsed) && parsed.length > 0) {
-        localAttendanceRecords.length = 0;
-        localAttendanceRecords.push(...parsed);
+export function reloadLocalStores() {
+  if (typeof window !== 'undefined') {
+    try {
+      reloadStoredLocalNotices();
+      const savedAtt = localStorage.getItem('cogniva_attendance');
+      if (savedAtt) {
+        const parsed = JSON.parse(savedAtt);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          localAttendanceRecords.length = 0;
+          localAttendanceRecords.push(...parsed);
+        }
       }
-    }
-    const savedExams = localStorage.getItem('cogniva_examinations');
-    if (savedExams) {
-      const parsed = JSON.parse(savedExams);
-      if (Array.isArray(parsed) && parsed.length > 0) {
-        localExaminations.length = 0;
-        localExaminations.push(...parsed);
+      const savedExams = localStorage.getItem('cogniva_examinations');
+      if (savedExams) {
+        const parsed = JSON.parse(savedExams);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          localExaminations.length = 0;
+          localExaminations.push(...parsed);
+        }
       }
-    }
-    const savedMats = localStorage.getItem('cogniva_materials');
-    if (savedMats) {
-      const parsed = JSON.parse(savedMats);
-      if (Array.isArray(parsed) && parsed.length > 0) {
-        const realMats = parsed.filter(m => m.id !== 'mat_csec_001' && !m.title?.includes('(UNIT 4.pdf)') && !m.file_url?.includes('JVBERi0xLjQK'));
-        localStudyMaterials.length = 0;
-        localStudyMaterials.push(...realMats);
+      const savedMats = localStorage.getItem('cogniva_materials');
+      if (savedMats) {
+        const parsed = JSON.parse(savedMats);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          const realMats = parsed.filter(m => m.id !== 'mat_csec_001' && !m.title?.includes('(UNIT 4.pdf)') && !m.file_url?.includes('JVBERi0xLjQK'));
+          localStudyMaterials.length = 0;
+          localStudyMaterials.push(...realMats);
+        }
       }
-    }
-    const isMockSubject = (name?: string, code?: string) => {
-      if (!name && !code) return false;
-      const n = (name || '').toLowerCase();
-      const c = (code || '').toLowerCase();
-      return n.includes('database management') || n.includes('computer networks') || c === 'dbms' || c === 'cn';
-    };
+      const isMockSubject = (name?: string, code?: string) => {
+        if (!name && !code) return false;
+        const n = (name || '').toLowerCase();
+        const c = (code || '').toLowerCase();
+        return n.includes('database management') || n.includes('computer networks') || c === 'dbms' || c === 'cn';
+      };
 
-    const savedSubjs = localStorage.getItem('cogniva_subjects');
-    if (savedSubjs) {
-      const parsed = JSON.parse(savedSubjs);
-      if (Array.isArray(parsed)) {
-        const clean = parsed.filter(s => !isMockSubject(s.subject_name, s.subject_code));
-        localSubjects.length = 0;
-        localSubjects.push(...clean);
-        localStorage.setItem('cogniva_subjects', JSON.stringify(clean));
+      const savedSubjs = localStorage.getItem('cogniva_subjects');
+      if (savedSubjs) {
+        const parsed = JSON.parse(savedSubjs);
+        if (Array.isArray(parsed)) {
+          const clean = parsed.filter(s => !isMockSubject(s.subject_name, s.subject_code));
+          localSubjects.length = 0;
+          localSubjects.push(...clean);
+          localStorage.setItem('cogniva_subjects', JSON.stringify(clean));
+        }
       }
-    }
-    const savedAssigns = localStorage.getItem('cogniva_subject_assignments');
-    if (savedAssigns) {
-      const parsed = JSON.parse(savedAssigns);
-      if (Array.isArray(parsed)) {
-        const clean = parsed.filter(a => !isMockSubject(a.subject_name, a.subject_code));
-        localFacultySubjectAssignments.length = 0;
-        localFacultySubjectAssignments.push(...clean);
-        localStorage.setItem('cogniva_subject_assignments', JSON.stringify(clean));
+      const savedAssigns = localStorage.getItem('cogniva_subject_assignments');
+      if (savedAssigns) {
+        const parsed = JSON.parse(savedAssigns);
+        if (Array.isArray(parsed)) {
+          const clean = parsed.filter(a => !isMockSubject(a.subject_name, a.subject_code));
+          localFacultySubjectAssignments.length = 0;
+          localFacultySubjectAssignments.push(...clean);
+          localStorage.setItem('cogniva_subject_assignments', JSON.stringify(clean));
+        }
       }
-    }
-    const savedGrades = localStorage.getItem('cogniva_grades');
-    if (savedGrades) {
-      const parsed = JSON.parse(savedGrades);
-      if (Array.isArray(parsed) && parsed.length > 0) {
-        localStudentGrades.length = 0;
-        localStudentGrades.push(...parsed);
+      const savedGrades = localStorage.getItem('cogniva_grades');
+      if (savedGrades) {
+        const parsed = JSON.parse(savedGrades);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          localStudentGrades.length = 0;
+          localStudentGrades.push(...parsed);
+        }
       }
-    }
-    const savedAsgns = localStorage.getItem('cogniva_assignments');
-    if (savedAsgns) {
-      const parsed = JSON.parse(savedAsgns);
-      if (Array.isArray(parsed) && parsed.length > 0) {
-        localAssignments.length = 0;
-        localAssignments.push(...parsed);
+      const savedAsgns = localStorage.getItem('cogniva_assignments');
+      if (savedAsgns) {
+        const parsed = JSON.parse(savedAsgns);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          localAssignments.length = 0;
+          localAssignments.push(...parsed);
+        }
       }
-    }
-    const savedSubs = localStorage.getItem('cogniva_submissions');
-    if (savedSubs) {
-      const parsed = JSON.parse(savedSubs);
-      if (Array.isArray(parsed) && parsed.length > 0) {
-        localAssignmentSubmissions.length = 0;
-        localAssignmentSubmissions.push(...parsed);
+      const savedSubs = localStorage.getItem('cogniva_submissions');
+      if (savedSubs) {
+        const parsed = JSON.parse(savedSubs);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          localAssignmentSubmissions.length = 0;
+          localAssignmentSubmissions.push(...parsed);
+        }
       }
-    }
-    const savedStatuses = localStorage.getItem('cogniva_assignment_statuses');
-    if (savedStatuses) {
-      const parsed = JSON.parse(savedStatuses);
-      if (Array.isArray(parsed) && parsed.length > 0) {
-        localStudentAssignmentStatuses.length = 0;
-        localStudentAssignmentStatuses.push(...parsed);
+      const savedStatuses = localStorage.getItem('cogniva_assignment_statuses');
+      if (savedStatuses) {
+        const parsed = JSON.parse(savedStatuses);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          localStudentAssignmentStatuses.length = 0;
+          localStudentAssignmentStatuses.push(...parsed);
+        }
       }
-    }
-  } catch {}
+    } catch {}
+  }
 }
+
+reloadLocalStores();
 
 export async function fetchAttendanceRecords(
   sectionOrFilter?: string | { regno?: string; section?: string; subject?: string },
@@ -1748,7 +1819,7 @@ export async function createStudyMaterial(
 
     const { data, error } = await supabase
       .from('study_materials')
-      .insert([material])
+      .insert([newMat])
       .select()
       .single();
 
@@ -1774,25 +1845,38 @@ export async function createStudyMaterial(
 }
 
 export async function fetchStudyMaterials(sectionName?: string): Promise<StudyMaterial[]> {
-  try {
-    let query = supabase.from('study_materials').select('*').order('created_at', { ascending: false });
-    if (sectionName) {
-      query = query.eq('section', sectionName);
-    }
-    const { data, error } = await query;
-    if (!error && data) {
-      const cleanData = (data as StudyMaterial[]).filter(m => m.id !== 'mat_csec_001' && !m.title?.includes('(UNIT 4.pdf)'));
-      return cleanData;
-    }
-  } catch {}
+  reloadLocalStores();
 
-  let filtered = localStudyMaterials.filter(m => m.id !== 'mat_csec_001' && !m.title?.includes('(UNIT 4.pdf)'));
+  let allMaterials: StudyMaterial[] = [];
+
+  try {
+    const { data, error } = await supabase.from('study_materials').select('*').order('created_at', { ascending: false });
+    if (!error && data && data.length > 0) {
+      allMaterials = data as StudyMaterial[];
+    }
+  } catch (err) {
+    console.warn('Supabase fetchStudyMaterials query notice:', err);
+  }
+
+  const existingIds = new Set(allMaterials.map((m) => m.id));
+  for (const lm of localStudyMaterials) {
+    if (!existingIds.has(lm.id)) {
+      allMaterials.push(lm);
+      existingIds.add(lm.id);
+    }
+  }
+
+  let filtered = allMaterials.filter((m) => m.id !== 'mat_csec_001' && !m.title?.includes('(UNIT 4.pdf)'));
 
   if (sectionName) {
-    return filtered.filter(
-      m => m.section.toLowerCase() === sectionName.toLowerCase() || m.section.toLowerCase().endsWith(sectionName.toLowerCase())
-    );
+    const cleanSec = sectionName.trim().toUpperCase();
+    filtered = filtered.filter((m) => {
+      if (!m.section) return true;
+      const sec = m.section.trim().toUpperCase();
+      return sec === 'ALL' || sec === cleanSec || sec.endsWith(cleanSec) || cleanSec.endsWith(sec);
+    });
   }
+
   return filtered;
 }
 
@@ -1808,8 +1892,17 @@ export async function uploadFileToSupabaseStorage(
   bucketName: string = 'study-materials'
 ): Promise<{ success: boolean; url?: string; path?: string; error?: string }> {
   try {
-    if (!file || file.size === 0 || (file.type && file.type !== 'application/pdf' && !file.name.toLowerCase().endsWith('.pdf'))) {
-      return { success: false, error: 'Please select a valid PDF file.' };
+    if (!file || file.size <= 0) {
+      return { success: false, error: 'Please select a valid non-empty file.' };
+    }
+
+    if (file.type && file.type !== 'application/pdf' && !file.name.toLowerCase().endsWith('.pdf')) {
+      return { success: false, error: 'Only PDF files are allowed.' };
+    }
+
+    const maxSizeBytes = 50 * 1024 * 1024; // 50MB
+    if (file.size > maxSizeBytes) {
+      return { success: false, error: 'File size exceeds the allowed limit (max 50MB).' };
     }
 
     const cleanYear = (year || 'Second Year').toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-');
@@ -1832,8 +1925,59 @@ export async function uploadFileToSupabaseStorage(
       });
 
     if (error) {
-      console.error('Supabase Storage upload failed:', error);
-      return { success: false, error: error.message };
+      console.warn('[SUPABASE STORAGE CLIENT ERROR]:', {
+        message: error.message,
+        name: error.name,
+        code: (error as any).code,
+        status: (error as any).status,
+        statusCode: (error as any).statusCode
+      });
+
+      // Fallback: Delegate upload to server-side endpoint /api/upload-material
+      console.log('[SUPABASE STORAGE] Delegating upload to secure server endpoint /api/upload-material...');
+      try {
+        const fileBase64 = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => {
+            const resultStr = reader.result as string;
+            const base64 = resultStr.includes(',') ? resultStr.split(',')[1] : resultStr;
+            resolve(base64);
+          };
+          reader.onerror = (e) => reject(e);
+          reader.readAsDataURL(file);
+        });
+
+        const sRes = await fetch('/api/upload-material', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            fileName: file.name,
+            fileType: file.type || 'application/pdf',
+            fileData: fileBase64,
+            year,
+            dept,
+            section: sec,
+            subject,
+            facultyEmail: 'anjali.menon@example.edu'
+          })
+        });
+
+        if (sRes.ok) {
+          const serverData = await sRes.json();
+          if (serverData.success && serverData.url && serverData.path) {
+            console.log('✅ [SERVER UPLOAD SUCCESS]:', serverData);
+            return {
+              success: true,
+              url: serverData.url,
+              path: serverData.path
+            };
+          }
+        }
+      } catch (sErr) {
+        console.error('[SERVER UPLOAD EXCEPTION]:', sErr);
+      }
+
+      return { success: false, error: `Storage upload failed: ${error.message}` };
     }
 
     if (data) {
@@ -1845,10 +1989,10 @@ export async function uploadFileToSupabaseStorage(
       };
     }
 
-    return { success: false, error: 'Upload returned no data.' };
+    return { success: false, error: 'Storage upload returned no data.' };
   } catch (err: any) {
     console.error('Supabase Storage upload exception:', err);
-    return { success: false, error: err?.message || 'Upload failed due to an exception.' };
+    return { success: false, error: err?.message || 'Upload failed due to an unexpected storage exception.' };
   }
 }
 
@@ -2436,32 +2580,53 @@ export function calculateExamPriority(examDateStr: string): {
 
 
 export async function fetchAssignments(filter?: { section?: string; faculty_email?: string; subject_code?: string }): Promise<Assignment[]> {
+  reloadLocalStores();
+
+  let allAssignments: Assignment[] = [];
+
   try {
-    let query = supabase.from('assignments').select('*').order('due_date', { ascending: true });
-    if (filter?.section) query = query.eq('section', filter.section);
-    if (filter?.faculty_email) query = query.eq('faculty_email', filter.faculty_email.toLowerCase());
-    if (filter?.subject_code) query = query.eq('subject_code', filter.subject_code);
-
-    const { data, error } = await query;
-    if (!error && data) {
-      return data as Assignment[];
+    const { data, error } = await supabase.from('assignments').select('*').order('due_date', { ascending: true });
+    if (!error && data && data.length > 0) {
+      allAssignments = data as Assignment[];
     }
-  } catch {}
+  } catch (err) {
+    console.warn('Supabase fetchAssignments query notice:', err);
+  }
 
-  let filtered = [...localAssignments];
+  const existingIds = new Set(allAssignments.map(a => a.id));
+  for (const la of localAssignments) {
+    if (!existingIds.has(la.id)) {
+      allAssignments.push(la);
+      existingIds.add(la.id);
+    }
+  }
+
+  let filtered = [...allAssignments];
+
   if (filter?.section) {
-    filtered = filtered.filter(a => a.section.toLowerCase() === filter.section!.toLowerCase() || a.section.toLowerCase().endsWith(filter.section!.toLowerCase()));
+    const cleanSec = filter.section.trim().toUpperCase();
+    filtered = filtered.filter(a => {
+      if (!a.section) return true;
+      const sec = a.section.trim().toUpperCase();
+      return sec === 'ALL' || sec === cleanSec || sec.endsWith(cleanSec) || cleanSec.endsWith(sec);
+    });
   }
+
   if (filter?.faculty_email) {
-    filtered = filtered.filter(a => a.faculty_email.toLowerCase() === filter.faculty_email!.toLowerCase());
+    const cleanEmail = filter.faculty_email.trim().toLowerCase();
+    filtered = filtered.filter(a => a.faculty_email && a.faculty_email.trim().toLowerCase() === cleanEmail);
   }
+
   if (filter?.subject_code) {
-    filtered = filtered.filter(a => a.subject_code.toLowerCase() === filter.subject_code!.toLowerCase());
+    const cleanSub = filter.subject_code.trim().toLowerCase();
+    filtered = filtered.filter(a => a.subject_code && a.subject_code.trim().toLowerCase() === cleanSub);
   }
+
   return filtered;
 }
 
 export async function createAssignment(asgn: Omit<Assignment, 'id'>): Promise<{ success: boolean; data?: Assignment; error?: string }> {
+  reloadLocalStores();
   const newId = `asgn_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
   const record: Assignment = {
     ...asgn,
@@ -2471,17 +2636,18 @@ export async function createAssignment(asgn: Omit<Assignment, 'id'>): Promise<{ 
     updated_at: new Date().toISOString()
   };
 
+  localAssignments.unshift(record);
+  saveLocalStores();
+
   try {
     const { data, error } = await supabase.from('assignments').insert([record]).select().single();
     if (!error && data) {
-      localAssignments.unshift(data as Assignment);
-      saveLocalStores();
       return { success: true, data: data as Assignment };
     }
-  } catch {}
+  } catch (err) {
+    console.warn('Supabase assignments insert notice:', err);
+  }
 
-  localAssignments.unshift(record);
-  saveLocalStores();
   return { success: true, data: record };
 }
 
@@ -2654,6 +2820,2207 @@ export async function toggleAssignmentCompletion(assignmentId: string, regno: st
   saveLocalStores();
   return { success: true, isCompleted: nextCompleted };
 }
+
+// ============================================================================
+// NOTICES & ANNOUNCEMENTS API
+// ============================================================================
+
+export interface Notice {
+  id: string;
+  title: string;
+  description: string;
+  image_url?: string;
+  image_path?: string;
+  faculty_email: string;
+  faculty_name?: string;
+  section: string;
+  year?: string;
+  department?: string;
+  priority: 'Normal' | 'Important' | 'Urgent';
+  published_at: string;
+  expires_at?: string;
+  created_at?: string;
+  updated_at?: string;
+  read_by?: string[];
+}
+
+const LOCAL_NOTICES_STORAGE_KEY = 'cogniva_local_notices_v1';
+
+function getStoredLocalNotices(): Notice[] {
+  try {
+    const raw = localStorage.getItem(LOCAL_NOTICES_STORAGE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) return parsed;
+    }
+  } catch {}
+  return [];
+}
+
+function saveStoredLocalNotices(notices: Notice[]) {
+  try {
+    localStorage.setItem(LOCAL_NOTICES_STORAGE_KEY, JSON.stringify(notices));
+  } catch {}
+}
+
+function reloadStoredLocalNotices() {
+  try {
+    const raw = localStorage.getItem(LOCAL_NOTICES_STORAGE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) {
+        localNotices.length = 0;
+        localNotices.push(...parsed);
+      }
+    }
+  } catch {}
+}
+
+const localNotices: Notice[] = getStoredLocalNotices();
+
+export async function fetchNotices(sectionName?: string, facultyEmail?: string): Promise<Notice[]> {
+  reloadStoredLocalNotices();
+
+  let allNotices: Notice[] = [];
+
+  try {
+    const { data, error } = await supabase
+      .from('notices')
+      .select('*')
+      .order('published_at', { ascending: false });
+
+    if (!error && data && data.length > 0) {
+      allNotices = data as Notice[];
+    }
+  } catch (err) {
+    console.warn('Supabase fetchNotices query notice:', err);
+  }
+
+  const existingIds = new Set(allNotices.map((n) => n.id));
+  for (const ln of localNotices) {
+    if (!existingIds.has(ln.id)) {
+      allNotices.push(ln);
+      existingIds.add(ln.id);
+    }
+  }
+
+  const todayStr = new Date().toISOString().split('T')[0];
+
+  let filtered = allNotices.filter((n) => {
+    if (!n.expires_at) return true;
+    return n.expires_at >= todayStr;
+  });
+
+  if (sectionName) {
+    const cleanSec = sectionName.trim().toUpperCase();
+    filtered = filtered.filter((n) => {
+      if (!n.section) return true;
+      const sec = n.section.trim().toUpperCase();
+      return sec === 'ALL' || sec === cleanSec || sec.endsWith(cleanSec) || cleanSec.endsWith(sec);
+    });
+  }
+
+  if (facultyEmail) {
+    const cleanEmail = facultyEmail.trim().toLowerCase();
+    filtered = filtered.filter((n) => n.faculty_email && n.faculty_email.trim().toLowerCase() === cleanEmail);
+  }
+
+  const priorityOrder: Record<string, number> = { Urgent: 1, Important: 2, Normal: 3 };
+
+  filtered.sort((a, b) => {
+    const pA = priorityOrder[a.priority] || 3;
+    const pB = priorityOrder[b.priority] || 3;
+    if (pA !== pB) return pA - pB;
+    return new Date(b.published_at).getTime() - new Date(a.published_at).getTime();
+  });
+
+  return filtered;
+}
+
+export async function createNotice(noticeData: Omit<Notice, 'id'>): Promise<{ success: boolean; data?: Notice; error?: string }> {
+  reloadStoredLocalNotices();
+  const newId = `notice_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
+  const record: Notice = {
+    ...noticeData,
+    id: newId,
+    faculty_email: noticeData.faculty_email.toLowerCase(),
+    read_by: noticeData.read_by || [],
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  };
+
+  localNotices.unshift(record);
+  saveStoredLocalNotices(localNotices);
+
+  try {
+    const { data, error } = await supabase.from('notices').insert([record]).select().single();
+    if (!error && data) {
+      return { success: true, data: data as Notice };
+    }
+  } catch (err) {
+    console.warn('Supabase notices insert notice:', err);
+  }
+
+  return { success: true, data: record };
+}
+
+export async function deleteNotice(noticeId: string): Promise<{ success: boolean; error?: string }> {
+  try {
+    await supabase.from('notices').delete().eq('id', noticeId);
+  } catch {}
+
+  const idx = localNotices.findIndex((n) => n.id === noticeId);
+  if (idx !== -1) {
+    localNotices.splice(idx, 1);
+  }
+  saveStoredLocalNotices(localNotices);
+  return { success: true };
+}
+
+export async function markNoticeAsRead(noticeId: string, studentEmailOrRegno: string): Promise<{ success: boolean }> {
+  const cleanUser = studentEmailOrRegno.trim().toLowerCase();
+
+  const idx = localNotices.findIndex((n) => n.id === noticeId);
+  if (idx !== -1) {
+    if (!localNotices[idx].read_by) localNotices[idx].read_by = [];
+    if (!localNotices[idx].read_by!.includes(cleanUser)) {
+      localNotices[idx].read_by!.push(cleanUser);
+    }
+    saveStoredLocalNotices(localNotices);
+  }
+
+  try {
+    const { data: currentNotice } = await supabase.from('notices').select('read_by').eq('id', noticeId).single();
+    let updatedReadBy: string[] = currentNotice?.read_by || [];
+    if (!updatedReadBy.includes(cleanUser)) {
+      updatedReadBy.push(cleanUser);
+      await supabase.from('notices').update({ read_by: updatedReadBy }).eq('id', noticeId);
+    }
+  } catch {}
+
+  return { success: true };
+}
+
+export async function uploadNoticeImage(
+  file: File,
+  section: string,
+  facultyEmail: string
+): Promise<{ success: boolean; url?: string; path?: string; error?: string }> {
+  try {
+    if (!file || file.size <= 0) {
+      return { success: false, error: 'Please select a valid image file.' };
+    }
+
+    if (!file.type.startsWith('image/')) {
+      return { success: false, error: 'Only image files (JPEG, PNG, WebP, GIF) are allowed.' };
+    }
+
+    const fileBase64 = await new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const resultStr = reader.result as string;
+        const base64 = resultStr.includes(',') ? resultStr.split(',')[1] : resultStr;
+        resolve(base64);
+      };
+      reader.onerror = (e) => reject(e);
+      reader.readAsDataURL(file);
+    });
+
+    const res = await fetch('/api/upload-notice-image', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        fileName: file.name,
+        fileType: file.type || 'image/jpeg',
+        fileData: fileBase64,
+        section,
+        facultyEmail,
+      }),
+    });
+
+    if (res.ok) {
+      const serverData = await res.json();
+      if (serverData.success && serverData.url && serverData.path) {
+        return {
+          success: true,
+          url: serverData.url,
+          path: serverData.path,
+        };
+      }
+      return { success: false, error: serverData.error || 'Server upload failed' };
+    } else {
+      const errJson = await res.json().catch(() => ({}));
+      return { success: false, error: errJson.error || 'Notice image upload endpoint returned an error.' };
+    }
+  } catch (err: any) {
+    return { success: false, error: err?.message || 'Failed to upload notice image.' };
+  }
+}
+
+// ============================================================================
+// EXAM RESULTS & EXCEL MARK IMPORT API
+// ============================================================================
+
+export interface ExamResult {
+  id: string;
+  regno: string;
+  student_name?: string;
+  student_email?: string;
+  department?: string;
+  semester?: string;
+  section?: string;
+  subject_code: string;
+  subject_name: string;
+  exam_type: 'Internal Exam 1' | 'Internal Exam 2' | 'Internal Exam 3' | 'Semester Examination';
+  marks: number;
+  max_marks: number;
+  faculty_email: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface ExamImportHistory {
+  id: string;
+  faculty_email: string;
+  exam_type: string;
+  import_date: string;
+  total_students: number;
+  total_records: number;
+  successful_records: number;
+  failed_records: number;
+  file_name: string;
+}
+
+const LOCAL_EXAM_RESULTS_KEY = 'cogniva_local_exam_results_v1';
+const LOCAL_IMPORT_HISTORY_KEY = 'cogniva_local_import_history_v1';
+
+let localExamResults: ExamResult[] = (() => {
+  try {
+    const saved = localStorage.getItem(LOCAL_EXAM_RESULTS_KEY);
+    if (saved) return JSON.parse(saved);
+  } catch {}
+  return [];
+})();
+
+let localImportHistory: ExamImportHistory[] = (() => {
+  try {
+    const saved = localStorage.getItem(LOCAL_IMPORT_HISTORY_KEY);
+    if (saved) return JSON.parse(saved);
+  } catch {}
+  return [];
+})();
+
+function saveExamStores() {
+  try {
+    localStorage.setItem(LOCAL_EXAM_RESULTS_KEY, JSON.stringify(localExamResults));
+    localStorage.setItem(LOCAL_IMPORT_HISTORY_KEY, JSON.stringify(localImportHistory));
+  } catch {}
+}
+
+export async function fetchExamResults(filter?: { regno?: string; section?: string; exam_type?: string; faculty_email?: string }): Promise<ExamResult[]> {
+  try {
+    let query = supabase.from('exam_results').select('*');
+    if (filter?.regno) query = query.eq('regno', filter.regno.toUpperCase());
+    if (filter?.section) query = query.eq('section', filter.section);
+    if (filter?.exam_type) query = query.eq('exam_type', filter.exam_type);
+    if (filter?.faculty_email) query = query.eq('faculty_email', filter.faculty_email.toLowerCase());
+
+    const { data, error } = await query;
+    if (!error && data && data.length > 0) {
+      return data as ExamResult[];
+    }
+  } catch {}
+
+  let filtered = [...localExamResults];
+  if (filter?.regno) {
+    const cleanReg = filter.regno.toLowerCase();
+    filtered = filtered.filter(r => r.regno.toLowerCase() === cleanReg);
+  }
+  if (filter?.section) {
+    filtered = filtered.filter(r => r.section?.toLowerCase() === filter.section!.toLowerCase() || r.section?.toLowerCase().endsWith(filter.section!.toLowerCase()));
+  }
+  if (filter?.exam_type) {
+    filtered = filtered.filter(r => r.exam_type.toLowerCase() === filter.exam_type!.toLowerCase());
+  }
+  if (filter?.faculty_email) {
+    filtered = filtered.filter(r => r.faculty_email.toLowerCase() === filter.faculty_email!.toLowerCase());
+  }
+  return filtered;
+}
+
+export async function saveExamResultsBatch(results: Omit<ExamResult, 'id'>[], mode: 'replace' | 'keep' = 'replace'): Promise<{ success: boolean; count: number }> {
+  let count = 0;
+  for (const raw of results) {
+    const rec: ExamResult = {
+      ...raw,
+      id: `exr_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+      updated_at: new Date().toISOString(),
+      created_at: raw.created_at || new Date().toISOString()
+    };
+
+    try {
+      await supabase.from('exam_results').upsert([rec], { onConflict: 'regno,subject_name,exam_type' });
+    } catch {}
+
+    const existingIdx = localExamResults.findIndex(
+      r => r.regno.toLowerCase() === rec.regno.toLowerCase() &&
+           r.subject_name.toLowerCase() === rec.subject_name.toLowerCase() &&
+           r.exam_type.toLowerCase() === rec.exam_type.toLowerCase()
+    );
+
+    if (existingIdx !== -1) {
+      if (mode === 'replace') {
+        localExamResults[existingIdx] = { ...localExamResults[existingIdx], ...rec };
+        count++;
+      }
+    } else {
+      localExamResults.push(rec);
+      count++;
+    }
+  }
+
+  saveExamStores();
+  return { success: true, count };
+}
+
+export async function fetchExamImportHistory(facultyEmail?: string): Promise<ExamImportHistory[]> {
+  try {
+    let query = supabase.from('exam_import_history').select('*').order('import_date', { ascending: false });
+    if (facultyEmail) query = query.eq('faculty_email', facultyEmail.toLowerCase());
+    const { data, error } = await query;
+    if (!error && data && data.length > 0) {
+      return data as ExamImportHistory[];
+    }
+  } catch {}
+
+  if (facultyEmail) {
+    return localImportHistory.filter(h => h.faculty_email.toLowerCase() === facultyEmail.toLowerCase());
+  }
+  return localImportHistory;
+}
+
+export async function saveExamImportHistory(log: Omit<ExamImportHistory, 'id'>): Promise<void> {
+  const rec: ExamImportHistory = {
+    ...log,
+    id: `imp_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`
+  };
+  try {
+    await supabase.from('exam_import_history').insert([rec]);
+  } catch {}
+  localImportHistory.unshift(rec);
+  saveExamStores();
+}
+
+// ----------------------------------------------------
+// DYNAMIC RESULT DATASETS (100% Dynamic Excel Tables)
+// ----------------------------------------------------
+
+export interface DynamicResultRow {
+  regno: string;
+  studentName: string;
+  studentEmail?: string;
+  department?: string;
+  semester?: string;
+  section?: string;
+  data: Record<string, number | string | null>;
+}
+
+export interface DynamicResultDataset {
+  id: string;
+  fileName: string;
+  facultyEmail: string;
+  importedAt: string;
+  headers: string[]; // Original Excel headers in exact order
+  regNoHeader: string;
+  nameHeader?: string;
+  resultHeaders: string[]; // Result column keys in exact order
+  rows: DynamicResultRow[];
+}
+
+const LOCAL_DYNAMIC_DATASETS_KEY = 'cogniva_dynamic_result_datasets_v1';
+
+let localDynamicDatasets: DynamicResultDataset[] = [];
+
+try {
+  const raw = localStorage.getItem(LOCAL_DYNAMIC_DATASETS_KEY);
+  if (raw) localDynamicDatasets = JSON.parse(raw);
+} catch {}
+
+function saveDynamicDatasetsStore() {
+  try {
+    localStorage.setItem(LOCAL_DYNAMIC_DATASETS_KEY, JSON.stringify(localDynamicDatasets));
+  } catch {}
+}
+
+export async function fetchDynamicResultsDataset(facultyEmail?: string): Promise<DynamicResultDataset | null> {
+  try {
+    let query = supabase.from('dynamic_result_datasets').select('*').order('imported_at', { ascending: false });
+    if (facultyEmail) query = query.eq('faculty_email', facultyEmail.toLowerCase());
+    const { data, error } = await query.limit(1);
+    if (!error && data && data.length > 0) {
+      return data[0] as DynamicResultDataset;
+    }
+  } catch {}
+
+  if (facultyEmail) {
+    const filtered = localDynamicDatasets.filter(d => !facultyEmail || d.facultyEmail.toLowerCase() === facultyEmail.toLowerCase());
+    if (filtered.length > 0) return filtered[0];
+  }
+  return localDynamicDatasets[0] || null;
+}
+
+export async function fetchAllDynamicResultsDatasets(facultyEmail?: string): Promise<DynamicResultDataset[]> {
+  try {
+    let query = supabase.from('dynamic_result_datasets').select('*').order('imported_at', { ascending: false });
+    if (facultyEmail) query = query.eq('faculty_email', facultyEmail.toLowerCase());
+    const { data, error } = await query;
+    if (!error && data && data.length > 0) {
+      return data as DynamicResultDataset[];
+    }
+  } catch {}
+
+  if (facultyEmail) {
+    return localDynamicDatasets.filter(d => d.facultyEmail.toLowerCase() === facultyEmail.toLowerCase());
+  }
+  return localDynamicDatasets;
+}
+
+export async function saveDynamicResultsDataset(dataset: Omit<DynamicResultDataset, 'id' | 'importedAt'>): Promise<DynamicResultDataset> {
+  const fullDataset: DynamicResultDataset = {
+    ...dataset,
+    id: `ds_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+    importedAt: new Date().toISOString()
+  };
+
+  try {
+    await supabase.from('dynamic_result_datasets').upsert([fullDataset]);
+  } catch {}
+
+  const existingIdx = localDynamicDatasets.findIndex(
+    d => d.facultyEmail.toLowerCase() === dataset.facultyEmail.toLowerCase() && d.fileName === dataset.fileName
+  );
+  if (existingIdx !== -1) {
+    localDynamicDatasets[existingIdx] = fullDataset;
+  } else {
+    localDynamicDatasets.unshift(fullDataset);
+  }
+
+  saveDynamicDatasetsStore();
+  return fullDataset;
+}
+
+// ----------------------------------------------------
+// CGPA & SGPA ACADEMIC PERFORMANCE SYSTEM
+// ----------------------------------------------------
+
+export interface SemesterGpaEntry {
+  semester: string; // e.g. "Sem 1", "Sem 2", "Sem 3", "Sem 4"
+  sgpa: number | null;
+  cgpa: number | null;
+  status: 'Completed' | 'Current' | 'Pending';
+}
+
+export interface StudentCgpaRecord {
+  id: string;
+  regno: string;
+  studentName: string;
+  studentEmail?: string;
+  department?: string;
+  semester?: string;
+  section?: string;
+  facultyEmail?: string;
+  semesters: SemesterGpaEntry[];
+  currentCgpa: number | null;
+  latestSgpa: number | null;
+  previousSgpa: number | null;
+  bestSgpa: number | null;
+  lowestSgpa: number | null;
+  averageSgpa: number | null;
+  trend: 'improving' | 'stable' | 'declining';
+  sgpaDelta: number | null;
+  cgpaDelta: number | null;
+  updatedAt: string;
+}
+
+export interface CgpaImportDataset {
+  id: string;
+  fileName: string;
+  facultyEmail: string;
+  importedAt: string;
+  headers: string[];
+  regNoHeader: string;
+  nameHeader?: string;
+  semHeaders: string[];
+  cgpaHeader?: string;
+  records: StudentCgpaRecord[];
+}
+
+const LOCAL_CGPA_RECORDS_KEY = 'cogniva_student_cgpa_records_v1';
+const LOCAL_CGPA_DATASETS_KEY = 'cogniva_cgpa_import_datasets_v1';
+
+let localCgpaRecords: StudentCgpaRecord[] = [];
+let localCgpaDatasets: CgpaImportDataset[] = [];
+
+try {
+  const rawRecs = localStorage.getItem(LOCAL_CGPA_RECORDS_KEY);
+  if (rawRecs) localCgpaRecords = JSON.parse(rawRecs);
+  const rawDs = localStorage.getItem(LOCAL_CGPA_DATASETS_KEY);
+  if (rawDs) localCgpaDatasets = JSON.parse(rawDs);
+} catch {}
+
+if (localCgpaRecords.length === 0) {
+  localCgpaRecords = [
+    {
+      id: 'cgpa_1',
+      regno: '2024CSE001',
+      studentName: 'Aditya Varma',
+      studentEmail: 'aditya.v@example.edu',
+      department: 'CSE',
+      semester: '4',
+      section: 'CSE-C',
+      facultyEmail: 'anjali.menon@example.edu',
+      semesters: [
+        { semester: 'Sem 1', sgpa: 8.10, cgpa: 8.10, status: 'Completed' },
+        { semester: 'Sem 2', sgpa: 8.35, cgpa: 8.22, status: 'Completed' },
+        { semester: 'Sem 3', sgpa: 8.42, cgpa: 8.29, status: 'Completed' },
+        { semester: 'Sem 4', sgpa: null, cgpa: null, status: 'Current' }
+      ],
+      currentCgpa: 8.29,
+      latestSgpa: 8.42,
+      previousSgpa: 8.35,
+      bestSgpa: 8.42,
+      lowestSgpa: 8.10,
+      averageSgpa: 8.29,
+      trend: 'improving',
+      sgpaDelta: 0.07,
+      cgpaDelta: 0.07,
+      updatedAt: new Date().toISOString()
+    },
+    {
+      id: 'cgpa_2',
+      regno: '2024CSE002',
+      studentName: 'Bhavna Sharma',
+      studentEmail: 'bhavna.s@example.edu',
+      department: 'CSE',
+      semester: '4',
+      section: 'CSE-C',
+      facultyEmail: 'anjali.menon@example.edu',
+      semesters: [
+        { semester: 'Sem 1', sgpa: 8.60, cgpa: 8.60, status: 'Completed' },
+        { semester: 'Sem 2', sgpa: 8.75, cgpa: 8.68, status: 'Completed' },
+        { semester: 'Sem 3', sgpa: 8.80, cgpa: 8.72, status: 'Completed' },
+        { semester: 'Sem 4', sgpa: null, cgpa: null, status: 'Current' }
+      ],
+      currentCgpa: 8.72,
+      latestSgpa: 8.80,
+      previousSgpa: 8.75,
+      bestSgpa: 8.80,
+      lowestSgpa: 8.60,
+      averageSgpa: 8.72,
+      trend: 'improving',
+      sgpaDelta: 0.05,
+      cgpaDelta: 0.04,
+      updatedAt: new Date().toISOString()
+    },
+    {
+      id: 'cgpa_3',
+      regno: '2024CSE003',
+      studentName: 'Chetan Kumar',
+      studentEmail: 'chetan.k@example.edu',
+      department: 'CSE',
+      semester: '4',
+      section: 'CSE-C',
+      facultyEmail: 'anjali.menon@example.edu',
+      semesters: [
+        { semester: 'Sem 1', sgpa: 7.80, cgpa: 7.80, status: 'Completed' },
+        { semester: 'Sem 2', sgpa: 7.90, cgpa: 7.85, status: 'Completed' },
+        { semester: 'Sem 3', sgpa: 8.10, cgpa: 7.93, status: 'Completed' },
+        { semester: 'Sem 4', sgpa: null, cgpa: null, status: 'Current' }
+      ],
+      currentCgpa: 7.93,
+      latestSgpa: 8.10,
+      previousSgpa: 7.90,
+      bestSgpa: 8.10,
+      lowestSgpa: 7.80,
+      averageSgpa: 7.93,
+      trend: 'improving',
+      sgpaDelta: 0.20,
+      cgpaDelta: 0.08,
+      updatedAt: new Date().toISOString()
+    }
+  ];
+  saveCgpaStores();
+}
+
+function saveCgpaStores() {
+  try {
+    localStorage.setItem(LOCAL_CGPA_RECORDS_KEY, JSON.stringify(localCgpaRecords));
+    localStorage.setItem(LOCAL_CGPA_DATASETS_KEY, JSON.stringify(localCgpaDatasets));
+  } catch {}
+}
+
+export async function fetchFacultyCgpaRecords(facultyEmail?: string): Promise<StudentCgpaRecord[]> {
+  try {
+    let query = supabase.from('student_cgpa_records').select('*');
+    if (facultyEmail) query = query.eq('faculty_email', facultyEmail.toLowerCase());
+    const { data, error } = await query;
+    if (!error && data && data.length > 0) {
+      return data as StudentCgpaRecord[];
+    }
+  } catch {}
+
+  if (facultyEmail) {
+    return localCgpaRecords.filter(r => !r.facultyEmail || r.facultyEmail.toLowerCase() === facultyEmail.toLowerCase());
+  }
+  return localCgpaRecords;
+}
+
+export async function fetchStudentCgpaRecord(regnoOrEmail: string): Promise<StudentCgpaRecord | null> {
+  const clean = regnoOrEmail.toLowerCase().trim();
+  try {
+    const { data, error } = await supabase
+      .from('student_cgpa_records')
+      .select('*')
+      .or(`regno.ilike.${clean},student_email.ilike.${clean}`)
+      .limit(1);
+    if (!error && data && data.length > 0) {
+      return data[0] as StudentCgpaRecord;
+    }
+  } catch {}
+
+  const found = localCgpaRecords.find(
+    r => r.regno.toLowerCase() === clean || (r.studentEmail && r.studentEmail.toLowerCase() === clean)
+  );
+  return found || localCgpaRecords[0] || null;
+}
+
+export async function saveCgpaRecordsBatch(
+  records: StudentCgpaRecord[],
+  datasetMeta?: Omit<CgpaImportDataset, 'id' | 'importedAt' | 'records'>
+): Promise<{ success: boolean; count: number }> {
+  try {
+    await supabase.from('student_cgpa_records').upsert(records, { onConflict: 'regno' });
+  } catch {}
+
+  records.forEach(rec => {
+    const idx = localCgpaRecords.findIndex(r => r.regno.toLowerCase() === rec.regno.toLowerCase());
+    if (idx !== -1) {
+      localCgpaRecords[idx] = rec;
+    } else {
+      localCgpaRecords.push(rec);
+    }
+  });
+
+  if (datasetMeta) {
+    const ds: CgpaImportDataset = {
+      ...datasetMeta,
+      id: `cgpa_ds_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+      importedAt: new Date().toISOString(),
+      records
+    };
+    localCgpaDatasets.unshift(ds);
+    try {
+      await supabase.from('cgpa_import_datasets').insert([ds]);
+    } catch {}
+  }
+
+  saveCgpaStores();
+  return { success: true, count: records.length };
+}
+
+export async function fetchCgpaImportHistory(facultyEmail?: string): Promise<CgpaImportDataset[]> {
+  try {
+    let query = supabase.from('cgpa_import_datasets').select('*').order('imported_at', { ascending: false });
+    if (facultyEmail) query = query.eq('faculty_email', facultyEmail.toLowerCase());
+    const { data, error } = await query;
+    if (!error && data && data.length > 0) {
+      return data as CgpaImportDataset[];
+    }
+  } catch {}
+
+  if (facultyEmail) {
+    return localCgpaDatasets.filter(d => d.facultyEmail.toLowerCase() === facultyEmail.toLowerCase());
+  }
+  return localCgpaDatasets;
+}
+
+// ============================================================================
+// DYNAMIC SUBJECT-WISE + OVERALL ATTENDANCE API & PERSISTENCE
+// ============================================================================
+
+export interface DynamicSubjectAttendance {
+  subjectName: string;
+  attendancePercentage: number;
+  status: 'Good' | 'Watch' | 'At Risk';
+}
+
+export interface StudentAttendanceSummaryRecord {
+  id: string;
+  regno: string;
+  studentName: string;
+  studentEmail?: string;
+  department?: string;
+  year?: string;
+  section: string;
+  facultyEmail?: string;
+  subjectAttendances: DynamicSubjectAttendance[];
+  overallAttendancePercentage: number | null;
+  overallStatus: 'Good' | 'Watch' | 'At Risk';
+  highestSubject?: { subjectName: string; percentage: number };
+  lowestSubject?: { subjectName: string; percentage: number };
+  importedSubjectHeaders?: string[];
+  updatedAt: string;
+}
+
+export interface DynamicAttendanceImportDataset {
+  id: string;
+  fileName: string;
+  facultyEmail: string;
+  section: string;
+  importedAt: string;
+  headers: string[];
+  regNoHeader: string;
+  nameHeader?: string;
+  subjectHeaders: string[];
+  overallHeader?: string;
+  records: StudentAttendanceSummaryRecord[];
+}
+
+const LOCAL_ATT_SUMMARY_KEY = 'cogniva_student_attendance_summary_v1';
+const LOCAL_ATT_DATASETS_KEY = 'cogniva_attendance_import_datasets_v1';
+
+let localAttendanceSummaryRecords: StudentAttendanceSummaryRecord[] = [];
+let localAttendanceImportDatasets: DynamicAttendanceImportDataset[] = [];
+
+export function reloadLocalAttendanceStores(): StudentAttendanceSummaryRecord[] {
+  try {
+    if (typeof window !== 'undefined') {
+      const rawRecs = localStorage.getItem(LOCAL_ATT_SUMMARY_KEY);
+      if (rawRecs) localAttendanceSummaryRecords = JSON.parse(rawRecs);
+      const rawDs = localStorage.getItem(LOCAL_ATT_DATASETS_KEY);
+      if (rawDs) localAttendanceImportDatasets = JSON.parse(rawDs);
+    }
+  } catch {}
+  return localAttendanceSummaryRecords;
+}
+
+reloadLocalAttendanceStores();
+
+function saveAttendanceSummaryStores() {
+  try {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(LOCAL_ATT_SUMMARY_KEY, JSON.stringify(localAttendanceSummaryRecords));
+      localStorage.setItem(LOCAL_ATT_DATASETS_KEY, JSON.stringify(localAttendanceImportDatasets));
+    }
+  } catch {}
+}
+
+export async function fetchFacultyAttendanceSummaryRecords(
+  facultyEmail?: string,
+  sectionName?: string
+): Promise<StudentAttendanceSummaryRecord[]> {
+  try {
+    let query = supabase.from('student_attendance_summary').select('*');
+    if (sectionName) query = query.eq('section', sectionName);
+    if (facultyEmail) query = query.eq('faculty_email', facultyEmail.toLowerCase());
+    const { data, error } = await query;
+    if (!error && data && data.length > 0) {
+      return data as StudentAttendanceSummaryRecord[];
+    }
+  } catch {}
+
+  reloadLocalAttendanceStores();
+  let filtered = [...localAttendanceSummaryRecords];
+  if (sectionName) {
+    filtered = filtered.filter(r => r.section.toLowerCase() === sectionName.toLowerCase() || r.section.toLowerCase().endsWith(sectionName.toLowerCase()));
+  }
+  if (facultyEmail) {
+    filtered = filtered.filter(r => !r.facultyEmail || r.facultyEmail.toLowerCase() === facultyEmail.toLowerCase());
+  }
+  return filtered;
+}
+
+export async function fetchStudentAttendanceSummaryRecord(
+  regnoOrEmail: string
+): Promise<StudentAttendanceSummaryRecord | null> {
+  if (!regnoOrEmail) return null;
+  const cleanInput = regnoOrEmail.toLowerCase().trim();
+
+  reloadLocalAttendanceStores();
+
+  let matchedStudent: StudentMember | undefined = undefined;
+  try {
+    const roster = await fetchStudentMembers();
+    matchedStudent = roster.find(
+      s => s.email?.toLowerCase() === cleanInput || s.regno?.toLowerCase() === cleanInput || s.id?.toLowerCase() === cleanInput
+    );
+  } catch {}
+
+  const candidateKeys = new Set<string>();
+  candidateKeys.add(cleanInput);
+  if (matchedStudent) {
+    if (matchedStudent.regno) candidateKeys.add(matchedStudent.regno.toLowerCase().trim());
+    if (matchedStudent.email) candidateKeys.add(matchedStudent.email.toLowerCase().trim());
+    if (matchedStudent.name) candidateKeys.add(matchedStudent.name.toLowerCase().trim());
+  }
+
+  try {
+    for (const key of Array.from(candidateKeys)) {
+      const { data, error } = await supabase
+        .from('student_attendance_summary')
+        .select('*')
+        .or(`regno.ilike.${key},student_email.ilike.${key},student_name.ilike.${key}`)
+        .limit(1);
+      if (!error && data && data.length > 0) {
+        return data[0] as StudentAttendanceSummaryRecord;
+      }
+    }
+  } catch {}
+
+  const allRecords = reloadLocalAttendanceStores();
+  for (const key of Array.from(candidateKeys)) {
+    const found = allRecords.find(r => {
+      const rReg = (r.regno || '').toLowerCase().trim();
+      const rEmail = (r.studentEmail || '').toLowerCase().trim();
+      const rName = (r.studentName || '').toLowerCase().trim();
+      return rReg === key || rEmail === key || rName === key;
+    });
+    if (found) return found;
+  }
+
+  if (matchedStudent) {
+    const roster = await fetchStudentMembers().catch(() => []);
+    const studentIdx = roster.findIndex(s => s.regno.toLowerCase() === matchedStudent?.regno.toLowerCase());
+    if (studentIdx !== -1 && studentIdx < allRecords.length) {
+      return allRecords[studentIdx];
+    }
+  }
+
+  return null;
+}
+
+export async function saveAttendanceSummaryBatch(
+  records: StudentAttendanceSummaryRecord[],
+  datasetMeta?: Omit<DynamicAttendanceImportDataset, 'id' | 'importedAt' | 'records'>,
+  overwrite: boolean = true
+): Promise<{ success: boolean; count: number }> {
+  try {
+    await supabase.from('student_attendance_summary').upsert(records, { onConflict: 'regno' });
+  } catch {}
+
+  reloadLocalAttendanceStores();
+
+  records.forEach(newRec => {
+    const idx = localAttendanceSummaryRecords.findIndex(r => r.regno.toLowerCase() === newRec.regno.toLowerCase());
+    if (idx !== -1) {
+      if (overwrite) {
+        localAttendanceSummaryRecords[idx] = newRec;
+      } else {
+        const existingRec = localAttendanceSummaryRecords[idx];
+        const mergedSubjects = [...existingRec.subjectAttendances];
+
+        newRec.subjectAttendances.forEach(newSub => {
+          const sIdx = mergedSubjects.findIndex(s => s.subjectName.toLowerCase() === newSub.subjectName.toLowerCase());
+          if (sIdx !== -1) {
+            mergedSubjects[sIdx] = newSub;
+          } else {
+            mergedSubjects.push(newSub);
+          }
+        });
+
+        const validPct = mergedSubjects.map(s => s.attendancePercentage).filter((p): p is number => p !== null);
+        const overall = newRec.overallAttendancePercentage !== null
+          ? newRec.overallAttendancePercentage
+          : validPct.length > 0
+          ? Math.round(validPct.reduce((a, b) => a + b, 0) / validPct.length)
+          : null;
+
+        const overallStatus = overall !== null ? (overall >= 85 ? 'Good' : overall >= 75 ? 'Watch' : 'At Risk') : 'Good';
+
+        localAttendanceSummaryRecords[idx] = {
+          ...existingRec,
+          subjectAttendances: mergedSubjects,
+          overallAttendancePercentage: overall,
+          overallStatus,
+          importedSubjectHeaders: Array.from(new Set([...(existingRec.importedSubjectHeaders || []), ...(newRec.importedSubjectHeaders || [])])),
+          updatedAt: new Date().toISOString()
+        };
+      }
+    } else {
+      localAttendanceSummaryRecords.push(newRec);
+    }
+  });
+
+  if (datasetMeta) {
+    const ds: DynamicAttendanceImportDataset = {
+      ...datasetMeta,
+      id: `att_ds_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+      importedAt: new Date().toISOString(),
+      records
+    };
+    localAttendanceImportDatasets.unshift(ds);
+    try {
+      await supabase.from('attendance_import_datasets').insert([ds]);
+    } catch {}
+  }
+
+  saveAttendanceSummaryStores();
+  return { success: true, count: records.length };
+}
+
+export async function fetchDynamicAttendanceImportHistory(
+  facultyEmail?: string
+): Promise<DynamicAttendanceImportDataset[]> {
+  try {
+    let query = supabase.from('attendance_import_datasets').select('*').order('imported_at', { ascending: false });
+    if (facultyEmail) query = query.eq('faculty_email', facultyEmail.toLowerCase());
+    const { data, error } = await query;
+    if (!error && data && data.length > 0) {
+      return data as DynamicAttendanceImportDataset[];
+    }
+  } catch {}
+
+  reloadLocalAttendanceStores();
+  if (facultyEmail) {
+    return localAttendanceImportDatasets.filter(d => d.facultyEmail.toLowerCase() === facultyEmail.toLowerCase());
+  }
+  return localAttendanceImportDatasets;
+}
+
+export function parseDynamicAttendanceExcel(
+  arrayBuffer: ArrayBuffer,
+  roster: StudentMember[]
+) {
+  const wb = XLSX.read(arrayBuffer, { type: 'array' });
+  const sheetName = wb.SheetNames[0];
+  const sheet = wb.Sheets[sheetName];
+  const rawRows: Record<string, any>[] = XLSX.utils.sheet_to_json(sheet, { defval: '' });
+
+  if (rawRows.length === 0) {
+    return {
+      headers: [],
+      regNoHeader: '',
+      subjectHeaders: [],
+      matchedRows: [],
+      unmatchedRows: [],
+      totalExcelRows: 0
+    };
+  }
+
+  const headers = Object.keys(rawRows[0]);
+  const norm = (s: string) => String(s || '').trim().toLowerCase().replace(/[^a-z0-9]/g, '');
+
+  let regNoHeader = headers.find(h => ['regno', 'register', 'rollno', 'studentid', 'id', 'reg'].some(k => norm(h).includes(k))) || headers[0];
+  let nameHeader = headers.find(h => ['name', 'studentname', 'fullname'].some(k => norm(h).includes(k)));
+  let emailHeader = headers.find(h => ['email', 'mail'].some(k => norm(h).includes(k)));
+  let overallHeader = headers.find(h => norm(h).includes('overall') || norm(h).includes('totalattendance'));
+
+  const serialKeywords = ['sno', 'slno', 'srno', 'no', 'sn', 'sno.', 'slno.', 'srno.', 'row', 'index'];
+  const idKeywords = ['regno', 'register', 'registernumber', 'rollno', 'rollnumber', 'studentid', 'student_id', 'id', 'reg'];
+  const nameKeywords = ['name', 'studentname', 'fullname', 'student_name', 'full_name'];
+  const emailKeywords = ['email', 'studentemail', 'emailaddress', 'mail'];
+  const structKeywords = ['department', 'dept', 'section', 'sec', 'year', 'academicyear', 'semester', 'sem', 'dob', 'dateofbirth'];
+  const overallKeywords = ['overall', 'overallattendance', 'overall_attendance', 'overall%', 'totalattendance', 'total_attendance', 'total%'];
+
+  const isMeta = (h: string) => {
+    const n = norm(h);
+    if (!n) return true;
+    if (serialKeywords.some(k => n === k)) return true;
+    if (idKeywords.some(k => n === k || n.replace(/[^a-z]/g, '') === k)) return true;
+    if (nameKeywords.some(k => n === k || n.replace(/[^a-z]/g, '') === k)) return true;
+    if (emailKeywords.some(k => n === k || n.replace(/[^a-z]/g, '') === k)) return true;
+    if (structKeywords.some(k => n === k)) return true;
+    if (overallKeywords.some(k => n === k || n.includes('overall') || n.includes('totalattendance'))) return true;
+    return false;
+  };
+
+  const subjectHeaders = headers.filter(h => !isMeta(h));
+
+  const matchedRows: StudentAttendanceSummaryRecord[] = [];
+  const unmatchedRows: Array<{ rowNumber: number; data: Record<string, any>; reason: string }> = [];
+
+  rawRows.forEach((row, i) => {
+    const regVal = String(row[regNoHeader] || '').trim();
+    const nameVal = nameHeader ? String(row[nameHeader] || '').trim() : '';
+    const emailVal = emailHeader ? String(row[emailHeader] || '').trim() : '';
+
+    if (!regVal && !nameVal && !emailVal) {
+      unmatchedRows.push({ rowNumber: i + 2, data: row, reason: 'Empty student identifier row' });
+      return;
+    }
+
+    const matchedStudent = roster.find(s => 
+      (regVal && s.regno.toLowerCase() === regVal.toLowerCase()) ||
+      (emailVal && s.email.toLowerCase() === emailVal.toLowerCase()) ||
+      (nameVal && s.name.toLowerCase() === nameVal.toLowerCase())
+    ) || (roster.length > i ? roster[i] : undefined);
+
+    if (!matchedStudent && regVal && roster.length > 0 && !roster.some(s => s.regno.toLowerCase() === regVal.toLowerCase())) {
+      unmatchedRows.push({ rowNumber: i + 2, data: row, reason: `Student '${regVal}' not in authorized section roster` });
+    }
+
+    const sReg = matchedStudent?.regno || regVal || `REG_${i + 1}`;
+    const sName = matchedStudent?.name || nameVal || `Student ${i + 1}`;
+    const sEmail = matchedStudent?.email || emailVal;
+    const sDept = matchedStudent?.department || String(row['Department'] || row['Dept'] || 'CSE').trim();
+    const sSec = matchedStudent?.section || String(row['Section'] || row['Sec'] || 'CSE-C').trim();
+
+    const subjectAttendances: DynamicSubjectAttendance[] = [];
+    const validPercentages: number[] = [];
+
+    subjectHeaders.forEach(sh => {
+      const rawVal = String(row[sh] || '').trim();
+      if (!rawVal) return;
+
+      const cleaned = rawVal.replace('%', '').trim();
+      const num = parseFloat(cleaned);
+
+      if (!isNaN(num) && num >= 0 && num <= 100) {
+        const rounded = Math.round(num);
+        validPercentages.push(rounded);
+        const status = rounded >= 85 ? 'Good' : rounded >= 75 ? 'Watch' : 'At Risk';
+        subjectAttendances.push({
+          subjectName: sh,
+          attendancePercentage: rounded,
+          status
+        });
+      }
+    });
+
+    const explicitOverallRaw = overallHeader ? String(row[overallHeader] || '').trim().replace('%', '') : '';
+    const explicitOverallNum = parseFloat(explicitOverallRaw);
+
+    const overallAttendancePercentage = !isNaN(explicitOverallNum) && explicitOverallNum >= 0 && explicitOverallNum <= 100
+      ? Math.round(explicitOverallNum)
+      : validPercentages.length > 0
+      ? Math.round(validPercentages.reduce((a, b) => a + b, 0) / validPercentages.length)
+      : null;
+
+    const hasLowSubject = subjectAttendances.some(s => s.status === 'At Risk');
+    const overallStatus = overallAttendancePercentage !== null
+      ? (overallAttendancePercentage >= 85 && !hasLowSubject ? 'Good' : overallAttendancePercentage >= 75 && !hasLowSubject ? 'Watch' : 'At Risk')
+      : 'Good';
+
+    let highestSubject: { subjectName: string; percentage: number } | undefined = undefined;
+    let lowestSubject: { subjectName: string; percentage: number } | undefined = undefined;
+
+    if (subjectAttendances.length > 0) {
+      const sorted = [...subjectAttendances].sort((a, b) => b.attendancePercentage - a.attendancePercentage);
+      highestSubject = { subjectName: sorted[0].subjectName, percentage: sorted[0].attendancePercentage };
+      lowestSubject = { subjectName: sorted[sorted.length - 1].subjectName, percentage: sorted[sorted.length - 1].percentage };
+    }
+
+    matchedRows.push({
+      id: `att_sum_${sReg.toLowerCase().replace(/[^a-z0-9]/g, '_')}`,
+      regno: sReg,
+      studentName: sName,
+      studentEmail: sEmail,
+      department: sDept,
+      section: sSec,
+      subjectAttendances,
+      overallAttendancePercentage,
+      overallStatus,
+      highestSubject,
+      lowestSubject,
+      importedSubjectHeaders: subjectHeaders,
+      updatedAt: new Date().toISOString()
+    });
+  });
+
+  return {
+    headers,
+    regNoHeader,
+    nameHeader,
+    subjectHeaders,
+    overallHeader,
+    matchedRows,
+    unmatchedRows,
+    totalExcelRows: rawRows.length
+  };
+}
+
+export interface DynamicSubjectGrade {
+  subjectName: string;
+  grade: string;
+  gradePoint?: number;
+  status?: string;
+}
+
+export interface StudentGradeSummaryRecord {
+  id: string;
+  regno: string;
+  studentName: string;
+  studentEmail?: string;
+  department?: string;
+  section: string;
+  facultyEmail?: string;
+  subjectGrades: DynamicSubjectGrade[];
+  overallGrade?: string;
+  overallGradePoint?: number;
+  highestGradeSubject?: { subjectName: string; grade: string };
+  lowestGradeSubject?: { subjectName: string; grade: string };
+  updatedAt: string;
+}
+
+export interface DynamicGradeImportDataset {
+  id: string;
+  fileName: string;
+  importedBy: string;
+  section: string;
+  subjectCount: number;
+  studentCount: number;
+  importedAt: string;
+  records: StudentGradeSummaryRecord[];
+}
+
+const LOCAL_GRADE_SUMMARY_KEY = 'cogniva_student_grade_summary_v1';
+const LOCAL_GRADE_DATASETS_KEY = 'cogniva_grade_import_datasets_v1';
+
+const localGradeSummaryRecords: StudentGradeSummaryRecord[] = loadGradeSummaryRecords();
+const localGradeImportDatasets: DynamicGradeImportDataset[] = loadGradeImportDatasets();
+
+function loadGradeSummaryRecords(): StudentGradeSummaryRecord[] {
+  try {
+    const raw = localStorage.getItem(LOCAL_GRADE_SUMMARY_KEY);
+    if (raw) return JSON.parse(raw);
+  } catch {}
+  return [
+    {
+      id: 'grd_sum_23cs001',
+      regno: '23CS001',
+      studentName: 'Aditya Varma',
+      studentEmail: 'aditya.varma@example.edu',
+      department: 'CSE',
+      section: 'CSE-C',
+      facultyEmail: 'anjali.menon@example.edu',
+      subjectGrades: [
+        { subjectName: 'Data Analytics', grade: 'A', gradePoint: 9, status: 'Good' },
+        { subjectName: 'Cloud Computing', grade: 'A+', gradePoint: 10, status: 'Good' },
+        { subjectName: 'Embedded Programming', grade: 'B+', gradePoint: 8, status: 'Good' },
+        { subjectName: 'Generative AI', grade: 'A', gradePoint: 9, status: 'Good' },
+        { subjectName: 'Compiler Design', grade: 'B', gradePoint: 7, status: 'Watch' }
+      ],
+      overallGrade: 'A',
+      overallGradePoint: 8.6,
+      highestGradeSubject: { subjectName: 'Cloud Computing', grade: 'A+' },
+      lowestGradeSubject: { subjectName: 'Compiler Design', grade: 'B' },
+      updatedAt: new Date().toISOString()
+    },
+    {
+      id: 'grd_sum_23cs002',
+      regno: '23CS002',
+      studentName: 'Bhavna Sharma',
+      studentEmail: 'bhavna.sharma@example.edu',
+      department: 'CSE',
+      section: 'CSE-C',
+      facultyEmail: 'anjali.menon@example.edu',
+      subjectGrades: [
+        { subjectName: 'Data Analytics', grade: 'A+', gradePoint: 10, status: 'Good' },
+        { subjectName: 'Cloud Computing', grade: 'A', gradePoint: 9, status: 'Good' },
+        { subjectName: 'Embedded Programming', grade: 'A', gradePoint: 9, status: 'Good' },
+        { subjectName: 'Generative AI', grade: 'A+', gradePoint: 10, status: 'Good' },
+        { subjectName: 'Compiler Design', grade: 'B+', gradePoint: 8, status: 'Good' }
+      ],
+      overallGrade: 'A+',
+      overallGradePoint: 9.2,
+      highestGradeSubject: { subjectName: 'Data Analytics', grade: 'A+' },
+      lowestGradeSubject: { subjectName: 'Compiler Design', grade: 'B+' },
+      updatedAt: new Date().toISOString()
+    },
+    {
+      id: 'grd_sum_23cs003',
+      regno: '23CS003',
+      studentName: 'Chetan Kumar',
+      studentEmail: 'chetan.kumar@example.edu',
+      department: 'CSE',
+      section: 'CSE-C',
+      facultyEmail: 'anjali.menon@example.edu',
+      subjectGrades: [
+        { subjectName: 'Data Analytics', grade: 'B', gradePoint: 7, status: 'Watch' },
+        { subjectName: 'Cloud Computing', grade: 'B+', gradePoint: 8, status: 'Good' },
+        { subjectName: 'Embedded Programming', grade: 'C+', gradePoint: 6, status: 'Watch' },
+        { subjectName: 'Generative AI', grade: 'B', gradePoint: 7, status: 'Watch' },
+        { subjectName: 'Compiler Design', grade: 'C', gradePoint: 5, status: 'At Risk' }
+      ],
+      overallGrade: 'B',
+      overallGradePoint: 6.6,
+      highestGradeSubject: { subjectName: 'Cloud Computing', grade: 'B+' },
+      lowestGradeSubject: { subjectName: 'Compiler Design', grade: 'C' },
+      updatedAt: new Date().toISOString()
+    }
+  ];
+}
+
+function loadGradeImportDatasets(): DynamicGradeImportDataset[] {
+  try {
+    const raw = localStorage.getItem(LOCAL_GRADE_DATASETS_KEY);
+    if (raw) return JSON.parse(raw);
+  } catch {}
+  return [];
+}
+
+function saveGradeSummaryStores() {
+  try {
+    localStorage.setItem(LOCAL_GRADE_SUMMARY_KEY, JSON.stringify(localGradeSummaryRecords));
+    localStorage.setItem(LOCAL_GRADE_DATASETS_KEY, JSON.stringify(localGradeImportDatasets));
+  } catch {}
+}
+
+export function gradeToPoint(gradeStr: string): number {
+  const clean = String(gradeStr || '').trim().toUpperCase();
+  switch (clean) {
+    case 'O':
+    case 'A+': return 10;
+    case 'A': return 9;
+    case 'A-': return 8.5;
+    case 'B+': return 8;
+    case 'B': return 7;
+    case 'B-': return 6.5;
+    case 'C+': return 6;
+    case 'C': return 5;
+    case 'C-': return 4.5;
+    case 'D': return 4;
+    case 'E': return 3;
+    case 'F': return 0;
+    default:
+      const num = parseFloat(clean);
+      return !isNaN(num) ? num : 0;
+  }
+}
+
+export function pointToGrade(pt: number): string {
+  if (pt >= 9.5) return 'A+';
+  if (pt >= 8.5) return 'A';
+  if (pt >= 7.5) return 'B+';
+  if (pt >= 6.5) return 'B';
+  if (pt >= 5.5) return 'C+';
+  if (pt >= 4.5) return 'C';
+  if (pt >= 4.0) return 'D';
+  return 'F';
+}
+
+export async function fetchFacultyGradeSummaryRecords(
+  facultyEmail?: string,
+  sectionName?: string
+): Promise<StudentGradeSummaryRecord[]> {
+  try {
+    let query = supabase.from('student_grade_summary').select('*');
+    if (sectionName) query = query.eq('section', sectionName);
+    if (facultyEmail) query = query.eq('faculty_email', facultyEmail.toLowerCase());
+    const { data, error } = await query;
+    if (!error && data && data.length > 0) {
+      return data as StudentGradeSummaryRecord[];
+    }
+  } catch {}
+
+  let filtered = [...localGradeSummaryRecords];
+  if (sectionName) {
+    filtered = filtered.filter(r => r.section.toLowerCase() === sectionName.toLowerCase() || r.section.toLowerCase().endsWith(sectionName.toLowerCase()));
+  }
+  if (facultyEmail) {
+    filtered = filtered.filter(r => !r.facultyEmail || r.facultyEmail.toLowerCase() === facultyEmail.toLowerCase());
+  }
+  return filtered;
+}
+
+export async function fetchStudentGradeSummaryRecord(
+  regnoOrEmail: string
+): Promise<StudentGradeSummaryRecord | null> {
+  const clean = regnoOrEmail.toLowerCase().trim();
+  try {
+    const { data, error } = await supabase
+      .from('student_grade_summary')
+      .select('*')
+      .or(`regno.ilike.${clean},student_email.ilike.${clean}`)
+      .limit(1);
+    if (!error && data && data.length > 0) {
+      return data[0] as StudentGradeSummaryRecord;
+    }
+  } catch {}
+
+  const found = localGradeSummaryRecords.find(
+    r => r.regno.toLowerCase() === clean || (r.studentEmail && r.studentEmail.toLowerCase() === clean)
+  );
+  return found || localGradeSummaryRecords[0] || null;
+}
+
+export async function saveGradeSummaryBatch(
+  records: StudentGradeSummaryRecord[],
+  datasetMeta?: Omit<DynamicGradeImportDataset, 'id' | 'importedAt' | 'records'>,
+  overwrite: boolean = true
+): Promise<{ success: boolean; count: number }> {
+  try {
+    await supabase.from('student_grade_summary').upsert(records, { onConflict: 'regno' });
+  } catch {}
+
+  records.forEach(newRec => {
+    const idx = localGradeSummaryRecords.findIndex(r => r.regno.toLowerCase() === newRec.regno.toLowerCase());
+    if (idx !== -1) {
+      if (overwrite) {
+        localGradeSummaryRecords[idx] = newRec;
+      } else {
+        const existingRec = localGradeSummaryRecords[idx];
+        const mergedSubjects = [...existingRec.subjectGrades];
+
+        newRec.subjectGrades.forEach(newSub => {
+          const sIdx = mergedSubjects.findIndex(s => s.subjectName.toLowerCase() === newSub.subjectName.toLowerCase());
+          if (sIdx !== -1) {
+            mergedSubjects[sIdx] = newSub;
+          } else {
+            mergedSubjects.push(newSub);
+          }
+        });
+
+        const validPoints = mergedSubjects.map(s => s.gradePoint ?? gradeToPoint(s.grade));
+        const avgPt = validPoints.length > 0 ? (validPoints.reduce((a, b) => a + b, 0) / validPoints.length) : undefined;
+        const overall = newRec.overallGrade || (avgPt !== undefined ? pointToGrade(avgPt) : 'N/A');
+
+        localGradeSummaryRecords[idx] = {
+          ...existingRec,
+          subjectGrades: mergedSubjects,
+          overallGrade: overall,
+          overallGradePoint: avgPt !== undefined ? Math.round(avgPt * 10) / 10 : undefined,
+          updatedAt: new Date().toISOString()
+        };
+      }
+    } else {
+      localGradeSummaryRecords.push(newRec);
+    }
+  });
+
+  if (datasetMeta) {
+    const ds: DynamicGradeImportDataset = {
+      ...datasetMeta,
+      id: `grd_ds_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+      importedAt: new Date().toISOString(),
+      records
+    };
+    localGradeImportDatasets.unshift(ds);
+    try {
+      await supabase.from('grade_import_datasets').insert([ds]);
+    } catch {}
+  }
+
+  saveGradeSummaryStores();
+  return { success: true, count: records.length };
+}
+
+export async function fetchDynamicGradeImportHistory(
+  facultyEmail?: string
+): Promise<DynamicGradeImportDataset[]> {
+  try {
+    let query = supabase.from('grade_import_datasets').select('*').order('imported_at', { ascending: false });
+    if (facultyEmail) query = query.eq('faculty_email', facultyEmail.toLowerCase());
+    const { data, error } = await query;
+    if (!error && data && data.length > 0) {
+      return data as DynamicGradeImportDataset[];
+    }
+  } catch {}
+
+  if (facultyEmail) {
+    return localGradeImportDatasets.filter(d => d.facultyEmail.toLowerCase() === facultyEmail.toLowerCase());
+  }
+  return localGradeImportDatasets;
+}
+
+export function parseDynamicGradeExcel(
+  arrayBuffer: ArrayBuffer,
+  roster: StudentMember[]
+) {
+  const wb = XLSX.read(arrayBuffer, { type: 'array' });
+  const sheetName = wb.SheetNames[0];
+  const sheet = wb.Sheets[sheetName];
+  const rawRows: Record<string, any>[] = XLSX.utils.sheet_to_json(sheet, { defval: '' });
+
+  if (rawRows.length === 0) {
+    return {
+      headers: [],
+      regNoHeader: '',
+      subjectHeaders: [],
+      matchedRows: [],
+      unmatchedRows: [],
+      totalExcelRows: 0
+    };
+  }
+
+  const headers = Object.keys(rawRows[0]);
+  const norm = (s: string) => String(s || '').trim().toLowerCase().replace(/[^a-z0-9]/g, '');
+
+  let regNoHeader = headers.find(h => ['regno', 'register', 'rollno', 'studentid', 'id', 'reg'].some(k => norm(h).includes(k))) || headers[0];
+  let nameHeader = headers.find(h => ['name', 'studentname', 'fullname'].some(k => norm(h).includes(k)));
+  let emailHeader = headers.find(h => ['email', 'mail'].some(k => norm(h).includes(k)));
+  let overallHeader = headers.find(h => norm(h).includes('overallgrade') || norm(h).includes('overall') || norm(h) === 'grade');
+
+  const metaKeywords = ['regno', 'register', 'rollno', 'studentid', 'id', 'reg', 'name', 'studentname', 'fullname', 'email', 'mail', 'department', 'dept', 'section', 'sec', 'year', 'semester', 'sem', 'dob'];
+  if (overallHeader) metaKeywords.push(norm(overallHeader));
+
+  const subjectHeaders = headers.filter(h => {
+    const n = norm(h);
+    return !metaKeywords.some(k => n === k || (k.length >= 4 && n === k));
+  });
+
+  const matchedRows: StudentGradeSummaryRecord[] = [];
+  const unmatchedRows: Array<{ rowNumber: number; data: Record<string, any>; reason: string }> = [];
+
+  rawRows.forEach((row, i) => {
+    const regVal = String(row[regNoHeader] || '').trim();
+    const nameVal = nameHeader ? String(row[nameHeader] || '').trim() : '';
+    const emailVal = emailHeader ? String(row[emailHeader] || '').trim() : '';
+
+    if (!regVal && !nameVal && !emailVal) {
+      unmatchedRows.push({ rowNumber: i + 2, data: row, reason: 'Empty student identifier row' });
+      return;
+    }
+
+    const matchedStudent = roster.find(s => 
+      (regVal && s.regno.toLowerCase() === regVal.toLowerCase()) ||
+      (emailVal && s.email.toLowerCase() === emailVal.toLowerCase()) ||
+      (nameVal && s.name.toLowerCase() === nameVal.toLowerCase())
+    );
+
+    if (!matchedStudent && regVal && roster.length > 0 && !roster.some(s => s.regno.toLowerCase() === regVal.toLowerCase())) {
+      unmatchedRows.push({ rowNumber: i + 2, data: row, reason: `Student '${regVal}' not in authorized section roster` });
+    }
+
+    const sReg = matchedStudent?.regno || regVal || `REG_${i + 1}`;
+    const sName = matchedStudent?.name || nameVal || `Student ${i + 1}`;
+    const sEmail = matchedStudent?.email || emailVal;
+    const sDept = matchedStudent?.department || String(row['Department'] || row['Dept'] || 'CSE').trim();
+    const sSec = matchedStudent?.section || String(row['Section'] || row['Sec'] || 'CSE-C').trim();
+
+    const subjectGrades: DynamicSubjectGrade[] = [];
+    const validPoints: number[] = [];
+
+    subjectHeaders.forEach(sh => {
+      const rawVal = String(row[sh] || '').trim();
+      if (!rawVal) return;
+
+      const pt = gradeToPoint(rawVal);
+      const gradeStr = rawVal.toUpperCase();
+      const status = pt >= 8 ? 'Good' : pt >= 6 ? 'Watch' : 'At Risk';
+
+      validPoints.push(pt);
+      subjectGrades.push({
+        subjectName: sh,
+        grade: gradeStr,
+        gradePoint: pt,
+        status
+      });
+    });
+
+    const explicitOverall = overallHeader ? String(row[overallHeader] || '').trim().toUpperCase() : '';
+    const avgPoint = validPoints.length > 0 ? (validPoints.reduce((a, b) => a + b, 0) / validPoints.length) : undefined;
+    const overallGrade = explicitOverall || (avgPoint !== undefined ? pointToGrade(avgPoint) : 'N/A');
+
+    let highestGradeSubject: { subjectName: string; grade: string } | undefined = undefined;
+    let lowestGradeSubject: { subjectName: string; grade: string } | undefined = undefined;
+
+    if (subjectGrades.length > 0) {
+      const sorted = [...subjectGrades].sort((a, b) => (b.gradePoint ?? 0) - (a.gradePoint ?? 0));
+      highestGradeSubject = { subjectName: sorted[0].subjectName, grade: sorted[0].grade };
+      lowestGradeSubject = { subjectName: sorted[sorted.length - 1].subjectName, grade: sorted[sorted.length - 1].grade };
+    }
+
+    matchedRows.push({
+      id: `grd_sum_${sReg.toLowerCase().replace(/[^a-z0-9]/g, '_')}`,
+      regno: sReg,
+      studentName: sName,
+      studentEmail: sEmail,
+      department: sDept,
+      section: sSec,
+      subjectGrades,
+      overallGrade,
+      overallGradePoint: avgPoint !== undefined ? Math.round(avgPoint * 10) / 10 : undefined,
+      highestGradeSubject,
+      lowestGradeSubject,
+      updatedAt: new Date().toISOString()
+    });
+  });
+
+  return {
+    headers,
+    regNoHeader,
+    nameHeader,
+    subjectHeaders,
+    overallHeader,
+    matchedRows,
+    unmatchedRows,
+    totalExcelRows: rawRows.length
+  };
+}
+
+// ====================================================
+// HACKATHON MANAGEMENT & SYNC SYSTEM
+// ====================================================
+import { HackathonAggregator, RawHackathon } from './hackathonProviders';
+
+export interface Hackathon {
+  id: string;
+  external_id: string;
+  source: 'UNSTOP' | 'DEVFOLIO' | 'DEVPOST';
+  title: string;
+  description: string;
+  official_url: string;
+  image_url?: string;
+  status: 'LIVE' | 'UPCOMING' | 'ENDING_SOON' | 'ENDED';
+  mode: 'Online' | 'Offline' | 'Hybrid';
+  start_date?: string;
+  end_date?: string;
+  registration_deadline?: string;
+  eligibility?: string;
+  team_size?: string;
+  categories: string[];
+  skills: string[];
+  participant_count?: number;
+  prize?: string;
+  organizer?: string;
+  featured?: boolean;
+  relevance_score?: number;
+  source_created_at?: string;
+  last_synced_at?: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export function calculateHackathonRelevance(
+  hackathon: Hackathon,
+  studentDept: string = 'CSE',
+  studentSkills: string[] = ['AI', 'Python', 'React', 'Java', 'Machine Learning']
+): number {
+  let score = 50;
+
+  if (hackathon.status === 'LIVE') score += 25;
+  if (hackathon.status === 'ENDING_SOON') score += 30;
+  if (hackathon.status === 'UPCOMING') score += 15;
+
+  const deptLower = studentDept.toLowerCase();
+  const text = `${hackathon.title} ${hackathon.description} ${hackathon.eligibility || ''} ${(hackathon.categories || []).join(' ')}`.toLowerCase();
+  if (text.includes(deptLower) || text.includes('engineering') || text.includes('all students')) {
+    score += 15;
+  }
+
+  const hackSkills = (hackathon.skills || []).map(s => s.toLowerCase());
+  const hackCats = (hackathon.categories || []).map(c => c.toLowerCase());
+  for (const s of studentSkills) {
+    const sLow = s.toLowerCase();
+    if (hackSkills.some(hs => hs.includes(sLow)) || hackCats.some(hc => hc.includes(sLow))) {
+      score += 10;
+    }
+  }
+
+  if (hackathon.mode === 'Online' || hackathon.mode === 'Hybrid') score += 10;
+  if (hackathon.featured) score += 20;
+
+  return Math.min(100, score);
+}
+
+const HACKATHONS_LOCAL_KEY = 'cogniva_hackathons_v1';
+
+export async function syncHackathons(): Promise<Hackathon[]> {
+  const aggregator = new HackathonAggregator();
+  const rawItems = await aggregator.fetchAll();
+  const now = new Date().toISOString();
+
+  const normalizedList: Hackathon[] = rawItems
+    .filter((item) => item.title && item.official_url)
+    .map((item) => {
+      let status = item.status || 'LIVE';
+      if (item.registration_deadline) {
+        const deadline = new Date(item.registration_deadline).getTime();
+        if (!isNaN(deadline)) {
+          const diffDays = (deadline - Date.now()) / (1000 * 3600 * 24);
+          if (diffDays < 0) status = 'ENDED';
+          else if (diffDays <= 4 && status !== 'ENDED') status = 'ENDING_SOON';
+        }
+      }
+
+      const h: Hackathon = {
+        id: `${item.source.toLowerCase()}_${item.external_id.replace(/[^a-z0-9]/gi, '_')}`,
+        external_id: item.external_id,
+        source: item.source,
+        title: item.title,
+        description: item.description,
+        official_url: item.official_url,
+        image_url: item.image_url,
+        status: status as any,
+        mode: item.mode || 'Online',
+        start_date: item.start_date,
+        end_date: item.end_date,
+        registration_deadline: item.registration_deadline,
+        eligibility: item.eligibility,
+        team_size: item.team_size,
+        categories: item.categories || ['Technology'],
+        skills: item.skills || ['Coding'],
+        participant_count: item.participant_count,
+        prize: item.prize,
+        organizer: item.organizer || item.source,
+        featured: false,
+        last_synced_at: now,
+        created_at: now,
+        updated_at: now
+      };
+      h.relevance_score = calculateHackathonRelevance(h);
+      return h;
+    });
+
+  const uniqueMap = new Map<string, Hackathon>();
+  normalizedList.forEach((h) => {
+    if (h.status !== 'ENDED') {
+      uniqueMap.set(`${h.source}_${h.external_id}`, h);
+    }
+  });
+  const uniqueHackathons = Array.from(uniqueMap.values());
+
+  try {
+    localStorage.setItem(HACKATHONS_LOCAL_KEY, JSON.stringify(uniqueHackathons));
+  } catch (err) {
+    console.warn('LocalStorage save failed for hackathons:', err);
+  }
+
+  try {
+    const { error } = await supabase.from('hackathons').upsert(uniqueHackathons, { onConflict: 'external_id,source' });
+    if (error) {
+      console.warn('Supabase hackathons upsert warning:', error.message);
+    }
+  } catch (err) {
+    console.warn('Supabase sync warning:', err);
+  }
+
+  return uniqueHackathons;
+}
+
+export async function fetchHackathons(): Promise<Hackathon[]> {
+  // First attempt server endpoint feed for verified real data
+  try {
+    const feedRes = await fetch('/api/hackathons/feed');
+    if (feedRes.ok) {
+      const feedJson = await feedRes.json();
+      if (feedJson.success && Array.isArray(feedJson.data) && feedJson.data.length > 0) {
+        const now = new Date().toISOString();
+        const verifiedList: Hackathon[] = feedJson.data.map((item: RawHackathon) => {
+          const h: Hackathon = {
+            id: `${item.source.toLowerCase()}_${item.external_id.replace(/[^a-z0-9]/gi, '_')}`,
+            external_id: item.external_id,
+            source: item.source,
+            title: item.title,
+            description: item.description,
+            official_url: item.official_url,
+            image_url: item.image_url,
+            status: item.status || 'LIVE',
+            mode: item.mode || 'Online',
+            start_date: item.start_date,
+            end_date: item.end_date,
+            registration_deadline: item.registration_deadline,
+            eligibility: item.eligibility,
+            team_size: item.team_size,
+            categories: item.categories || ['Technology'],
+            skills: item.skills || ['Coding'],
+            participant_count: item.participant_count,
+            prize: item.prize,
+            organizer: item.organizer || item.source,
+            featured: false,
+            last_synced_at: now,
+            created_at: now,
+            updated_at: now
+          };
+          h.relevance_score = calculateHackathonRelevance(h);
+          return h;
+        });
+
+        try {
+          localStorage.setItem(HACKATHONS_LOCAL_KEY, JSON.stringify(verifiedList));
+        } catch {}
+
+        return verifiedList;
+      }
+    }
+  } catch (err) {
+    console.warn('Server feed fetch warning:', err);
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from('hackathons')
+      .select('*')
+      .neq('status', 'ENDED');
+
+    if (!error && data && data.length > 0) {
+      // Filter out any legacy synthetic/fake records if present
+      const cleanData = (data as any[]).filter(
+        (h) => !h.external_id?.includes('ethindia') && !h.external_id?.includes('flipkart') && !h.external_id?.includes('chrome')
+      );
+      if (cleanData.length > 0) {
+        return cleanData.map((item: any) => ({
+          ...item,
+          relevance_score: calculateHackathonRelevance(item)
+        }));
+      }
+    }
+  } catch (err) {
+    console.warn('Supabase hackathons fetch warning:', err);
+  }
+
+  try {
+    const local = localStorage.getItem(HACKATHONS_LOCAL_KEY);
+    if (local) {
+      const parsed: Hackathon[] = JSON.parse(local);
+      const cleanLocal = parsed.filter(
+        (h) => h.status !== 'ENDED' && !h.external_id?.includes('ethindia') && !h.external_id?.includes('flipkart') && !h.external_id?.includes('chrome')
+      );
+      if (cleanLocal.length > 0) {
+        return cleanLocal.map((h) => ({
+          ...h,
+          relevance_score: calculateHackathonRelevance(h)
+        }));
+      }
+    }
+  } catch (err) {
+    console.warn('LocalStorage hackathons read warning:', err);
+  }
+
+  return await syncHackathons();
+}
+
+// ====================================================
+// GOAL-TO-ACTION ROADMAP SYSTEM API
+// ====================================================
+import { generateGoalRoadmapAi } from './ai-service';
+
+export interface GoalMilestone {
+  id: string;
+  goal_id: string;
+  phase_id: string;
+  title: string;
+  description: string;
+  why_it_matters: string;
+  priority: 'HIGH' | 'MEDIUM' | 'LOW';
+  estimated_hours: number;
+  order_index: number;
+  status: 'PENDING' | 'COMPLETED';
+  completed_at?: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface GoalPhase {
+  id: string;
+  goal_id: string;
+  title: string;
+  description?: string;
+  order_index: number;
+  milestones: GoalMilestone[];
+}
+
+export interface Goal {
+  id: string;
+  student_id?: string;
+  student_email?: string;
+  title: string;
+  description?: string;
+  why_it_matters?: string;
+  target_date?: string;
+  progress_percentage: number;
+  status: 'ON_TRACK' | 'NEEDS_ATTENTION' | 'AT_RISK' | 'NOT_STARTED';
+  color: 'teal' | 'amber' | 'coral' | 'violet';
+  phases: GoalPhase[];
+  created_at?: string;
+  updated_at?: string;
+}
+
+const LOCAL_GOALS_KEY = 'cogniva_student_goals_v1';
+
+export function calculateGoalStats(goal: Goal): Goal {
+  const allMilestones = (goal.phases || []).flatMap(p => p.milestones || []);
+  const total = allMilestones.length;
+  const completed = allMilestones.filter(m => m.status === 'COMPLETED').length;
+  const progress_percentage = total > 0 ? Math.round((completed / total) * 100) : 0;
+
+  let status: Goal['status'] = 'NOT_STARTED';
+  if (total > 0) {
+    if (progress_percentage >= 60) status = 'ON_TRACK';
+    else if (progress_percentage >= 30) status = 'NEEDS_ATTENTION';
+    else if (progress_percentage > 0) status = 'AT_RISK';
+    else status = 'NOT_STARTED';
+  }
+
+  return {
+    ...goal,
+    progress_percentage,
+    status
+  };
+}
+
+export function getDefaultGoals(userEmail?: string): Goal[] {
+  const email = (userEmail || 'student001@cogniva.edu').toLowerCase();
+
+  const g1: Goal = {
+    id: 'goal_research_internship',
+    student_email: email,
+    title: 'Research internship',
+    description: 'Build a credible applied ML portfolio and publish benchmark evaluation code.',
+    why_it_matters: 'Essential for securing competitive research assistantships and top lab offers.',
+    target_date: '2026-03-28',
+    progress_percentage: 50,
+    status: 'NEEDS_ATTENTION',
+    color: 'violet',
+    phases: [
+      {
+        id: 'phase_res_1',
+        goal_id: 'goal_research_internship',
+        title: 'Phase 1: Build Core Foundations',
+        order_index: 1,
+        milestones: [
+          {
+            id: 'ms_res_1',
+            goal_id: 'goal_research_internship',
+            phase_id: 'phase_res_1',
+            title: 'Master NumPy & Pandas for Applied ML',
+            description: 'Strengthen data manipulation, array vectorization, and data processing skills.',
+            why_it_matters: 'Core prerequisite for implementing data pipelines and model training code.',
+            priority: 'HIGH',
+            estimated_hours: 8,
+            order_index: 1,
+            status: 'COMPLETED',
+            completed_at: new Date().toISOString()
+          },
+          {
+            id: 'ms_res_2',
+            goal_id: 'goal_research_internship',
+            phase_id: 'phase_res_1',
+            title: 'Study Core Machine Learning Algorithms',
+            description: 'Implement linear regression, decision trees, and SVMs from scratch.',
+            why_it_matters: 'Builds deep technical intuition needed for research lab technical interviews.',
+            priority: 'HIGH',
+            estimated_hours: 12,
+            order_index: 2,
+            status: 'PENDING'
+          }
+        ]
+      },
+      {
+        id: 'phase_res_2',
+        goal_id: 'goal_research_internship',
+        title: 'Phase 2: Build Empirical Evidence',
+        order_index: 2,
+        milestones: [
+          {
+            id: 'ms_res_3',
+            goal_id: 'goal_research_internship',
+            phase_id: 'phase_res_2',
+            title: 'Construct an End-to-End ML Evaluation Notebook',
+            description: 'Build a reproducible benchmark notebook comparing baseline models on public datasets.',
+            why_it_matters: 'Demonstrates practical experimentation capability to prospective research mentors.',
+            priority: 'HIGH',
+            estimated_hours: 15,
+            order_index: 3,
+            status: 'PENDING'
+          },
+          {
+            id: 'ms_res_4',
+            goal_id: 'goal_research_internship',
+            phase_id: 'phase_res_2',
+            title: 'Publish Open-Source ML Repository on GitHub',
+            description: 'Clean code, write comprehensive README, and add model performance visualizations.',
+            why_it_matters: 'Serves as visible proof of code quality for applications.',
+            priority: 'MEDIUM',
+            estimated_hours: 6,
+            order_index: 4,
+            status: 'PENDING'
+          }
+        ]
+      }
+    ]
+  };
+
+  const g2: Goal = {
+    id: 'goal_semester_distinction',
+    student_email: email,
+    title: 'Semester distinction',
+    description: 'Finish above 8.5 GPA with strong assessment consistency across all subjects.',
+    why_it_matters: 'Protects academic standing and satisfies honor roll criteria.',
+    target_date: '2026-04-30',
+    progress_percentage: 67,
+    status: 'ON_TRACK',
+    color: 'amber',
+    phases: [
+      {
+        id: 'phase_sem_1',
+        goal_id: 'goal_semester_distinction',
+        title: 'Phase 1: Assessment Protection',
+        order_index: 1,
+        milestones: [
+          {
+            id: 'ms_sem_1',
+            goal_id: 'goal_semester_distinction',
+            phase_id: 'phase_sem_1',
+            title: 'Map Subject Priority Matrix',
+            description: 'Identify subjects below 8.0 target GPA and protect 45-min daily revision blocks.',
+            why_it_matters: 'Early focus prevents score drop before midterms.',
+            priority: 'HIGH',
+            estimated_hours: 5,
+            order_index: 1,
+            status: 'COMPLETED',
+            completed_at: new Date().toISOString()
+          },
+          {
+            id: 'ms_sem_2',
+            goal_id: 'goal_semester_distinction',
+            phase_id: 'phase_sem_1',
+            title: 'Complete All Pending Subject Assignments',
+            description: 'Finish lab reports and theory submissions 48 hours before deadline.',
+            why_it_matters: 'Secures full internal assessment marks.',
+            priority: 'HIGH',
+            estimated_hours: 10,
+            order_index: 2,
+            status: 'COMPLETED',
+            completed_at: new Date().toISOString()
+          },
+          {
+            id: 'ms_sem_3',
+            goal_id: 'goal_semester_distinction',
+            phase_id: 'phase_sem_1',
+            title: 'Solve Past 5-Year Question Papers',
+            description: 'Practice timed paper solving for core subjects.',
+            why_it_matters: 'Familiarizes with faculty examination patterns.',
+            priority: 'HIGH',
+            estimated_hours: 14,
+            order_index: 3,
+            status: 'PENDING'
+          }
+        ]
+      }
+    ]
+  };
+
+  const g3: Goal = {
+    id: 'goal_systems_project',
+    student_email: email,
+    title: 'Complete systems project',
+    description: 'Ship a distributed systems demo with RPC networking and replication.',
+    why_it_matters: 'Demonstrates low-level engineering capability for backend SDE roles.',
+    target_date: '2026-04-12',
+    progress_percentage: 33,
+    status: 'AT_RISK',
+    color: 'teal',
+    phases: [
+      {
+        id: 'phase_sys_1',
+        goal_id: 'goal_systems_project',
+        title: 'Phase 1: Architecture & Prototype',
+        order_index: 1,
+        milestones: [
+          {
+            id: 'ms_sys_1',
+            goal_id: 'goal_systems_project',
+            phase_id: 'phase_sys_1',
+            title: 'Design Concurrent Event Loop Architecture',
+            description: 'Implement socket handling and thread pool dispatcher.',
+            why_it_matters: 'Foundation for high-throughput node communication.',
+            priority: 'HIGH',
+            estimated_hours: 12,
+            order_index: 1,
+            status: 'COMPLETED',
+            completed_at: new Date().toISOString()
+          },
+          {
+            id: 'ms_sys_2',
+            goal_id: 'goal_systems_project',
+            phase_id: 'phase_sys_1',
+            title: 'Implement Consensus & Data Replication',
+            description: 'Write heartbeat ping and log synchronization handlers.',
+            why_it_matters: 'Ensures cluster consistency during network partitions.',
+            priority: 'HIGH',
+            estimated_hours: 16,
+            order_index: 2,
+            status: 'PENDING'
+          },
+          {
+            id: 'ms_sys_3',
+            goal_id: 'goal_systems_project',
+            phase_id: 'phase_sys_1',
+            title: 'Benchmark Latency under Synthetic Load',
+            description: 'Record throughput metrics and memory footprint.',
+            why_it_matters: 'Provides empirical metrics for system documentation.',
+            priority: 'MEDIUM',
+            estimated_hours: 6,
+            order_index: 3,
+            status: 'PENDING'
+          }
+        ]
+      }
+    ]
+  };
+
+  return [calculateGoalStats(g1), calculateGoalStats(g2), calculateGoalStats(g3)];
+}
+
+export async function fetchStudentGoals(userEmail?: string): Promise<Goal[]> {
+  const cleanEmail = (userEmail || 'student001@cogniva.edu').toLowerCase();
+
+  try {
+    const { data, error } = await supabase
+      .from('student_goals')
+      .select('*')
+      .eq('student_email', cleanEmail)
+      .order('created_at', { ascending: false });
+
+    if (!error && data && data.length > 0) {
+      return data.map((item: any) => calculateGoalStats(item));
+    }
+  } catch (err) {
+    console.warn('Supabase student_goals fetch notice:', err);
+  }
+
+  try {
+    const raw = localStorage.getItem(`${LOCAL_GOALS_KEY}_${cleanEmail}`);
+    if (raw) {
+      const parsed: Goal[] = JSON.parse(raw);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        return parsed.map(g => calculateGoalStats(g));
+      }
+    }
+  } catch (err) {
+    console.warn('LocalStorage student_goals read notice:', err);
+  }
+
+  const defaults = getDefaultGoals(cleanEmail);
+  saveAllGoalsLocal(cleanEmail, defaults);
+  return defaults;
+}
+
+function saveAllGoalsLocal(email: string, goals: Goal[]) {
+  try {
+    localStorage.setItem(`${LOCAL_GOALS_KEY}_${email.toLowerCase()}`, JSON.stringify(goals));
+  } catch {}
+}
+
+export async function saveStudentGoal(goal: Goal): Promise<Goal> {
+  const updatedGoal = calculateGoalStats(goal);
+  const email = (updatedGoal.student_email || 'student001@cogniva.edu').toLowerCase();
+
+  const existingGoals = await fetchStudentGoals(email);
+  const idx = existingGoals.findIndex(g => g.id === updatedGoal.id || g.title.toLowerCase() === updatedGoal.title.toLowerCase());
+  if (idx !== -1) {
+    existingGoals[idx] = updatedGoal;
+  } else {
+    existingGoals.unshift(updatedGoal);
+  }
+
+  saveAllGoalsLocal(email, existingGoals);
+
+  try {
+    await supabase.from('student_goals').upsert([updatedGoal], { onConflict: 'id' });
+  } catch (err) {
+    console.warn('Supabase student_goals save notice:', err);
+  }
+
+  return updatedGoal;
+}
+
+export async function toggleMilestoneCompletion(goalId: string, milestoneId: string, userEmail?: string): Promise<Goal | null> {
+  const email = (userEmail || 'student001@cogniva.edu').toLowerCase();
+  const goals = await fetchStudentGoals(email);
+  const goal = goals.find(g => g.id === goalId);
+  if (!goal) return null;
+
+  for (const phase of goal.phases) {
+    const ms = phase.milestones.find(m => m.id === milestoneId);
+    if (ms) {
+      ms.status = ms.status === 'COMPLETED' ? 'PENDING' : 'COMPLETED';
+      ms.completed_at = ms.status === 'COMPLETED' ? new Date().toISOString() : undefined;
+      break;
+    }
+  }
+
+  return await saveStudentGoal(goal);
+}
+
+export async function deleteStudentGoal(goalId: string, userEmail?: string): Promise<boolean> {
+  const email = (userEmail || 'student001@cogniva.edu').toLowerCase();
+  const goals = await fetchStudentGoals(email);
+  const filtered = goals.filter(g => g.id !== goalId);
+  saveAllGoalsLocal(email, filtered);
+
+  try {
+    await supabase.from('student_goals').delete().eq('id', goalId);
+  } catch {}
+
+  return true;
+}
+
+export async function autoGenerateGoalMilestones(
+  goalTitle: string,
+  existingGoal?: Goal,
+  goalDescription?: string,
+  targetDate?: string,
+  userEmail?: string
+): Promise<Goal> {
+  const email = (userEmail || 'student001@cogniva.edu').toLowerCase();
+
+  const roadmapData = await generateGoalRoadmapAi(
+    goalTitle,
+    goalDescription || existingGoal?.description,
+    targetDate || existingGoal?.target_date,
+    { dept: 'CSE', year: '2nd Year', cgpa: 8.2, skills: ['Java', 'Python', 'React', 'AI'] },
+    email
+  );
+
+  const goalId = existingGoal?.id || `goal_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
+  const preservedCompletedMilestones = (existingGoal?.phases || []).flatMap(p => p.milestones || []).filter(m => m.status === 'COMPLETED');
+
+  const newPhases: GoalPhase[] = (roadmapData?.phases || []).map((phase, pIdx) => {
+    const phaseId = `phase_${goalId}_${pIdx + 1}`;
+    const newMilestones: GoalMilestone[] = phase.milestones.map((ms, mIdx) => ({
+      id: `ms_${goalId}_${pIdx + 1}_${mIdx + 1}`,
+      goal_id: goalId,
+      phase_id: phaseId,
+      title: ms.title,
+      description: ms.description,
+      why_it_matters: ms.why_it_matters,
+      priority: ms.priority || 'HIGH',
+      estimated_hours: ms.estimated_hours || 8,
+      order_index: ms.order || (mIdx + 1),
+      status: 'PENDING'
+    }));
+    return {
+      id: phaseId,
+      goal_id: goalId,
+      title: phase.title,
+      order_index: pIdx + 1,
+      milestones: newMilestones
+    };
+  });
+
+  if (preservedCompletedMilestones.length > 0 && newPhases.length > 0) {
+    const existingMsTitles = new Set(newPhases.flatMap(p => p.milestones.map(m => m.title.toLowerCase())));
+    preservedCompletedMilestones.forEach(cm => {
+      if (!existingMsTitles.has(cm.title.toLowerCase())) {
+        newPhases[0].milestones.unshift(cm);
+      }
+    });
+  }
+
+  const updatedGoal: Goal = {
+    id: goalId,
+    student_email: email,
+    title: goalTitle,
+    description: goalDescription || existingGoal?.description || `Actionable AI-generated roadmap for ${goalTitle}`,
+    why_it_matters: existingGoal?.why_it_matters || 'Structured milestones to achieve goal targets.',
+    target_date: targetDate || existingGoal?.target_date || '2026-12-15',
+    progress_percentage: existingGoal?.progress_percentage || 0,
+    status: existingGoal?.status || 'NOT_STARTED',
+    color: existingGoal?.color || 'violet',
+    phases: newPhases,
+    created_at: existingGoal?.created_at || new Date().toISOString(),
+    updated_at: new Date().toISOString()
+  };
+
+  return await saveStudentGoal(updatedGoal);
+}
+
+
+
+
 
 
 

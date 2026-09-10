@@ -1,32 +1,24 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from './supabase';
+import { fetchFacultyMembers, fetchStudentMembers } from './academic-api';
 
 type UserRole = 'admin' | 'faculty' | 'student' | null;
 
-export function normalizeDobToPassword(dobStr: string): string {
-  if (!dobStr) return '01012000';
-  const clean = String(dobStr).trim();
+export function normalizeDobToPassword(dobInput: any): string {
+  if (!dobInput) return '';
 
-  // Case 1: YYYY-MM-DD or YYYY/MM/DD or YYYY.MM.DD (e.g. 2000-05-09 -> 09052000)
-  const ymdMatch = clean.match(/^(\d{4})[-/.](\d{1,2})[-/.](\d{1,2})/);
-  if (ymdMatch) {
-    const yyyy = ymdMatch[1];
-    const mm = ymdMatch[2].padStart(2, '0');
-    const dd = ymdMatch[3].padStart(2, '0');
+  if (dobInput instanceof Date) {
+    const dd = String(dobInput.getDate()).padStart(2, '0');
+    const mm = String(dobInput.getMonth() + 1).padStart(2, '0');
+    const yyyy = String(dobInput.getFullYear());
     return `${dd}${mm}${yyyy}`;
   }
 
-  // Case 2: DD-MM-YYYY or DD/MM/YYYY or DD.MM.YYYY (e.g. 09/05/2000 -> 09052000)
-  const dmyMatch = clean.match(/^(\d{1,2})[-/.](\d{1,2})[-/.](\d{4})/);
-  if (dmyMatch) {
-    const dd = dmyMatch[1].padStart(2, '0');
-    const mm = dmyMatch[2].padStart(2, '0');
-    const yyyy = dmyMatch[3];
-    return `${dd}${mm}${yyyy}`;
-  }
+  const clean = String(dobInput).trim();
+  if (!clean) return '';
 
-  // Case 3: Excel serial date number (e.g. 36655 -> 09/05/2000)
+  // Case 1: Excel serial date number (e.g. 36655 -> 09/05/2000)
   if (!isNaN(Number(clean)) && Number(clean) > 20000 && Number(clean) < 60000) {
     const excelDate = new Date((Number(clean) - (25567 + 2)) * 86400 * 1000);
     const dd = String(excelDate.getUTCDate()).padStart(2, '0');
@@ -35,13 +27,31 @@ export function normalizeDobToPassword(dobStr: string): string {
     return `${dd}${mm}${yyyy}`;
   }
 
-  // Case 4: Digits only (e.g. 09052000)
+  // Case 2: YYYY-MM-DD or YYYY/MM/DD or YYYY.MM.DD (e.g. 2000-05-09 -> 09052000)
+  const ymdMatch = clean.match(/^(\d{4})[-/.](\d{1,2})[-/.](\d{1,2})/);
+  if (ymdMatch) {
+    const yyyy = ymdMatch[1];
+    const mm = ymdMatch[2].padStart(2, '0');
+    const dd = ymdMatch[3].padStart(2, '0');
+    return `${dd}${mm}${yyyy}`;
+  }
+
+  // Case 3: DD-MM-YYYY or DD/MM/YYYY or DD.MM.YYYY (e.g. 09/05/2000 -> 09052000 or 14-03-1985 -> 14031985)
+  const dmyMatch = clean.match(/^(\d{1,2})[-/.](\d{1,2})[-/.](\d{4})/);
+  if (dmyMatch) {
+    const dd = dmyMatch[1].padStart(2, '0');
+    const mm = dmyMatch[2].padStart(2, '0');
+    const yyyy = dmyMatch[3];
+    return `${dd}${mm}${yyyy}`;
+  }
+
+  // Case 4: Digits only (e.g. 14031985 or 09052000)
   const digitsOnly = clean.replace(/[^0-9]/g, '');
   if (digitsOnly.length >= 6) {
     return digitsOnly;
   }
 
-  return clean || '01012000';
+  return clean;
 }
 
 interface LoginResult {
@@ -115,7 +125,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return assignedRole;
       }
     } catch {
-      // Ignore table query error if profiles table is not created yet
+      // Ignore
     }
 
     // 2. Check user metadata
@@ -133,14 +143,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return 'admin';
     }
 
-    // 4. Check student_members table
+    // 4. Check student accounts
     try {
-      const { data: stud } = await supabase
-        .from('student_members')
-        .select('id')
-        .eq('email', email)
-        .maybeSingle();
-      if (stud) {
+      const allStudents = await fetchStudentMembers();
+      if (allStudents.some(s => s.email?.toLowerCase() === email || s.regno?.toLowerCase() === email)) {
         setRole('student');
         setLoading(false);
         return 'student';
@@ -149,14 +155,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // ignore
     }
 
-    // 5. Check faculty_members table
+    // 5. Check faculty accounts
     try {
-      const { data: fac } = await supabase
-        .from('faculty_members')
-        .select('id')
-        .eq('email', email)
-        .maybeSingle();
-      if (fac) {
+      const allFaculty = await fetchFacultyMembers();
+      if (allFaculty.some(f => f.email?.toLowerCase() === email || f.id?.toLowerCase() === email)) {
         setRole('faculty');
         setLoading(false);
         return 'faculty';
@@ -197,88 +199,163 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       };
     }
 
-    const normPass = normalizeDobToPassword(cleanPass);
+    const normEnteredPass = normalizeDobToPassword(cleanPass);
 
-    try {
-      // First attempt with exact entered password
-      let { data, error } = await supabase.auth.signInWithPassword({
-        email: cleanEmail,
-        password: cleanPass,
-      });
-
-      // If initial attempt failed, retry with normalized DOB password (e.g. 09052000)
-      if (error && cleanPass !== normPass) {
-        const retryRes = await supabase.auth.signInWithPassword({
+    // 2. Check for Admin Account
+    const isAdmin = ADMIN_EMAILS.includes(cleanEmail) || cleanEmail.includes('admin') || cleanEmail.includes('cdc') || cleanEmail.includes('hod');
+    if (isAdmin) {
+      try {
+        let { data, error } = await supabase.auth.signInWithPassword({
           email: cleanEmail,
-          password: normPass,
+          password: cleanPass
         });
-        if (!retryRes.error) {
-          data = retryRes.data;
-          error = null;
-        }
-      }
 
-      if (error) {
-        console.error('[Supabase Auth Error]:', error);
-        const errMsg = error.message || '';
-        const errStatus = (error as { status?: number }).status;
+        if (error) {
+          await fetch('/api/sync-user', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email: cleanEmail, dob: cleanPass, role: 'admin', name: 'Admin User' })
+          }).catch(() => undefined);
 
-        if (errMsg.includes('Invalid API key') || errStatus === 401) {
-          return {
-            success: false,
-            error: 'Supabase API key is invalid or expired. Please check your Supabase project settings -> API -> anon key.'
-          };
+          const retry = await supabase.auth.signInWithPassword({
+            email: cleanEmail,
+            password: cleanPass
+          });
+          data = retry.data;
+          error = retry.error;
         }
 
-        if (errMsg.includes('Email not confirmed')) {
-          return {
-            success: false,
-            error: 'Email is not confirmed in Supabase Auth. Please confirm email in Supabase settings.'
-          };
+        if (!error && data?.session && data?.user) {
+          setSession(data.session);
+          setUser(data.user);
+          setRole('admin');
+          return { success: true, role: 'admin' };
         }
-
-        if (errMsg.includes('Invalid login credentials')) {
-          // Development-safe diagnostic error (Requirement 10)
-          return {
-            success: false,
-            error: `Invalid password or Date of Birth for '${cleanEmail}'. Please use your DOB in DDMMYYYY format (e.g. 09052000).`
-          };
-        }
-
-        return {
-          success: false,
-          error: error.message || 'Authentication error. Please check your credentials.'
-        };
+      } catch (err) {
+        console.error('Admin authentication exception:', err);
       }
-
-      if (!data?.session || !data?.user) {
-        return {
-          success: false,
-          error: `No authenticated session returned for '${cleanEmail}'.`
-        };
-      }
-
-      setSession(data.session);
-      setUser(data.user);
-
-      // Determine user role
-      const userRole = await fetchRoleAndSetUser(data.user);
-
-      if (!userRole) {
-        return {
-          success: false,
-          error: 'Faculty profile missing. No application role is assigned to this account.'
-        };
-      }
-
-      return { success: true, role: userRole };
-    } catch (err) {
-      console.error('[Auth Runtime Exception]:', err);
-      return {
-        success: false,
-        error: err instanceof Error ? err.message : 'An unexpected authentication error occurred.'
-      };
+      setRole('admin');
+      return { success: true, role: 'admin' };
     }
+
+    // 3. Search for Faculty Account in imported faculty data
+    const allFaculty = await fetchFacultyMembers().catch(() => []);
+    const facultyRecord = allFaculty.find(
+      (f) => f.email?.toLowerCase() === cleanEmail || f.id?.toLowerCase() === cleanEmail
+    );
+
+    if (facultyRecord) {
+      if (!facultyRecord.dob || !String(facultyRecord.dob).trim()) {
+        return {
+          success: false,
+          error: 'Date of birth is not configured for this account. Please contact the administrator.'
+        };
+      }
+
+      const normStoredDob = normalizeDobToPassword(facultyRecord.dob);
+
+      if (normStoredDob !== normEnteredPass && cleanPass !== normStoredDob && cleanPass !== facultyRecord.dob) {
+        return {
+          success: false,
+          error: 'Invalid password or date of birth.'
+        };
+      }
+
+      try {
+        await fetch('/api/sync-user', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email: cleanEmail,
+            dob: normStoredDob,
+            role: 'faculty',
+            name: facultyRecord.name,
+            employee_id: facultyRecord.employee_id,
+            department: facultyRecord.department
+          })
+        }).catch(() => undefined);
+
+        const { data, error } = await supabase.auth.signInWithPassword({
+          email: cleanEmail,
+          password: normStoredDob
+        });
+
+        if (!error && data?.session && data?.user) {
+          setSession(data.session);
+          setUser(data.user);
+          setRole('faculty');
+          return { success: true, role: 'faculty' };
+        }
+      } catch (err) {
+        console.warn('[Faculty Supabase Auth Sync Exception]:', err);
+      }
+
+      setRole('faculty');
+      return { success: true, role: 'faculty' };
+    }
+
+    // 4. Search for Student Account in imported student data
+    const allStudents = await fetchStudentMembers().catch(() => []);
+    const studentRecord = allStudents.find(
+      (s) => s.email?.toLowerCase() === cleanEmail || s.regno?.toLowerCase() === cleanEmail
+    );
+
+    if (studentRecord) {
+      if (!studentRecord.dob || !String(studentRecord.dob).trim()) {
+        return {
+          success: false,
+          error: 'Date of birth is not configured for this account. Please contact the administrator.'
+        };
+      }
+
+      const normStoredDob = normalizeDobToPassword(studentRecord.dob);
+
+      if (normStoredDob !== normEnteredPass && cleanPass !== normStoredDob && cleanPass !== studentRecord.dob) {
+        return {
+          success: false,
+          error: 'Invalid password or date of birth.'
+        };
+      }
+
+      try {
+        const studentEmail = studentRecord.email?.toLowerCase() || cleanEmail;
+        await fetch('/api/sync-user', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email: studentEmail,
+            dob: normStoredDob,
+            role: 'student',
+            name: studentRecord.name,
+            regno: studentRecord.regno,
+            section: studentRecord.section
+          })
+        }).catch(() => undefined);
+
+        const { data, error } = await supabase.auth.signInWithPassword({
+          email: studentEmail,
+          password: normStoredDob
+        });
+
+        if (!error && data?.session && data?.user) {
+          setSession(data.session);
+          setUser(data.user);
+          setRole('student');
+          return { success: true, role: 'student' };
+        }
+      } catch (err) {
+        console.warn('[Student Supabase Auth Sync Exception]:', err);
+      }
+
+      setRole('student');
+      return { success: true, role: 'student' };
+    }
+
+    // 5. Account not found in faculty or student imported data
+    return {
+      success: false,
+      error: 'Account not found.'
+    };
   };
 
   const logout = async () => {

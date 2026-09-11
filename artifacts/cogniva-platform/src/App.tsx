@@ -39,6 +39,7 @@ import { FacultyClassesView } from '@/components/FacultyClassesView';
 import { FacultyAttendanceManagementView } from '@/components/FacultyAttendanceManagementView';
 import { FacultyCgpaView } from '@/components/FacultyCgpaView';
 import { FacultyGradesManagementView } from '@/components/FacultyGradesManagementView';
+import { AdminGeminiConfigView } from '@/components/AdminGeminiConfigView';
 import {
   AdminHomeView,
   AcademicStructureView,
@@ -193,6 +194,7 @@ const nav: NavItem[] = [
   { href: '/admin/students', label: 'Students', icon: GraduationCap, roles: ['admin'] },
   { href: '/admin/faculty-mgmt', label: 'Faculty', icon: UsersRound, roles: ['admin'] },
   { href: '/admin/faculty-access', label: 'Faculty Access', icon: UserCog, roles: ['admin'] },
+  { href: '/admin/gemini-config', label: 'Gemini AI Config', icon: Sparkles, roles: ['admin'] },
 ];
 
 const subjects = [
@@ -4328,6 +4330,7 @@ function AdminSection({ section }: { section: string }) {
   if (section === 'faculty-access') return <FacultyAccessView />;
   if (section === 'students') return <StudentManagementView />;
   if (section === 'faculty-mgmt') return <FacultyManagementView />;
+  if (section === 'gemini-config') return <AdminGeminiConfigView />;
   return <PageFrame><EmptyState title="Admin Section Ready" description="Select a valid section from the Admin navigation." /></PageFrame>;
 }
 
@@ -5480,6 +5483,7 @@ function AppRouter() {
       <Route path="/admin/faculty-access" component={admin('faculty-access')} />
       <Route path="/admin/students" component={admin('students')} />
       <Route path="/admin/faculty-mgmt" component={admin('faculty-mgmt')} />
+      <Route path="/admin/gemini-config" component={admin('gemini-config')} />
       <Route path="/admin/risk" component={admin('risk')} />
       <Route path="/admin/analytics" component={admin('analytics')} />
       <Route path="/admin/faculty" component={admin('faculty')} />

@@ -1,4 +1,4 @@
--- ============================================================================
+﻿-- ============================================================================
 -- COGNIVA MIGRATION 001: PROFILES & ROLES SYSTEM
 -- ============================================================================
 
@@ -12,9 +12,12 @@ CREATE TABLE IF NOT EXISTS public._migrations (
 CREATE TABLE IF NOT EXISTS public.profiles (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID UNIQUE REFERENCES auth.users(id) ON DELETE CASCADE,
-  email TEXT NOT NULL,
+  email TEXT NOT NULL UNIQUE,
   role TEXT NOT NULL CHECK (role IN ('admin', 'faculty', 'student')),
   full_name TEXT,
+  regno TEXT,
+  section TEXT,
+  department TEXT,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
@@ -25,7 +28,7 @@ RETURNS BOOLEAN AS $$
 BEGIN
   RETURN EXISTS (
     SELECT 1 FROM public.profiles
-    WHERE user_id = auth.uid() AND role = 'admin'
+    WHERE (user_id = auth.uid() OR LOWER(email) = LOWER(auth.jwt() ->> 'email')) AND role = 'admin'
   );
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;

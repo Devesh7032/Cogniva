@@ -3501,8 +3501,31 @@ export async function saveCgpaRecordsBatch(
   datasetMeta?: Omit<CgpaImportDataset, 'id' | 'importedAt' | 'records'>
 ): Promise<{ success: boolean; count: number }> {
   try {
-    await supabase.from('student_cgpa_records').upsert(records, { onConflict: 'regno' });
-  } catch {}
+    const dbRecords = records.map(r => ({
+      id: r.id,
+      regno: r.regno,
+      student_name: r.studentName,
+      student_email: r.studentEmail,
+      department: r.department || 'CSE',
+      semester: r.semester || '4',
+      section: r.section || 'CSE-C',
+      faculty_email: r.facultyEmail,
+      semesters: r.semesters || [],
+      current_cgpa: r.currentCgpa,
+      latest_sgpa: r.latestSgpa,
+      previous_sgpa: r.previousSgpa,
+      best_sgpa: r.bestSgpa,
+      lowest_sgpa: r.lowestSgpa,
+      average_sgpa: r.averageSgpa,
+      trend: r.trend || 'stable',
+      sgpa_delta: r.sgpaDelta,
+      cgpa_delta: r.cgpaDelta,
+      updated_at: r.updatedAt || new Date().toISOString()
+    }));
+    await supabase.from('student_cgpa_records').upsert(dbRecords, { onConflict: 'regno' });
+  } catch (err) {
+    console.warn('saveCgpaRecordsBatch DB error:', err);
+  }
 
   records.forEach(rec => {
     const idx = localCgpaRecords.findIndex(r => r.regno.toLowerCase() === rec.regno.toLowerCase());
@@ -3837,8 +3860,21 @@ export async function saveAttendanceSummaryBatch(
   overwrite: boolean = true
 ): Promise<{ success: boolean; count: number }> {
   try {
-    await supabase.from('student_attendance_summary').upsert(records, { onConflict: 'regno' });
-  } catch {}
+    const dbRecords = records.map(r => ({
+      id: r.id,
+      regno: r.regno,
+      student_name: r.studentName,
+      student_email: r.studentEmail,
+      department: r.department || 'CSE',
+      section: r.section || 'CSE-C',
+      overall_attendance: r.overallAttendancePercentage ?? 85,
+      subjects: r.subjectAttendances || [],
+      updated_at: r.updatedAt || new Date().toISOString()
+    }));
+    await supabase.from('student_attendance_summary').upsert(dbRecords, { onConflict: 'regno' });
+  } catch (err) {
+    console.warn('saveAttendanceSummaryBatch DB error:', err);
+  }
 
   reloadLocalAttendanceStores();
 
@@ -4282,8 +4318,20 @@ export async function saveGradeSummaryBatch(
   overwrite: boolean = true
 ): Promise<{ success: boolean; count: number }> {
   try {
-    await supabase.from('student_grade_summary').upsert(records, { onConflict: 'regno' });
-  } catch {}
+    const dbRecords = records.map(r => ({
+      id: r.id,
+      regno: r.regno,
+      student_name: r.studentName,
+      student_email: r.studentEmail,
+      department: r.department || 'CSE',
+      section: r.section || 'CSE-C',
+      subjects: r.subjectGrades || [],
+      updated_at: r.updatedAt || new Date().toISOString()
+    }));
+    await supabase.from('student_grade_summary').upsert(dbRecords, { onConflict: 'regno' });
+  } catch (err) {
+    console.warn('saveGradeSummaryBatch DB error:', err);
+  }
 
   records.forEach(newRec => {
     const idx = localGradeSummaryRecords.findIndex(r => r.regno.toLowerCase() === newRec.regno.toLowerCase());

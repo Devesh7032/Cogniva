@@ -593,6 +593,170 @@ function supabaseAuthPlugin(): Plugin {
           return res.end(JSON.stringify({ success: false, error: String(err), data: [] }));
         }
       });
+      // ============================================================================
+      // 6. ADMIN GEMINI CONFIGURATION STATUS ENDPOINT (/api/admin/gemini-status)
+      // ============================================================================
+      server.middlewares.use('/api/admin/gemini-status', async (req, res) => {
+        if (req.method !== 'POST') {
+          res.statusCode = 405;
+          return res.end(JSON.stringify({ error: 'Method not allowed' }));
+        }
+
+        let body = '';
+        req.on('data', chunk => { body += chunk; });
+        req.on('end', async () => {
+          try {
+            const payload = JSON.parse(body || '{}');
+            const { userRole } = payload;
+
+            if (userRole !== 'admin') {
+              res.statusCode = 403;
+              res.setHeader('Content-Type', 'application/json');
+              return res.end(JSON.stringify({ error: 'Forbidden: Access restricted to Administrators.' }));
+            }
+
+            const getMaskedInfo = (keyStr: string) => {
+              const clean = String(keyStr || '').trim();
+              if (!clean) {
+                return { maskedKey: 'Not Configured', isConfigured: false, source: 'Not Set' };
+              }
+              if (clean.length > 4) {
+                return { maskedKey: `••••••••••••••••${clean.slice(-4)}`, isConfigured: true, source: 'Server Environment' };
+              }
+              return { maskedKey: 'Configured', isConfigured: true, source: 'Server Environment' };
+            };
+
+            const adminInfo = getMaskedInfo(GEMINI_ADMIN_API_KEY);
+            const facultyInfo = getMaskedInfo(GEMINI_FACULTY_API_KEY);
+            const studentInfo = getMaskedInfo(GEMINI_STUDENT_API_KEY);
+
+            const configs = [
+              {
+                id: 'admin',
+                name: 'Admin Gemini',
+                serviceName: 'AdminGeminiService',
+                envVar: 'GEMINI_ADMIN_API_KEY',
+                maskedKey: adminInfo.maskedKey,
+                isConfigured: adminInfo.isConfigured,
+                source: adminInfo.source,
+                status: adminInfo.isConfigured ? 'Untested' : 'Configuration Missing'
+              },
+              {
+                id: 'faculty',
+                name: 'Faculty Gemini',
+                serviceName: 'FacultyGeminiService',
+                envVar: 'GEMINI_FACULTY_API_KEY',
+                maskedKey: facultyInfo.maskedKey,
+                isConfigured: facultyInfo.isConfigured,
+                source: facultyInfo.source,
+                status: facultyInfo.isConfigured ? 'Untested' : 'Configuration Missing'
+              },
+              {
+                id: 'student',
+                name: 'Student Gemini',
+                serviceName: 'StudentGeminiService',
+                envVar: 'GEMINI_STUDENT_API_KEY',
+                maskedKey: studentInfo.maskedKey,
+                isConfigured: studentInfo.isConfigured,
+                source: studentInfo.source,
+                status: studentInfo.isConfigured ? 'Untested' : 'Configuration Missing'
+              }
+            ];
+
+            res.setHeader('Content-Type', 'application/json');
+            return res.end(JSON.stringify({ success: true, configs }));
+          } catch (err) {
+            console.error('[GEMINI STATUS API ERROR]:', err);
+            res.statusCode = 500;
+            res.setHeader('Content-Type', 'application/json');
+            return res.end(JSON.stringify({ error: 'Server error checking Gemini status: ' + String(err) }));
+          }
+        });
+      });
+
+      // ============================================================================
+      // 7. ADMIN GEMINI CONNECTION TEST ENDPOINT (/api/admin/gemini-test)
+      // ============================================================================
+      server.middlewares.use('/api/admin/gemini-test', async (req, res) => {
+        if (req.method !== 'POST') {
+          res.statusCode = 405;
+          return res.end(JSON.stringify({ error: 'Method not allowed' }));
+        }
+
+        let body = '';
+        req.on('data', chunk => { body += chunk; });
+        req.on('end', async () => {
+          try {
+            const payload = JSON.parse(body || '{}');
+            const { userRole, serviceId } = payload;
+
+            if (userRole !== 'admin') {
+              res.statusCode = 403;
+              res.setHeader('Content-Type', 'application/json');
+              return res.end(JSON.stringify({ error: 'Forbidden: Access restricted to Administrators.' }));
+            }
+
+            let targetKey = '';
+            if (serviceId === 'admin') targetKey = GEMINI_ADMIN_API_KEY;
+            else if (serviceId === 'faculty') targetKey = GEMINI_FACULTY_API_KEY;
+            else if (serviceId === 'student') targetKey = GEMINI_STUDENT_API_KEY;
+
+            if (!targetKey || targetKey.trim().length === 0) {
+              res.setHeader('Content-Type', 'application/json');
+              return res.end(JSON.stringify({
+                success: true,
+                serviceId,
+                status: 'Configuration Missing',
+                message: `Environment variable for ${serviceId} Gemini service is not set.`
+              }));
+            }
+
+            try {
+              const ai = new GoogleGenAI({ apiKey: targetKey });
+              const testRes = await ai.models.generateContent({
+                model: 'gemini-3.6-flash',
+                contents: 'Ping connection verification call'
+              });
+
+              if (testRes) {
+                res.setHeader('Content-Type', 'application/json');
+                return res.end(JSON.stringify({
+                  success: true,
+                  serviceId,
+                  status: 'Connected',
+                  message: 'Connection verified successfully. Google Gemini API responded cleanly.'
+                }));
+              }
+            } catch (err: any) {
+              const errStr = String(err?.message || err);
+              let status = 'Connection Error';
+              if (
+                errStr.includes('400') ||
+                errStr.includes('401') ||
+                errStr.includes('403') ||
+                errStr.includes('API_KEY_INVALID') ||
+                errStr.includes('PERMISSION_DENIED') ||
+                errStr.toLowerCase().includes('invalid')
+              ) {
+                status = 'Invalid Credential';
+              }
+
+              res.setHeader('Content-Type', 'application/json');
+              return res.end(JSON.stringify({
+                success: true,
+                serviceId,
+                status,
+                message: `Gemini API response: ${errStr}`
+              }));
+            }
+          } catch (err) {
+            console.error('[GEMINI TEST API ERROR]:', err);
+            res.statusCode = 500;
+            res.setHeader('Content-Type', 'application/json');
+            return res.end(JSON.stringify({ error: 'Server error testing Gemini key: ' + String(err) }));
+          }
+        });
+      });
     }
   };
 }

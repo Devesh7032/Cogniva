@@ -1,8 +1,7 @@
--- ============================================================================
+﻿-- ============================================================================
 -- COGNIVA MIGRATION 002: ACADEMIC STRUCTURE (YEARS, DEPARTMENTS, SECTIONS)
 -- ============================================================================
 
--- 1. ACADEMIC YEARS TABLE
 CREATE TABLE IF NOT EXISTS public.academic_years (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   name TEXT NOT NULL UNIQUE,
@@ -11,7 +10,6 @@ CREATE TABLE IF NOT EXISTS public.academic_years (
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 2. DEPARTMENTS TABLE
 CREATE TABLE IF NOT EXISTS public.departments (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   name TEXT NOT NULL,
@@ -19,18 +17,16 @@ CREATE TABLE IF NOT EXISTS public.departments (
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 3. SECTIONS TABLE
 CREATE TABLE IF NOT EXISTS public.sections (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  academic_year_id UUID NOT NULL REFERENCES public.academic_years(id) ON DELETE CASCADE,
-  department_id UUID NOT NULL REFERENCES public.departments(id) ON DELETE CASCADE,
-  name TEXT NOT NULL,
+  academic_year_id UUID REFERENCES public.academic_years(id) ON DELETE CASCADE,
+  department_id UUID REFERENCES public.departments(id) ON DELETE CASCADE,
+  name TEXT NOT NULL UNIQUE,
   capacity INT DEFAULT 60,
-  created_at TIMESTAMPTZ DEFAULT NOW(),
-  CONSTRAINT unique_section_per_dept_year UNIQUE (academic_year_id, department_id, name)
+  created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- Initial Academic Years Seed Data (Idempotent)
+-- Seed Initial Academic Years
 INSERT INTO public.academic_years (name, code, order_index)
 VALUES
   ('First Year', '1YR', 1),
@@ -39,7 +35,7 @@ VALUES
   ('Fourth Year', '4YR', 4)
 ON CONFLICT (name) DO NOTHING;
 
--- Initial Departments Seed Data (Idempotent)
+-- Seed Initial Departments
 INSERT INTO public.departments (name, code)
 VALUES
   ('Computer Science & Engineering', 'CSE'),
@@ -63,12 +59,11 @@ BEGIN
     FOREACH sec_name IN ARRAY sec_list LOOP
       INSERT INTO public.sections (academic_year_id, department_id, name, capacity)
       VALUES (v_year_id, v_dept_id, sec_name, 60)
-      ON CONFLICT (academic_year_id, department_id, name) DO NOTHING;
+      ON CONFLICT (name) DO NOTHING;
     END LOOP;
   END IF;
 END $$;
 
--- Record migration execution
 INSERT INTO public._migrations (id, name)
 VALUES (2, '002_academic_structure.sql')
 ON CONFLICT (id) DO NOTHING;

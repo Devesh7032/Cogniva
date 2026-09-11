@@ -1,24 +1,25 @@
-import { createClient } from '@supabase/supabase-js';
+﻿import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = 'https://gtoacfhmilqrtjjiyzci.supabase.co';
-const serviceRoleKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd0b2FjZmhtaWxxcnRqaml5emNpIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4ODkyNzY3MSwiZXhwIjoyMTA0NTAzNjcxfQ.CA8XmqBZ0R0Sc306c8uYR0NXX_Xja5YKoFs7sewMud0';
+const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || 'https://gtoacfhmilqrtjjiyzci.supabase.co';
+const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_ANON_KEY;
+
+if (!serviceRoleKey) {
+  console.error('ERROR: SUPABASE_SERVICE_ROLE_KEY environment variable is required.');
+  process.exit(1);
+}
 
 console.log('=====================================================');
 console.log(' COGNIVA COMPLETE BACKEND & AUTH PROVISIONING');
 console.log('=====================================================');
 
 const adminClient = createClient(supabaseUrl, serviceRoleKey, {
-  auth: {
-    autoRefreshToken: false,
-    persistSession: false
-  }
+  auth: { autoRefreshToken: false, persistSession: false }
 });
 
 export function normalizeDobToPassword(dobStr) {
   if (!dobStr) return '01012000';
   const clean = String(dobStr).trim();
 
-  // Handle Excel Serial dates (e.g. 38117 -> 2004-05-10 -> 10052004)
   if (!isNaN(Number(clean)) && Number(clean) > 20000 && Number(clean) < 60000) {
     const excelDate = new Date((Number(clean) - (25567 + 2)) * 86400 * 1000);
     const dd = String(excelDate.getUTCDate()).padStart(2, '0');
@@ -27,7 +28,6 @@ export function normalizeDobToPassword(dobStr) {
     return `${dd}${mm}${yyyy}`;
   }
 
-  // Case 1: YYYY-MM-DD or YYYY/MM/DD (e.g. 2004-05-10 -> 10052004)
   const ymdMatch = clean.match(/^(\d{4})[-/.](\d{1,2})[-/.](\d{1,2})/);
   if (ymdMatch) {
     const yyyy = ymdMatch[1];
@@ -36,7 +36,6 @@ export function normalizeDobToPassword(dobStr) {
     return `${dd}${mm}${yyyy}`;
   }
 
-  // Case 2: DD-MM-YYYY or DD/MM/YYYY (e.g. 10/05/2004 -> 10052004)
   const dmyMatch = clean.match(/^(\d{1,2})[-/.](\d{1,2})[-/.](\d{4})/);
   if (dmyMatch) {
     const dd = dmyMatch[1].padStart(2, '0');
@@ -45,7 +44,6 @@ export function normalizeDobToPassword(dobStr) {
     return `${dd}${mm}${yyyy}`;
   }
 
-  // Case 3: Digits only
   const digitsOnly = clean.replace(/[^0-9]/g, '');
   if (digitsOnly.length >= 6) {
     return digitsOnly;
@@ -55,7 +53,6 @@ export function normalizeDobToPassword(dobStr) {
 }
 
 async function setupDatabaseAndAuth() {
-  // 1. Provision Admins
   console.log('\n--- Provisioning Admin Accounts ---');
   const admins = [
     { email: 'cdc@gmail.com', pass: 'cdc123', name: 'Academic Admin (CDC)' },
@@ -98,7 +95,6 @@ async function setupDatabaseAndAuth() {
     }
   }
 
-  // 2. Provision 20 Enrolled Students
   console.log('\n--- Provisioning Student Accounts ---');
   const studentNames = [
     'Aditya Varma', 'Bhavna Sharma', 'Chetan Kumar', 'Deepa Nair', 'Eshwar Rao',
@@ -112,12 +108,12 @@ async function setupDatabaseAndAuth() {
   for (let i = 0; i < 20; i++) {
     const num = String(i + 1).padStart(3, '0');
     const email = `student${num}@cogniva.edu`;
-    const dob = '2004-05-10'; // 10th May 2004 -> DDMMYYYY = 10052004
+    const dob = '2004-05-10';
     const normPass = normalizeDobToPassword(dob);
     const name = studentNames[i];
     const regno = `2024CSE${num}`;
 
-    console.log(`Processing Student ${num}: ${name} (${email}) | Pass: ${normPass}`);
+    console.log(`Processing Student ${num}: ${name} (${email})`);
 
     let authUser = existingMap.get(email.toLowerCase());
     if (!authUser) {
@@ -162,7 +158,6 @@ async function setupDatabaseAndAuth() {
     }
   }
 
-  // Insert into students table
   try {
     const { error: insertErr } = await adminClient.from('students').upsert(studentsToInsert, { onConflict: 'email' });
     if (insertErr) {

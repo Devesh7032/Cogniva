@@ -54,3 +54,8 @@ Thumbs.db
 .cache/
 .local/
 
+
+# Local test data files
+*.xlsx
+*.xls
+COGNIVA_CSE_Faculty_Dataset*.xlsx

@@ -98,6 +98,7 @@ export interface FacultyMember {
   section?: string;
   subject?: string;
   phone?: string;
+  cabin_location?: string;
   created_at?: string;
   updated_at?: string;
 }
@@ -112,6 +113,7 @@ export interface FacultyImportRow {
   subject?: string;
   dob: string;
   phone?: string;
+  cabin_location?: string;
 }
 
 export interface ImportResult {
@@ -152,16 +154,16 @@ const FALLBACK_SECTIONS: Section[] = [
 const localCustomDepts: Department[] = [];
 const localCustomSections: Section[] = [];
 const localCustomFaculty: FacultyMember[] = [
-  { id: 'fac_anjali_001', employee_id: 'FAC001', name: 'Dr. Anjali Menon', email: 'anjali.menon@example.edu', dob: '14-03-1985', department: 'Computer Science and Engineering', year: '2', section: 'CSE-C', phone: '+91 9876543210', created_at: new Date().toISOString() },
-  { id: 'fac_ravi_002', employee_id: 'FAC002', name: 'Dr. Ravi Chandran', email: 'ravi.chandran@example.edu', dob: '22-07-1982', department: 'Computer Science and Engineering', year: '2', section: 'CSE-A', phone: '+91 9876543211', created_at: new Date().toISOString() },
-  { id: 'fac_meera_003', employee_id: 'FAC003', name: 'Prof. Meera Krishnan', email: 'meera.krishnan@example.edu', dob: '09-01-1988', department: 'Computer Science and Engineering', year: '2', section: 'CSE-B', phone: '+91 9876543212', created_at: new Date().toISOString() },
-  { id: 'fac_suresh_004', employee_id: 'FAC004', name: 'Dr. Suresh Balan', email: 'suresh.balan@example.edu', dob: '05-11-1980', department: 'Computer Science and Engineering', year: '2', section: 'CSE-D', phone: '+91 9876543213', created_at: new Date().toISOString() },
-  { id: 'fac_neha_005', employee_id: 'FAC005', name: 'Prof. Neha Kapoor', email: 'neha.kapoor@example.edu', dob: '18-06-1987', department: 'Computer Science and Engineering', year: '2', section: 'CSE-E', phone: '+91 9876543214', created_at: new Date().toISOString() },
-  { id: 'fac_arvind_006', employee_id: 'FAC006', name: 'Dr. Arvind Nair', email: 'arvind.nair@example.edu', dob: '27-09-1984', department: 'Computer Science and Engineering', year: '2', section: 'CSE-F', phone: '+91 9876543215', created_at: new Date().toISOString() },
-  { id: 'fac_kavitha_007', employee_id: 'FAC007', name: 'Prof. Kavitha Iyer', email: 'kavitha.iyer@example.edu', dob: '11-02-1989', department: 'Computer Science and Engineering', year: '2', section: 'CSE-G', phone: '+91 9876543216', created_at: new Date().toISOString() },
-  { id: 'fac_prakash_008', employee_id: 'FAC008', name: 'Dr. Prakash Verma', email: 'prakash.verma@example.edu', dob: '03-12-1981', department: 'Computer Science and Engineering', year: '2', section: 'CSE-H', phone: '+91 9876543217', created_at: new Date().toISOString() },
-  { id: 'fac_swathi_009', employee_id: 'FAC009', name: 'Prof. Swathi Rao', email: 'swathi.rao@example.edu', dob: '25-04-1986', department: 'Computer Science and Engineering', year: '2', section: 'CSE-I', phone: '+91 9876543218', created_at: new Date().toISOString() },
-  { id: 'fac_vikram_010', employee_id: 'FAC010', name: 'Dr. Vikram Das', email: 'vikram.das@example.edu', dob: '16-08-1983', department: 'Computer Science and Engineering', year: '2', section: 'CSE-J', phone: '+91 9876543219', created_at: new Date().toISOString() }
+  { id: 'fac_anjali_001', employee_id: 'FAC001', name: 'Dr. Anjali Menon', email: 'anjali.menon@example.edu', dob: '14-03-1985', department: 'Computer Science & Engineering', year: '2', section: 'CSE-C', phone: '+91 9876543210', cabin_location: 'Main Academic Block, Cabin 304', created_at: new Date().toISOString() },
+  { id: 'fac_ravi_002', employee_id: 'FAC002', name: 'Dr. Ravi Chandran', email: 'ravi.chandran@example.edu', dob: '22-07-1982', department: 'Computer Science & Engineering', year: '2', section: 'CSE-A', phone: '+91 9876543211', cabin_location: 'CS Block, Ground Floor Cabin 08', created_at: new Date().toISOString() },
+  { id: 'fac_meera_003', employee_id: 'FAC003', name: 'Prof. Meera Krishnan', email: 'meera.krishnan@example.edu', dob: '09-01-1988', department: 'Computer Science & Engineering', year: '2', section: 'CSE-B', phone: '+91 9876543212', cabin_location: 'Main Academic Block, Cabin 308', created_at: new Date().toISOString() },
+  { id: 'fac_suresh_004', employee_id: 'FAC004', name: 'Dr. Suresh Balan', email: 'suresh.balan@example.edu', dob: '05-11-1980', department: 'Computer Science & Engineering', year: '2', section: 'CSE-D', phone: '+91 9876543213', cabin_location: 'Lab Complex, 2nd Floor Faculty Lounge', created_at: new Date().toISOString() },
+  { id: 'fac_neha_005', employee_id: 'FAC005', name: 'Prof. Neha Kapoor', email: 'neha.kapoor@example.edu', dob: '18-06-1987', department: 'Computer Science & Engineering', year: '2', section: 'CSE-E', phone: '+91 9876543214', cabin_location: 'CS Block, 1st Floor Cabin 14', created_at: new Date().toISOString() },
+  { id: 'fac_arvind_006', employee_id: 'FAC006', name: 'Dr. Arvind Nair', email: 'arvind.nair@example.edu', dob: '27-09-1984', department: 'Computer Science & Engineering', year: '2', section: 'CSE-F', phone: '+91 9876543215', cabin_location: 'Main Academic Block, Cabin 310', created_at: new Date().toISOString() },
+  { id: 'fac_kavitha_007', employee_id: 'FAC007', name: 'Prof. Kavitha Iyer', email: 'kavitha.iyer@example.edu', dob: '11-02-1989', department: 'Computer Science & Engineering', year: '2', section: 'CSE-G', phone: '+91 9876543216', cabin_location: 'CS Block, 2nd Floor Cabin 22', created_at: new Date().toISOString() },
+  { id: 'fac_prakash_008', employee_id: 'FAC008', name: 'Dr. Prakash Verma', email: 'prakash.verma@example.edu', dob: '03-12-1981', department: 'Computer Science & Engineering', year: '2', section: 'CSE-H', phone: '+91 9876543217', cabin_location: 'Lab Complex, 1st Floor Cabin 05', created_at: new Date().toISOString() },
+  { id: 'fac_swathi_009', employee_id: 'FAC009', name: 'Prof. Swathi Rao', email: 'swathi.rao@example.edu', dob: '25-04-1986', department: 'Computer Science & Engineering', year: '2', section: 'CSE-I', phone: '+91 9876543218', cabin_location: 'Main Academic Block, Cabin 302', created_at: new Date().toISOString() },
+  { id: 'fac_vikram_010', employee_id: 'FAC010', name: 'Dr. Vikram Das', email: 'vikram.das@example.edu', dob: '16-08-1983', department: 'Computer Science & Engineering', year: '2', section: 'CSE-J', phone: '+91 9876543219', cabin_location: 'CS Block, Ground Floor Cabin 02', created_at: new Date().toISOString() }
 ];
 
 const INITIAL_CSE_C_STUDENTS: StudentMember[] = Array.from({ length: 20 }, (_, i) => {
@@ -3545,6 +3547,133 @@ export async function fetchCgpaImportHistory(facultyEmail?: string): Promise<Cgp
 }
 
 // ============================================================================
+// DYNAMIC CGPA / SGPA EXCEL PARSER
+// ============================================================================
+
+export function parseDynamicCgpaExcel(
+  arrayBuffer: ArrayBuffer,
+  roster: StudentMember[]
+) {
+  const wb = XLSX.read(arrayBuffer, { type: 'array' });
+  const sheetName = wb.SheetNames[0];
+  const sheet = wb.Sheets[sheetName];
+  const rawRows: Record<string, any>[] = XLSX.utils.sheet_to_json(sheet, { defval: '' });
+
+  if (rawRows.length === 0) {
+    return { headers: [], regNoHeader: '', nameHeader: '', semHeaders: [], cgpaHeader: '', matchedRows: [], unmatchedRows: [], totalExcelRows: 0 };
+  }
+
+  const headers = Object.keys(rawRows[0]);
+  const norm = (s: string) => String(s || '').trim().toLowerCase().replace(/[^a-z0-9]/g, '');
+
+  const regNoHeader = headers.find(h =>
+    ['regno', 'register', 'rollno', 'studentid', 'reg', 'id'].some(k => norm(h).includes(k))
+  ) || headers[0];
+  const nameHeader = headers.find(h =>
+    ['name', 'studentname', 'fullname'].some(k => norm(h).includes(k))
+  ) || '';
+  const cgpaHeader = headers.find(h =>
+    ['cgpa', 'cumulativegpa', 'overallcgpa', 'cgpa'].some(k => norm(h).includes(k))
+  ) || '';
+
+  // Detect semester SGPA columns: "Sem 1 SGPA", "Semester 1", "S1 SGPA", etc.
+  const semHeaders = headers.filter(h => {
+    const n = norm(h);
+    return (n.includes('sem') || n.includes('semester') || n.startsWith('s')) &&
+      (n.includes('sgpa') || n.includes('gpa') || n.includes('score')) &&
+      !n.includes('cgpa');
+  });
+
+  const rosterMap = new Map<string, StudentMember>();
+  roster.forEach(s => {
+    rosterMap.set(norm(s.regno), s);
+    if (s.email) rosterMap.set(norm(s.email), s);
+    if (s.name) rosterMap.set(norm(s.name), s);
+  });
+
+  const matchedRows: StudentCgpaRecord[] = [];
+  const unmatchedRows: Record<string, any>[] = [];
+
+  rawRows.forEach(row => {
+    const rawRegno = String(row[regNoHeader] || '').trim();
+    const normRegno = norm(rawRegno);
+    if (!normRegno) return;
+
+    const student = rosterMap.get(normRegno);
+    const sSec = student?.section || '';
+
+    // Build semester entries
+    const semesters: SemesterGpaEntry[] = semHeaders.map((sh, idx) => {
+      const raw = parseFloat(String(row[sh] || ''));
+      const sgpa = isNaN(raw) ? null : Math.min(10, Math.max(0, raw));
+      return {
+        semester: sh,
+        sgpa,
+        cgpa: null,
+        status: (sgpa !== null ? 'Completed' : idx === semHeaders.length - 1 ? 'Current' : 'Pending') as SemesterGpaEntry['status']
+      };
+    });
+
+    // Compute rolling CGPA
+    let runTotal = 0, runCount = 0;
+    semesters.forEach(s => {
+      if (s.sgpa !== null) { runTotal += s.sgpa; runCount++; }
+      s.cgpa = runCount > 0 ? Math.round((runTotal / runCount) * 100) / 100 : null;
+    });
+
+    const completedSems = semesters.filter(s => s.sgpa !== null);
+    const currentCgpa = completedSems.length > 0
+      ? parseFloat(cgpaHeader && row[cgpaHeader] ? String(row[cgpaHeader]) : (completedSems.reduce((a, s) => a + (s.sgpa || 0), 0) / completedSems.length).toFixed(2))
+      : null;
+    const latestSgpa = completedSems.length > 0 ? completedSems[completedSems.length - 1].sgpa : null;
+    const previousSgpa = completedSems.length > 1 ? completedSems[completedSems.length - 2].sgpa : null;
+    const bestSgpa = completedSems.length > 0 ? Math.max(...completedSems.map(s => s.sgpa || 0)) : null;
+    const lowestSgpa = completedSems.length > 0 ? Math.min(...completedSems.map(s => s.sgpa || 10)) : null;
+    const averageSgpa = completedSems.length > 0 ? Math.round((completedSems.reduce((a, s) => a + (s.sgpa || 0), 0) / completedSems.length) * 100) / 100 : null;
+    const sgpaDelta = (latestSgpa !== null && previousSgpa !== null) ? Math.round((latestSgpa - previousSgpa) * 100) / 100 : null;
+    const trend: StudentCgpaRecord['trend'] = sgpaDelta === null ? 'stable' : sgpaDelta > 0.05 ? 'improving' : sgpaDelta < -0.05 ? 'declining' : 'stable';
+
+    const rec: StudentCgpaRecord = {
+      id: `cgpa_${rawRegno}_${Date.now()}`,
+      regno: rawRegno,
+      studentName: nameHeader ? String(row[nameHeader] || student?.name || rawRegno) : (student?.name || rawRegno),
+      studentEmail: student?.email,
+      department: student?.department || 'CSE',
+      section: sSec,
+      semester: String(completedSems.length),
+      semesters,
+      currentCgpa,
+      latestSgpa,
+      previousSgpa,
+      bestSgpa,
+      lowestSgpa,
+      averageSgpa,
+      trend,
+      sgpaDelta,
+      cgpaDelta: sgpaDelta,
+      updatedAt: new Date().toISOString()
+    };
+
+    if (student) {
+      matchedRows.push(rec);
+    } else {
+      unmatchedRows.push(row);
+    }
+  });
+
+  return {
+    headers,
+    regNoHeader,
+    nameHeader,
+    semHeaders,
+    cgpaHeader,
+    matchedRows,
+    unmatchedRows,
+    totalExcelRows: rawRows.length
+  };
+}
+
+// ============================================================================
 // DYNAMIC SUBJECT-WISE + OVERALL ATTENDANCE API & PERSISTENCE
 // ============================================================================
 
@@ -3575,13 +3704,16 @@ export interface StudentAttendanceSummaryRecord {
 export interface DynamicAttendanceImportDataset {
   id: string;
   fileName: string;
-  facultyEmail: string;
+  facultyEmail?: string;
+  importedBy?: string;
   section: string;
+  studentCount?: number;
+  subjectCount?: number;
   importedAt: string;
-  headers: string[];
-  regNoHeader: string;
+  headers?: string[];
+  regNoHeader?: string;
   nameHeader?: string;
-  subjectHeaders: string[];
+  subjectHeaders?: string[];
   overallHeader?: string;
   records: StudentAttendanceSummaryRecord[];
 }
@@ -3782,7 +3914,7 @@ export async function fetchDynamicAttendanceImportHistory(
 
   reloadLocalAttendanceStores();
   if (facultyEmail) {
-    return localAttendanceImportDatasets.filter(d => d.facultyEmail.toLowerCase() === facultyEmail.toLowerCase());
+    return localAttendanceImportDatasets.filter(d => (d.facultyEmail || d.importedBy || '').toLowerCase() === facultyEmail.toLowerCase());
   }
   return localAttendanceImportDatasets;
 }
@@ -3907,7 +4039,7 @@ export function parseDynamicAttendanceExcel(
     if (subjectAttendances.length > 0) {
       const sorted = [...subjectAttendances].sort((a, b) => b.attendancePercentage - a.attendancePercentage);
       highestSubject = { subjectName: sorted[0].subjectName, percentage: sorted[0].attendancePercentage };
-      lowestSubject = { subjectName: sorted[sorted.length - 1].subjectName, percentage: sorted[sorted.length - 1].percentage };
+      lowestSubject = { subjectName: sorted[sorted.length - 1].subjectName, percentage: sorted[sorted.length - 1].attendancePercentage };
     }
 
     matchedRows.push({
@@ -4218,7 +4350,7 @@ export async function fetchDynamicGradeImportHistory(
   } catch {}
 
   if (facultyEmail) {
-    return localGradeImportDatasets.filter(d => d.facultyEmail.toLowerCase() === facultyEmail.toLowerCase());
+    return localGradeImportDatasets.filter(d => (d.importedBy || '').toLowerCase() === facultyEmail.toLowerCase());
   }
   return localGradeImportDatasets;
 }
@@ -5017,6 +5149,894 @@ export async function autoGenerateGoalMilestones(
 
   return await saveStudentGoal(updatedGoal);
 }
+
+// ============================================================================
+// INTERNSHIP PROVIDER ARCHITECTURE & DATA STRUCTURES
+// ============================================================================
+
+import {
+  MultiSourceInternshipAggregator as AggregatorClass,
+  ProviderHealth as HealthType,
+  Internship as InternshipType
+} from './internshipProviders';
+
+export type {
+  Internship,
+  InternshipSource,
+  CompensationType,
+  ApplicationPipelineStatus,
+  ProviderHealth,
+  StudentEligibilityResult,
+  StudentApplicationRecord
+} from './internshipProviders';
+
+export {
+  MultiSourceInternshipAggregator,
+  evaluateStudentEligibility,
+  parseStudentYear,
+  fetchStudentApplicationPipeline,
+  updateStudentApplicationStatus
+} from './internshipProviders';
+
+export function calculateInternshipRelevance(
+  internship: InternshipType,
+  studentDept: string = 'CSE',
+  studentSkills: string[] = ['Python', 'AI', 'Machine Learning', 'React', 'Java', 'SQL'],
+  goalTitle?: string,
+  passionTrack?: string
+): number {
+  let score = 50;
+
+  const text = `${internship.title} ${internship.description} ${internship.eligibility || ''} ${internship.company_name}`.toLowerCase();
+
+  // Department / Academic Fit
+  if (text.includes(studentDept.toLowerCase()) || text.includes('engineering') || text.includes('computer science')) {
+    score += 15;
+  }
+
+  // Skill Relevance
+  const reqSkills = (internship.skills || []).map(s => s.toLowerCase());
+  for (const s of studentSkills) {
+    const sLow = s.toLowerCase();
+    if (reqSkills.some(rs => rs.includes(sLow)) || text.includes(sLow)) {
+      score += 10;
+    }
+  }
+
+  // Work Mode preference
+  if (internship.work_mode === 'Remote' || internship.work_mode === 'Hybrid') {
+    score += 10;
+  }
+
+  // Goal & Passion Track Relevance
+  if (passionTrack) {
+    const passionKw = passionTrack.toLowerCase().replace('_', ' ');
+    if (text.includes(passionKw)) score += 15;
+  }
+  if (goalTitle) {
+    const goalKw = goalTitle.toLowerCase();
+    if (text.includes(goalKw)) score += 15;
+  }
+
+  return Math.min(100, score);
+}
+
+const INTERNSHIPS_LOCAL_KEY = 'cogniva_internships_v1';
+const SAVED_HACKATHONS_LOCAL_KEY = 'cogniva_saved_hackathons_v1';
+const SAVED_INTERNSHIPS_LOCAL_KEY = 'cogniva_saved_internships_v1';
+
+let cachedProviderHealth: HealthType[] = [];
+
+export function getLatestProviderHealth(): HealthType[] {
+  return cachedProviderHealth;
+}
+
+export async function fetchMultiSourceInternshipsWithHealth(): Promise<{
+  internships: InternshipType[];
+  health: HealthType[];
+}> {
+  const aggregator = new AggregatorClass();
+  const res = await aggregator.fetchAllMultiSource();
+  
+  // Calculate relevance scores
+  const scored = res.internships.map(inst => ({
+    ...inst,
+    relevance_score: calculateInternshipRelevance(inst)
+  }));
+
+  cachedProviderHealth = res.health;
+
+  try {
+    localStorage.setItem(INTERNSHIPS_LOCAL_KEY, JSON.stringify(scored));
+  } catch {}
+
+  return {
+    internships: scored,
+    health: res.health
+  };
+}
+
+export async function fetchInternships(): Promise<import('./internshipProviders').Internship[]> {
+  // Try multi-source aggregator first
+  try {
+    const { internships } = await fetchMultiSourceInternshipsWithHealth();
+    if (internships.length > 0) return internships;
+  } catch (err) {
+    console.warn('[fetchInternships] Multi-source aggregator warning:', err);
+  }
+
+  // Attempt to fetch from Supabase
+  try {
+    const { data, error } = await supabase.from('internships').select('*').eq('is_active', true);
+    if (!error && data && data.length > 0) {
+      const list = (data as import('./internshipProviders').Internship[]).map(i => ({
+        ...i,
+        relevance_score: calculateInternshipRelevance(i)
+      }));
+      return list;
+    }
+  } catch {}
+
+  // Local storage fallback
+  try {
+    const savedLocal = localStorage.getItem(INTERNSHIPS_LOCAL_KEY);
+    if (savedLocal) {
+      const parsed = JSON.parse(savedLocal);
+      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+    }
+  } catch {}
+
+  return [];
+}
+
+export async function fetchSavedOpportunityIds(
+  userEmail: string,
+  type: 'hackathon' | 'internship'
+): Promise<string[]> {
+  const key = type === 'hackathon' ? `${SAVED_HACKATHONS_LOCAL_KEY}_${userEmail}` : `${SAVED_INTERNSHIPS_LOCAL_KEY}_${userEmail}`;
+  try {
+    const { data, error } = await supabase
+      .from('student_saved_opportunities')
+      .select('opportunity_id')
+      .eq('student_email', userEmail.toLowerCase().trim())
+      .eq('opportunity_type', type);
+    if (!error && data) {
+      const ids = data.map(d => d.opportunity_id);
+      localStorage.setItem(key, JSON.stringify(ids));
+      return ids;
+    }
+  } catch {}
+
+  try {
+    const local = localStorage.getItem(key);
+    if (local) return JSON.parse(local);
+  } catch {}
+
+  return [];
+}
+
+export async function toggleSaveOpportunityId(
+  userEmail: string,
+  id: string,
+  type: 'hackathon' | 'internship'
+): Promise<string[]> {
+  const cleanEmail = userEmail.toLowerCase().trim();
+  const current = await fetchSavedOpportunityIds(cleanEmail, type);
+  const exists = current.includes(id);
+  const updated = exists ? current.filter(i => i !== id) : [...current, id];
+
+  const key = type === 'hackathon' ? `${SAVED_HACKATHONS_LOCAL_KEY}_${cleanEmail}` : `${SAVED_INTERNSHIPS_LOCAL_KEY}_${cleanEmail}`;
+  try {
+    localStorage.setItem(key, JSON.stringify(updated));
+  } catch {}
+
+  try {
+    if (exists) {
+      await supabase
+        .from('student_saved_opportunities')
+        .delete()
+        .eq('student_email', cleanEmail)
+        .eq('opportunity_id', id)
+        .eq('opportunity_type', type);
+    } else {
+      await supabase
+        .from('student_saved_opportunities')
+        .upsert({
+          student_email: cleanEmail,
+          opportunity_id: id,
+          opportunity_type: type,
+          saved_at: new Date().toISOString()
+        }, { onConflict: 'student_email,opportunity_id,opportunity_type' });
+    }
+  } catch {}
+
+  return updated;
+}
+
+// ==========================================
+// FACULTY TIMETABLE & CAMPUS NAVIGATOR API
+// ==========================================
+
+export interface FacultyTimetableEntry {
+  id: string;
+  faculty_id?: string;
+  faculty_employee_id: string;
+  faculty_name: string;
+  faculty_email?: string;
+  cabin_location?: string;
+  subject_code?: string;
+  subject_name: string;
+  department?: string;
+  year?: string;
+  section_name: string;
+  day_of_week: 'Monday' | 'Tuesday' | 'Wednesday' | 'Thursday' | 'Friday' | 'Saturday' | 'Sunday';
+  start_time: string;
+  end_time: string;
+  room_number: string;
+  academic_year?: string;
+  semester?: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface TimetableImportRow {
+  faculty_name: string;
+  faculty_employee_id?: string;
+  faculty_email?: string;
+  cabin_location?: string;
+  subject_code?: string;
+  subject_name: string;
+  section_name: string;
+  department?: string;
+  day_of_week: string;
+  start_time: string;
+  end_time: string;
+  room_number: string;
+}
+
+export interface TimetableHeaderValidationResult {
+  valid: boolean;
+  missingColumns: string[];
+  mappedHeaders: Record<string, string>;
+}
+
+const INITIAL_FACULTY_TIMETABLE: FacultyTimetableEntry[] = [
+  // Dr. Anjali Menon (FAC001) - Advisor & CSE-C Faculty
+  { id: 'tt_anjali_mon_1', faculty_employee_id: 'FAC001', faculty_name: 'Dr. Anjali Menon', faculty_email: 'anjali.menon@example.edu', cabin_location: 'Main Academic Block, Cabin 304', subject_code: 'CS201', subject_name: 'Database Management Systems', section_name: 'CSE-C', room_number: 'CS-302', day_of_week: 'Monday', start_time: '08:00', end_time: '09:00', department: 'CSE' },
+  { id: 'tt_anjali_mon_2', faculty_employee_id: 'FAC001', faculty_name: 'Dr. Anjali Menon', faculty_email: 'anjali.menon@example.edu', cabin_location: 'Main Academic Block, Cabin 304', subject_code: 'CS201L', subject_name: 'DBMS Lab', section_name: 'CSE-C', room_number: 'Database Lab 2', day_of_week: 'Monday', start_time: '10:00', end_time: '12:00', department: 'CSE' },
+  { id: 'tt_anjali_tue_1', faculty_employee_id: 'FAC001', faculty_name: 'Dr. Anjali Menon', faculty_email: 'anjali.menon@example.edu', cabin_location: 'Main Academic Block, Cabin 304', subject_code: 'CS201', subject_name: 'Database Management Systems', section_name: 'CSE-C', room_number: 'CS-302', day_of_week: 'Tuesday', start_time: '09:00', end_time: '10:00', department: 'CSE' },
+  { id: 'tt_anjali_tue_2', faculty_employee_id: 'FAC001', faculty_name: 'Dr. Anjali Menon', faculty_email: 'anjali.menon@example.edu', cabin_location: 'Main Academic Block, Cabin 304', subject_code: 'CS201', subject_name: 'Database Management Systems', section_name: 'CSE-A', room_number: 'CS-301', day_of_week: 'Tuesday', start_time: '13:00', end_time: '14:00', department: 'CSE' },
+  { id: 'tt_anjali_wed_1', faculty_employee_id: 'FAC001', faculty_name: 'Dr. Anjali Menon', faculty_email: 'anjali.menon@example.edu', cabin_location: 'Main Academic Block, Cabin 304', subject_code: 'CS201', subject_name: 'Database Management Systems', section_name: 'CSE-C', room_number: 'CS-302', day_of_week: 'Wednesday', start_time: '08:00', end_time: '09:00', department: 'CSE' },
+  { id: 'tt_anjali_wed_2', faculty_employee_id: 'FAC001', faculty_name: 'Dr. Anjali Menon', faculty_email: 'anjali.menon@example.edu', cabin_location: 'Main Academic Block, Cabin 304', subject_code: 'CS201', subject_name: 'Database Management Systems', section_name: 'CSE-B', room_number: 'CS-303', day_of_week: 'Wednesday', start_time: '11:00', end_time: '12:00', department: 'CSE' },
+  { id: 'tt_anjali_thu_1', faculty_employee_id: 'FAC001', faculty_name: 'Dr. Anjali Menon', faculty_email: 'anjali.menon@example.edu', cabin_location: 'Main Academic Block, Cabin 304', subject_code: 'CS201L', subject_name: 'DBMS Lab', section_name: 'CSE-A', room_number: 'Database Lab 1', day_of_week: 'Thursday', start_time: '13:00', end_time: '15:00', department: 'CSE' },
+  { id: 'tt_anjali_fri_1', faculty_employee_id: 'FAC001', faculty_name: 'Dr. Anjali Menon', faculty_email: 'anjali.menon@example.edu', cabin_location: 'Main Academic Block, Cabin 304', subject_code: 'CS201', subject_name: 'Database Management Systems', section_name: 'CSE-C', room_number: 'CS-302', day_of_week: 'Friday', start_time: '09:00', end_time: '10:00', department: 'CSE' },
+
+  // Dr. Ravi Chandran (FAC002) - CSE-A Advisor & OS Faculty
+  { id: 'tt_ravi_mon_1', faculty_employee_id: 'FAC002', faculty_name: 'Dr. Ravi Chandran', faculty_email: 'ravi.chandran@example.edu', cabin_location: 'CS Block, Ground Floor Cabin 08', subject_code: 'CS202', subject_name: 'Operating Systems', section_name: 'CSE-A', room_number: 'CS-301', day_of_week: 'Monday', start_time: '09:00', end_time: '10:00', department: 'CSE' },
+  { id: 'tt_ravi_mon_2', faculty_employee_id: 'FAC002', faculty_name: 'Dr. Ravi Chandran', faculty_email: 'ravi.chandran@example.edu', cabin_location: 'CS Block, Ground Floor Cabin 08', subject_code: 'CS202', subject_name: 'Operating Systems', section_name: 'CSE-C', room_number: 'CS-302', day_of_week: 'Monday', start_time: '11:00', end_time: '12:00', department: 'CSE' },
+  { id: 'tt_ravi_tue_1', faculty_employee_id: 'FAC002', faculty_name: 'Dr. Ravi Chandran', faculty_email: 'ravi.chandran@example.edu', cabin_location: 'CS Block, Ground Floor Cabin 08', subject_code: 'CS202L', subject_name: 'OS Lab', section_name: 'CSE-C', room_number: 'Systems Lab 1', day_of_week: 'Tuesday', start_time: '10:00', end_time: '12:00', department: 'CSE' },
+  { id: 'tt_ravi_wed_1', faculty_employee_id: 'FAC002', faculty_name: 'Dr. Ravi Chandran', faculty_email: 'ravi.chandran@example.edu', cabin_location: 'CS Block, Ground Floor Cabin 08', subject_code: 'CS202', subject_name: 'Operating Systems', section_name: 'CSE-C', room_number: 'CS-302', day_of_week: 'Wednesday', start_time: '09:00', end_time: '10:00', department: 'CSE' },
+  { id: 'tt_ravi_thu_1', faculty_employee_id: 'FAC002', faculty_name: 'Dr. Ravi Chandran', faculty_email: 'ravi.chandran@example.edu', cabin_location: 'CS Block, Ground Floor Cabin 08', subject_code: 'CS202', subject_name: 'Operating Systems', section_name: 'CSE-B', room_number: 'CS-303', day_of_week: 'Thursday', start_time: '08:00', end_time: '09:00', department: 'CSE' },
+  { id: 'tt_ravi_fri_1', faculty_employee_id: 'FAC002', faculty_name: 'Dr. Ravi Chandran', faculty_email: 'ravi.chandran@example.edu', cabin_location: 'CS Block, Ground Floor Cabin 08', subject_code: 'CS202', subject_name: 'Operating Systems', section_name: 'CSE-C', room_number: 'CS-302', day_of_week: 'Friday', start_time: '08:00', end_time: '09:00', department: 'CSE' },
+
+  // Prof. Meera Krishnan (FAC003) - CSE-B Advisor & DAA Faculty
+  { id: 'tt_meera_mon_1', faculty_employee_id: 'FAC003', faculty_name: 'Prof. Meera Krishnan', faculty_email: 'meera.krishnan@example.edu', cabin_location: 'Main Academic Block, Cabin 308', subject_code: 'CS203', subject_name: 'Design & Analysis of Algorithms', section_name: 'CSE-B', room_number: 'CS-303', day_of_week: 'Monday', start_time: '10:00', end_time: '11:00', department: 'CSE' },
+  { id: 'tt_meera_mon_2', faculty_employee_id: 'FAC003', faculty_name: 'Prof. Meera Krishnan', faculty_email: 'meera.krishnan@example.edu', cabin_location: 'Main Academic Block, Cabin 308', subject_code: 'CS203', subject_name: 'Design & Analysis of Algorithms', section_name: 'CSE-C', room_number: 'CS-302', day_of_week: 'Monday', start_time: '13:00', end_time: '14:00', department: 'CSE' },
+  { id: 'tt_meera_tue_1', faculty_employee_id: 'FAC003', faculty_name: 'Prof. Meera Krishnan', faculty_email: 'meera.krishnan@example.edu', cabin_location: 'Main Academic Block, Cabin 308', subject_code: 'CS203', subject_name: 'Design & Analysis of Algorithms', section_name: 'CSE-C', room_number: 'CS-302', day_of_week: 'Tuesday', start_time: '08:00', end_time: '09:00', department: 'CSE' },
+  { id: 'tt_meera_wed_1', faculty_employee_id: 'FAC003', faculty_name: 'Prof. Meera Krishnan', faculty_email: 'meera.krishnan@example.edu', cabin_location: 'Main Academic Block, Cabin 308', subject_code: 'CS203L', subject_name: 'Algorithms Lab', section_name: 'CSE-C', room_number: 'Programming Lab 3', day_of_week: 'Wednesday', start_time: '13:00', end_time: '15:00', department: 'CSE' },
+  { id: 'tt_meera_thu_1', faculty_employee_id: 'FAC003', faculty_name: 'Prof. Meera Krishnan', faculty_email: 'meera.krishnan@example.edu', cabin_location: 'Main Academic Block, Cabin 308', subject_code: 'CS203', subject_name: 'Design & Analysis of Algorithms', section_name: 'CSE-A', room_number: 'CS-301', day_of_week: 'Thursday', start_time: '10:00', end_time: '11:00', department: 'CSE' },
+  { id: 'tt_meera_fri_1', faculty_employee_id: 'FAC003', faculty_name: 'Prof. Meera Krishnan', faculty_email: 'meera.krishnan@example.edu', cabin_location: 'Main Academic Block, Cabin 308', subject_code: 'CS203', subject_name: 'Design & Analysis of Algorithms', section_name: 'CSE-C', room_number: 'CS-302', day_of_week: 'Friday', start_time: '10:00', end_time: '11:00', department: 'CSE' },
+
+  // Dr. Suresh Balan (FAC004) - Computer Networks Faculty
+  { id: 'tt_suresh_mon_1', faculty_employee_id: 'FAC004', faculty_name: 'Dr. Suresh Balan', faculty_email: 'suresh.balan@example.edu', cabin_location: 'Lab Complex, 2nd Floor Faculty Lounge', subject_code: 'CS204', subject_name: 'Computer Networks', section_name: 'CSE-C', room_number: 'CS-302', day_of_week: 'Monday', start_time: '14:00', end_time: '15:00', department: 'CSE' },
+  { id: 'tt_suresh_tue_1', faculty_employee_id: 'FAC004', faculty_name: 'Dr. Suresh Balan', faculty_email: 'suresh.balan@example.edu', cabin_location: 'Lab Complex, 2nd Floor Faculty Lounge', subject_code: 'CS204', subject_name: 'Computer Networks', section_name: 'CSE-D', room_number: 'CS-304', day_of_week: 'Tuesday', start_time: '13:00', end_time: '14:00', department: 'CSE' },
+  { id: 'tt_suresh_wed_1', faculty_employee_id: 'FAC004', faculty_name: 'Dr. Suresh Balan', faculty_email: 'suresh.balan@example.edu', cabin_location: 'Lab Complex, 2nd Floor Faculty Lounge', subject_code: 'CS204', subject_name: 'Computer Networks', section_name: 'CSE-C', room_number: 'CS-302', day_of_week: 'Wednesday', start_time: '10:00', end_time: '11:00', department: 'CSE' },
+  { id: 'tt_suresh_thu_1', faculty_employee_id: 'FAC004', faculty_name: 'Dr. Suresh Balan', faculty_email: 'suresh.balan@example.edu', cabin_location: 'Lab Complex, 2nd Floor Faculty Lounge', subject_code: 'CS204L', subject_name: 'Networks Lab', section_name: 'CSE-C', room_number: 'Network Lab 1', day_of_week: 'Thursday', start_time: '08:00', end_time: '10:00', department: 'CSE' },
+  { id: 'tt_suresh_fri_1', faculty_employee_id: 'FAC004', faculty_name: 'Dr. Suresh Balan', faculty_email: 'suresh.balan@example.edu', cabin_location: 'Lab Complex, 2nd Floor Faculty Lounge', subject_code: 'CS204', subject_name: 'Computer Networks', section_name: 'CSE-C', room_number: 'CS-302', day_of_week: 'Friday', start_time: '13:00', end_time: '14:00', department: 'CSE' },
+
+  // Prof. Neha Kapoor (FAC005) - Theory of Computation Faculty
+  { id: 'tt_neha_mon_1', faculty_employee_id: 'FAC005', faculty_name: 'Prof. Neha Kapoor', faculty_email: 'neha.kapoor@example.edu', cabin_location: 'CS Block, 1st Floor Cabin 14', subject_code: 'CS205', subject_name: 'Theory of Computation', section_name: 'CSE-E', room_number: 'CS-305', day_of_week: 'Monday', start_time: '08:00', end_time: '09:00', department: 'CSE' },
+  { id: 'tt_neha_tue_1', faculty_employee_id: 'FAC005', faculty_name: 'Prof. Neha Kapoor', faculty_email: 'neha.kapoor@example.edu', cabin_location: 'CS Block, 1st Floor Cabin 14', subject_code: 'CS205', subject_name: 'Theory of Computation', section_name: 'CSE-C', room_number: 'CS-302', day_of_week: 'Tuesday', start_time: '14:00', end_time: '15:00', department: 'CSE' },
+  { id: 'tt_neha_wed_1', faculty_employee_id: 'FAC005', faculty_name: 'Prof. Neha Kapoor', faculty_email: 'neha.kapoor@example.edu', cabin_location: 'CS Block, 1st Floor Cabin 14', subject_code: 'CS205', subject_name: 'Theory of Computation', section_name: 'CSE-C', room_number: 'CS-302', day_of_week: 'Wednesday', start_time: '11:00', end_time: '12:00', department: 'CSE' },
+  { id: 'tt_neha_thu_1', faculty_employee_id: 'FAC005', faculty_name: 'Prof. Neha Kapoor', faculty_email: 'neha.kapoor@example.edu', cabin_location: 'CS Block, 1st Floor Cabin 14', subject_code: 'CS205', subject_name: 'Theory of Computation', section_name: 'CSE-C', room_number: 'CS-302', day_of_week: 'Thursday', start_time: '11:00', end_time: '12:00', department: 'CSE' },
+  { id: 'tt_neha_fri_1', faculty_employee_id: 'FAC005', faculty_name: 'Prof. Neha Kapoor', faculty_email: 'neha.kapoor@example.edu', cabin_location: 'CS Block, 1st Floor Cabin 14', subject_code: 'CS205', subject_name: 'Theory of Computation', section_name: 'CSE-F', room_number: 'CS-306', day_of_week: 'Friday', start_time: '11:00', end_time: '12:00', department: 'CSE' },
+
+  // Additional sections CSE-D to CSE-J faculty schedule entries
+  { id: 'tt_arvind_mon_1', faculty_employee_id: 'FAC006', faculty_name: 'Dr. Arvind Nair', faculty_email: 'arvind.nair@example.edu', cabin_location: 'Main Academic Block, Cabin 310', subject_code: 'CS206', subject_name: 'Software Engineering', section_name: 'CSE-F', room_number: 'CS-306', day_of_week: 'Monday', start_time: '09:00', end_time: '10:00', department: 'CSE' },
+  { id: 'tt_kavitha_tue_1', faculty_employee_id: 'FAC007', faculty_name: 'Prof. Kavitha Iyer', faculty_email: 'kavitha.iyer@example.edu', cabin_location: 'CS Block, 2nd Floor Cabin 22', subject_code: 'CS207', subject_name: 'Machine Learning', section_name: 'CSE-G', room_number: 'CS-307', day_of_week: 'Tuesday', start_time: '11:00', end_time: '12:00', department: 'CSE' },
+  { id: 'tt_prakash_wed_1', faculty_employee_id: 'FAC008', faculty_name: 'Dr. Prakash Verma', faculty_email: 'prakash.verma@example.edu', cabin_location: 'Lab Complex, 1st Floor Cabin 05', subject_code: 'CS208', subject_name: 'Cyber Security', section_name: 'CSE-H', room_number: 'CS-308', day_of_week: 'Wednesday', start_time: '08:00', end_time: '09:00', department: 'CSE' },
+  { id: 'tt_swathi_thu_1', faculty_employee_id: 'FAC009', faculty_name: 'Prof. Swathi Rao', faculty_email: 'swathi.rao@example.edu', cabin_location: 'Main Academic Block, Cabin 302', subject_code: 'CS209', subject_name: 'Cloud Computing', section_name: 'CSE-I', room_number: 'CS-309', day_of_week: 'Thursday', start_time: '14:00', end_time: '15:00', department: 'CSE' },
+  { id: 'tt_vikram_fri_1', faculty_employee_id: 'FAC010', faculty_name: 'Dr. Vikram Das', faculty_email: 'vikram.das@example.edu', cabin_location: 'CS Block, Ground Floor Cabin 02', subject_code: 'CS210', subject_name: 'Data Analytics', section_name: 'CSE-J', room_number: 'CS-310', day_of_week: 'Friday', start_time: '10:00', end_time: '11:00', department: 'CSE' }
+];
+
+const localCustomTimetable: FacultyTimetableEntry[] = [...INITIAL_FACULTY_TIMETABLE];
+
+export async function fetchFacultyTimetable(params?: {
+  facultyId?: string;
+  facultyEmail?: string;
+  facultyEmployeeId?: string;
+  sectionName?: string;
+  dayOfWeek?: string;
+}): Promise<FacultyTimetableEntry[]> {
+  try {
+    let query = supabase.from('faculty_timetable').select('*');
+
+    if (params?.facultyEmployeeId) {
+      query = query.eq('faculty_employee_id', params.facultyEmployeeId);
+    } else if (params?.facultyEmail) {
+      query = query.ilike('faculty_email', params.facultyEmail.trim());
+    } else if (params?.facultyId) {
+      query = query.eq('faculty_id', params.facultyId);
+    }
+
+    if (params?.sectionName) {
+      query = query.ilike('section_name', params.sectionName.trim());
+    }
+
+    if (params?.dayOfWeek) {
+      query = query.ilike('day_of_week', params.dayOfWeek.trim());
+    }
+
+    const { data, error } = await query.order('start_time', { ascending: true });
+
+    let allEntries = [...localCustomTimetable];
+    if (!error && data && data.length > 0) {
+      const dbIds = new Set(data.map((d: any) => d.id));
+      const extraLocal = localCustomTimetable.filter((l) => !dbIds.has(l.id));
+      allEntries = [...(data as FacultyTimetableEntry[]), ...extraLocal];
+    }
+
+    // Apply filters to combined local/db set
+    if (params?.facultyEmployeeId) {
+      const targetEmp = params.facultyEmployeeId.toLowerCase();
+      allEntries = allEntries.filter((t) => t.faculty_employee_id.toLowerCase() === targetEmp);
+    } else if (params?.facultyEmail) {
+      const targetMail = params.facultyEmail.toLowerCase();
+      allEntries = allEntries.filter((t) => (t.faculty_email || '').toLowerCase() === targetMail);
+    } else if (params?.facultyId) {
+      allEntries = allEntries.filter((t) => t.faculty_id === params.facultyId);
+    }
+
+    if (params?.sectionName) {
+      const targetSec = params.sectionName.toUpperCase();
+      allEntries = allEntries.filter((t) => (t.section_name || '').toUpperCase() === targetSec || (t.section_name || '').toUpperCase().endsWith(targetSec));
+    }
+
+    if (params?.dayOfWeek) {
+      const targetDay = params.dayOfWeek.toLowerCase();
+      allEntries = allEntries.filter((t) => t.day_of_week.toLowerCase() === targetDay);
+    }
+
+    return allEntries;
+  } catch {
+    let filtered = [...localCustomTimetable];
+    if (params?.facultyEmployeeId) {
+      filtered = filtered.filter((t) => t.faculty_employee_id.toLowerCase() === params.facultyEmployeeId!.toLowerCase());
+    } else if (params?.facultyEmail) {
+      filtered = filtered.filter((t) => (t.faculty_email || '').toLowerCase() === params.facultyEmail!.toLowerCase());
+    }
+    if (params?.sectionName) {
+      filtered = filtered.filter((t) => (t.section_name || '').toUpperCase() === params.sectionName!.toUpperCase());
+    }
+    if (params?.dayOfWeek) {
+      filtered = filtered.filter((t) => t.day_of_week.toLowerCase() === params.dayOfWeek!.toLowerCase());
+    }
+    return filtered;
+  }
+}
+
+export async function updateFacultyCabinLocation(facultyIdOrEmail: string, cabinLocation: string): Promise<{ success: boolean; error?: string }> {
+  try {
+    const target = facultyIdOrEmail.trim().toLowerCase();
+    const facs = await fetchFacultyMembers();
+    const fac = facs.find((f) => f.id === target || f.email.toLowerCase() === target || f.employee_id.toLowerCase() === target);
+
+    if (fac) {
+      await updateFacultyMember(fac.id, { cabin_location: cabinLocation });
+    }
+
+    localCustomTimetable.forEach((entry) => {
+      if (
+        (entry.faculty_id && entry.faculty_id === target) ||
+        (entry.faculty_email && entry.faculty_email.toLowerCase() === target) ||
+        (entry.faculty_employee_id && entry.faculty_employee_id.toLowerCase() === target)
+      ) {
+        entry.cabin_location = cabinLocation;
+      }
+    });
+
+    try {
+      await supabase
+        .from('faculty_timetable')
+        .update({ cabin_location: cabinLocation, updated_at: new Date().toISOString() })
+        .or(`faculty_email.eq.${target},faculty_employee_id.eq.${target}`);
+    } catch {}
+
+    return { success: true };
+  } catch (err: any) {
+    return { success: false, error: err?.message || 'Failed to update cabin location' };
+  }
+}
+
+export async function upsertFacultyTimetableEntry(entry: Partial<FacultyTimetableEntry>): Promise<{ success: boolean; data?: FacultyTimetableEntry; error?: string }> {
+  try {
+    const id = entry.id || `tt_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
+    const fullEntry: FacultyTimetableEntry = {
+      id,
+      faculty_employee_id: entry.faculty_employee_id || 'FAC001',
+      faculty_name: entry.faculty_name || 'Faculty Member',
+      faculty_email: entry.faculty_email || '',
+      cabin_location: entry.cabin_location || 'Main Academic Block',
+      subject_code: entry.subject_code || 'CS201',
+      subject_name: entry.subject_name || 'Academic Course',
+      section_name: (entry.section_name || 'CSE-A').toUpperCase(),
+      room_number: entry.room_number || 'CS-101',
+      day_of_week: (entry.day_of_week as any) || 'Monday',
+      start_time: entry.start_time || '08:00',
+      end_time: entry.end_time || '09:00',
+      department: entry.department || 'CSE',
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+
+    const existingIdx = localCustomTimetable.findIndex((t) => t.id === fullEntry.id);
+    if (existingIdx !== -1) {
+      localCustomTimetable[existingIdx] = fullEntry;
+    } else {
+      localCustomTimetable.push(fullEntry);
+    }
+
+    try {
+      const { data, error } = await supabase
+        .from('faculty_timetable')
+        .upsert([fullEntry], { onConflict: 'id' })
+        .select()
+        .single();
+
+      if (!error && data) {
+        return { success: true, data: data as FacultyTimetableEntry };
+      }
+    } catch {}
+
+    return { success: true, data: fullEntry };
+  } catch (err: any) {
+    return { success: false, error: err?.message || 'Failed to save timetable entry' };
+  }
+}
+
+export async function deleteFacultyTimetableEntry(id: string): Promise<{ success: boolean; error?: string }> {
+  try {
+    const idx = localCustomTimetable.findIndex((t) => t.id === id);
+    if (idx !== -1) {
+      localCustomTimetable.splice(idx, 1);
+    }
+
+    try {
+      await supabase.from('faculty_timetable').delete().eq('id', id);
+    } catch {}
+
+    return { success: true };
+  } catch (err: any) {
+    return { success: false, error: err?.message || 'Failed to delete entry' };
+  }
+}
+
+export function validateTimetableExcelHeaders(headers: string[]): TimetableHeaderValidationResult {
+  const normalized = headers.map((h) => String(h || '').trim().toLowerCase().replace(/[^a-z0-9]/g, ''));
+  const mappedHeaders: Record<string, string> = {};
+
+  const defs = [
+    { key: 'faculty_name', keywords: ['facultyname', 'faculty', 'teachername', 'staffname', 'professorname', 'name'] },
+    { key: 'faculty_employee_id', keywords: ['employeeid', 'empid', 'facultyid', 'staffid', 'empcode', 'code', 'id'] },
+    { key: 'faculty_email', keywords: ['email', 'facultyemail', 'mail', 'emailaddress'] },
+    { key: 'subject_name', keywords: ['subjectname', 'subject', 'course', 'coursename', 'subj'] },
+    { key: 'subject_code', keywords: ['subjectcode', 'coursecode', 'code'] },
+    { key: 'section_name', keywords: ['sectionname', 'section', 'class', 'sec', 'batch'] },
+    { key: 'day_of_week', keywords: ['dayofweek', 'day', 'weekday'] },
+    { key: 'start_time', keywords: ['starttime', 'fromtime', 'start', 'from'] },
+    { key: 'end_time', keywords: ['endtime', 'totime', 'end', 'to'] },
+    { key: 'room_number', keywords: ['roomnumber', 'room', 'hall', 'lab', 'roomno', 'cabin', 'location'] },
+    { key: 'cabin_location', keywords: ['cabinlocation', 'cabin', 'office', 'roomno', 'officelocation'] }
+  ];
+
+  for (const def of defs) {
+    let idx = normalized.findIndex((h) => def.keywords.includes(h));
+    if (idx === -1) {
+      idx = normalized.findIndex((h) => h.length > 1 && def.keywords.some((k) => h.includes(k) || (k.length > 3 && k.includes(h))));
+    }
+    if (idx !== -1) {
+      mappedHeaders[def.key] = headers[idx];
+    }
+  }
+
+  const missingColumns: string[] = [];
+  if (!mappedHeaders['faculty_name'] && !mappedHeaders['faculty_employee_id']) {
+    missingColumns.push('FACULTY NAME / EMPLOYEE ID');
+  }
+  if (!mappedHeaders['subject_name']) {
+    missingColumns.push('SUBJECT NAME');
+  }
+
+  return {
+    valid: missingColumns.length === 0,
+    missingColumns,
+    mappedHeaders,
+  };
+}
+
+export async function importTimetableBatch(rows: TimetableImportRow[]): Promise<ImportResult> {
+  let importedCount = 0;
+  let updatedCount = 0;
+  let skippedCount = 0;
+  let invalidCount = 0;
+  const errors: string[] = [];
+
+  const existingFaculty = await fetchFacultyMembers();
+
+  for (let index = 0; index < rows.length; index++) {
+    const row = rows[index];
+    const lineNo = index + 2;
+
+    const facName = String(row.faculty_name || '').trim();
+    let empId = String(row.faculty_employee_id || '').trim();
+    let email = String(row.faculty_email || '').trim().toLowerCase();
+    const subjName = String(row.subject_name || '').trim();
+    const subjCode = String(row.subject_code || '').trim() || 'CS200';
+    const secName = String(row.section_name || 'CSE-A').trim().toUpperCase();
+    let day = String(row.day_of_week || 'Monday').trim();
+    let startTime = String(row.start_time || '08:00').trim();
+    let endTime = String(row.end_time || '09:00').trim();
+    let room = String(row.room_number || 'CS-101').trim();
+
+    if (!facName && !empId) {
+      invalidCount++;
+      errors.push(`Row ${lineNo}: Missing faculty identity (Name or Employee ID)`);
+      continue;
+    }
+
+    if (!subjName) {
+      invalidCount++;
+      errors.push(`Row ${lineNo}: Missing Subject Name`);
+      continue;
+    }
+
+    const matchedFac = existingFaculty.find(
+      (f) =>
+        (empId && f.employee_id.toLowerCase() === empId.toLowerCase()) ||
+        (email && f.email.toLowerCase() === email) ||
+        (facName && f.name.toLowerCase().includes(facName.toLowerCase()))
+    );
+
+    if (matchedFac) {
+      if (!empId) empId = matchedFac.employee_id;
+      if (!email) email = matchedFac.email;
+    } else if (!empId) {
+      empId = `FAC_${Math.floor(100 + Math.random() * 900)}`;
+    }
+
+    const dayMap: Record<string, string> = {
+      mon: 'Monday', monday: 'Monday', m: 'Monday',
+      tue: 'Tuesday', tuesday: 'Tuesday', t: 'Tuesday',
+      wed: 'Wednesday', wednesday: 'Wednesday', w: 'Wednesday',
+      thu: 'Thursday', thursday: 'Thursday', th: 'Thursday',
+      fri: 'Friday', friday: 'Friday', f: 'Friday',
+      sat: 'Saturday', saturday: 'Saturday',
+      sun: 'Sunday', sunday: 'Sunday'
+    };
+    const cleanDayKey = day.toLowerCase().replace(/[^a-z]/g, '');
+    day = dayMap[cleanDayKey] || 'Monday';
+
+    const normalizeTime = (raw: string): string => {
+      if (!raw) return '08:00';
+      if (raw.includes(':')) {
+        const parts = raw.split(':');
+        let h = parseInt(parts[0], 10);
+        const m = parseInt(parts[1], 10) || 0;
+        if (raw.toLowerCase().includes('pm') && h < 12) h += 12;
+        if (raw.toLowerCase().includes('am') && h === 12) h = 0;
+        return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+      }
+      const num = parseInt(raw, 10);
+      if (!isNaN(num)) {
+        if (num >= 8 && num <= 12) return `${String(num).padStart(2, '0')}:00`;
+        if (num >= 1 && num <= 7) return `${String(num + 12).padStart(2, '0')}:00`;
+      }
+      return '08:00';
+    };
+
+    startTime = normalizeTime(startTime);
+    endTime = normalizeTime(endTime);
+
+    const isDup = localCustomTimetable.some(
+      (t) =>
+        t.faculty_employee_id.toLowerCase() === empId.toLowerCase() &&
+        t.day_of_week.toLowerCase() === day.toLowerCase() &&
+        t.start_time === startTime
+    );
+
+    const entryId = `tt_${Date.now()}_${index}`;
+    const newEntry: FacultyTimetableEntry = {
+      id: entryId,
+      faculty_employee_id: empId,
+      faculty_name: facName || matchedFac?.name || 'Faculty Member',
+      faculty_email: email || matchedFac?.email,
+      cabin_location: row.cabin_location || matchedFac?.cabin_location || 'Main Academic Block',
+      subject_code: subjCode,
+      subject_name: subjName,
+      section_name: secName,
+      room_number: room,
+      day_of_week: day as any,
+      start_time: startTime,
+      end_time: endTime,
+      department: row.department || matchedFac?.department || 'CSE',
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+
+    localCustomTimetable.push(newEntry);
+
+    try {
+      await supabase.from('faculty_timetable').upsert([newEntry]);
+    } catch {}
+
+    if (isDup) {
+      updatedCount++;
+    } else {
+      importedCount++;
+    }
+  }
+
+  return { importedCount, updatedCount, skippedCount, invalidCount, errors };
+}
+
+// ----------------------------------------------------
+// DYNAMIC STUDENT TIMETABLE & TODAY'S CLASSES ENGINE
+// ----------------------------------------------------
+
+export interface TodayClassItem {
+  id: string;
+  subject_name: string;
+  subject_code?: string;
+  faculty_name: string;
+  room_number: string;
+  start_time: string;
+  end_time: string;
+  period_number?: number;
+  section_name: string;
+  status: 'UPCOMING' | 'ONGOING' | 'COMPLETED';
+  status_label: string;
+  starts_in_minutes?: number;
+}
+
+export interface TodayScheduleResult {
+  isHoliday: boolean;
+  holidayReason?: string;
+  dayName: string;
+  dateStr: string;
+  classes: TodayClassItem[];
+  nextClass?: TodayClassItem;
+}
+
+// Academic Calendar Holidays / Working-Day Override Table
+export interface CalendarHolidayOverride {
+  dateStr: string; // YYYY-MM-DD
+  is_holiday: boolean;
+  holiday_name: string;
+  is_working_day_override?: boolean;
+}
+
+const INSTITUTION_HOLIDAY_OVERRIDES: CalendarHolidayOverride[] = [
+  { dateStr: '2026-09-14', is_holiday: fontIsHoliday('2026-09-14'), holiday_name: 'College Foundation Day' },
+  { dateStr: '2026-10-02', is_holiday: true, holiday_name: 'Gandhi Jayanti' },
+  { dateStr: '2026-10-25', is_holiday: true, holiday_name: 'Dussehra Holiday' },
+  { dateStr: '2026-11-01', is_holiday: true, holiday_name: 'Deepavali' }
+];
+
+function fontIsHoliday(_d: string): boolean {
+  return false;
+}
+
+export async function fetchStudentTimetable(sectionName?: string): Promise<FacultyTimetableEntry[]> {
+  const targetSec = (sectionName || 'CSE-C').toUpperCase().trim();
+  return await fetchFacultyTimetable({ sectionName: targetSec });
+}
+
+export async function getTodayClassSchedule(
+  sectionName?: string,
+  simulatedDate?: Date
+): Promise<TodayScheduleResult> {
+  const now = simulatedDate || new Date();
+  const dateStr = now.toISOString().split('T')[0];
+
+  const daysOfWeek = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+  const dayName = daysOfWeek[now.getDay()];
+
+  // 1. DATE-SPECIFIC HOLIDAY & WORKING DAY OVERRIDE CHECK
+  const holidayRecord = INSTITUTION_HOLIDAY_OVERRIDES.find(h => h.dateStr === dateStr);
+
+  if (holidayRecord && holidayRecord.is_holiday && !holidayRecord.is_working_day_override) {
+    return {
+      isHoliday: true,
+      holidayReason: holidayRecord.holiday_name,
+      dayName,
+      dateStr,
+      classes: []
+    };
+  }
+
+  const isWeekend = dayName === 'Saturday' || dayName === 'Sunday';
+  const isWorkingWeekendOverride = holidayRecord?.is_working_day_override;
+
+  if (isWeekend && !isWorkingWeekendOverride) {
+    return {
+      isHoliday: true,
+      holidayReason: `${dayName} — Weekend / No Classes Scheduled`,
+      dayName,
+      dateStr,
+      classes: []
+    };
+  }
+
+  // 2. FETCH SECTION TIMETABLE FOR TODAY'S DAY
+  const sec = (sectionName || 'CSE-C').toUpperCase().trim();
+  const allEntries = await fetchStudentTimetable(sec);
+  const todayEntries = allEntries
+    .filter(t => t.day_of_week.toLowerCase() === dayName.toLowerCase())
+    .sort((a, b) => a.start_time.localeCompare(b.start_time));
+
+  if (todayEntries.length === 0) {
+    return {
+      isHoliday: false,
+      holidayReason: `No classes scheduled for ${dayName}`,
+      dayName,
+      dateStr,
+      classes: []
+    };
+  }
+
+  // 3. CALCULATE LIVE STATUS BASED ON CURRENT TIME
+  const currentMinutes = now.getHours() * 60 + now.getMinutes();
+
+  const classes: TodayClassItem[] = todayEntries.map(e => {
+    const [startH, startM] = e.start_time.split(':').map(Number);
+    const [endH, endM] = e.end_time.split(':').map(Number);
+    const startMin = startH * 60 + startM;
+    const endMin = endH * 60 + endM;
+
+    let status: 'UPCOMING' | 'ONGOING' | 'COMPLETED' = 'UPCOMING';
+    let status_label = '';
+    let starts_in_minutes: number | undefined = undefined;
+
+    if (currentMinutes >= endMin) {
+      status = 'COMPLETED';
+      status_label = 'Completed';
+    } else if (currentMinutes >= startMin && currentMinutes < endMin) {
+      status = 'ONGOING';
+      status_label = 'Now · Live Class';
+    } else {
+      status = 'UPCOMING';
+      starts_in_minutes = startMin - currentMinutes;
+      if (starts_in_minutes < 60) {
+        status_label = `Starts in ${starts_in_minutes} min`;
+      } else {
+        const hrs = Math.floor(starts_in_minutes / 60);
+        const mins = starts_in_minutes % 60;
+        status_label = `Starts in ${hrs}h ${mins > 0 ? `${mins}m` : ''}`;
+      }
+    }
+
+    return {
+      id: e.id,
+      subject_name: e.subject_name,
+      subject_code: e.subject_code,
+      faculty_name: e.faculty_name,
+      room_number: e.room_number,
+      start_time: e.start_time,
+      end_time: e.end_time,
+      period_number: e.period_number,
+      section_name: e.section_name,
+      status,
+      status_label,
+      starts_in_minutes
+    };
+  });
+
+  const nextClass = classes.find(c => c.status === 'ONGOING' || c.status === 'UPCOMING');
+
+  return {
+    isHoliday: false,
+    dayName,
+    dateStr,
+    classes,
+    nextClass
+  };
+}
+
+export function parseTimetableExcel(fileBuffer: ArrayBuffer): {
+  success: boolean;
+  rows: TimetableImportRow[];
+  headers: string[];
+  error?: string;
+} {
+  try {
+    const workbook = XLSX.read(fileBuffer, { type: 'array' });
+    const sheetName = workbook.SheetNames[0];
+    if (!sheetName) return { success: false, rows: [], headers: [], error: 'Empty Excel file' };
+
+    const worksheet = workbook.Sheets[sheetName];
+    const rawData = XLSX.utils.sheet_to_json<any>(worksheet, { header: 1 });
+
+    if (!rawData || rawData.length === 0) {
+      return { success: false, rows: [], headers: [], error: 'No data found in worksheet' };
+    }
+
+    let headerRowIndex = 0;
+    for (let i = 0; i < Math.min(10, rawData.length); i++) {
+      const row = rawData[i];
+      if (Array.isArray(row) && row.some((cell) => {
+        const c = String(cell || '').toLowerCase();
+        return c.includes('faculty') || c.includes('subject') || c.includes('day') || c.includes('room') || c.includes('section');
+      })) {
+        headerRowIndex = i;
+        break;
+      }
+    }
+
+    const headers = (rawData[headerRowIndex] || []).map((h: any) => String(h || '').trim());
+    const validation = validateTimetableExcelHeaders(headers);
+
+    if (!validation.valid) {
+      return {
+        success: false,
+        rows: [],
+        headers,
+        error: `Missing required columns: ${validation.missingColumns.join(', ')}`
+      };
+    }
+
+    const rows: TimetableImportRow[] = [];
+    const m = validation.mappedHeaders;
+
+    for (let i = headerRowIndex + 1; i < rawData.length; i++) {
+      const r = rawData[i];
+      if (!r || r.length === 0) continue;
+
+      const getVal = (key: string): string => {
+        const colName = m[key];
+        if (!colName) return '';
+        const colIdx = headers.indexOf(colName);
+        if (colIdx === -1) return '';
+        return String(r[colIdx] || '').trim();
+      };
+
+      const faculty_name = getVal('faculty_name');
+      const faculty_employee_id = getVal('faculty_employee_id');
+      const subject_name = getVal('subject_name');
+
+      if (faculty_name || faculty_employee_id || subject_name) {
+        rows.push({
+          faculty_name: faculty_name || 'Faculty Member',
+          faculty_employee_id,
+          faculty_email: getVal('faculty_email'),
+          cabin_location: getVal('cabin_location'),
+          subject_code: getVal('subject_code'),
+          subject_name: subject_name || 'Academic Course',
+          section_name: getVal('section_name') || 'CSE-A',
+          day_of_week: getVal('day_of_week') || 'Monday',
+          start_time: getVal('start_time') || '08:00',
+          end_time: getVal('end_time') || '09:00',
+          room_number: getVal('room_number') || 'CS-101',
+          department: getVal('department') || 'CSE',
+        });
+      }
+    }
+
+    return { success: true, rows, headers };
+  } catch (err: any) {
+    return { success: false, rows: [], headers: [], error: err?.message || 'Failed to parse Excel file' };
+  }
+}
+
 
 
 

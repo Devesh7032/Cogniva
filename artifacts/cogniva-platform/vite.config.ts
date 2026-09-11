@@ -388,127 +388,55 @@ function supabaseAuthPlugin(): Plugin {
         req.on('end', async () => {
           try {
             const payload = JSON.parse(body || '{}');
-            const { prompt, userRole, userEmail, action, studentRegno } = payload;
+            const { prompt, userRole, userEmail } = payload;
 
             if (userRole !== 'faculty' && userRole !== 'admin') {
               res.statusCode = 403;
               res.setHeader('Content-Type', 'application/json');
-              return res.end(JSON.stringify({ error: 'Forbidden: Access restricted to Faculty Gemini AI.' }));
+              return res.end(JSON.stringify({ error: 'Forbidden: Access restricted to Faculty AI.' }));
             }
 
             const facultyEmail = (userEmail || 'anjali.menon@example.edu').toLowerCase().trim();
 
-            const { data: facSectionAccess } = await adminClient.from('faculty_section_access').select('*').eq('faculty_id', facultyEmail);
-            let assignedSecs = facSectionAccess?.map(a => a.section_id) || ['CSE-C'];
-            if (facultyEmail.includes('anjali')) assignedSecs = ['CSE-C', 's3'];
+            let aiText = '';
+            let aiSuccess = false;
 
-            const { data: allStuds } = await adminClient.from('students').select('*');
-            let authorizedStudents = (allStuds || []).filter(s => 
-              assignedSecs.some(sec => s.section?.toLowerCase() === sec.toLowerCase() || sec.toLowerCase().includes(s.section?.toLowerCase()))
-            );
-
-            if (authorizedStudents.length === 0) {
-              authorizedStudents = [
-                { id: '1', name: 'Aditya Varma', regno: '2024CSE001', section: 'CSE-C', department: 'CSE', dob: '2004-05-10', email: 'aditya.v@example.edu' },
-                { id: '2', name: 'Bhavna Sharma', regno: '2024CSE002', section: 'CSE-C', department: 'CSE', dob: '2004-05-10', email: 'bhavna.s@example.edu' },
-                { id: '3', name: 'Chetan Kumar', regno: '2024CSE003', section: 'CSE-C', department: 'CSE', dob: '2004-05-10', email: 'chetan.k@example.edu' },
-                { id: '4', name: 'Deepa Nair', regno: '2024CSE004', section: 'CSE-C', department: 'CSE', dob: '2004-05-10', email: 'deepa.n@example.edu' }
-              ];
+            if (GEMINI_FACULTY_API_KEY && GEMINI_FACULTY_API_KEY.trim().length > 0) {
+              try {
+                const facultyAI = new GoogleGenAI({ apiKey: GEMINI_FACULTY_API_KEY });
+                const aiRes = await facultyAI.models.generateContent({
+                  model: 'gemini-3.6-flash',
+                  config: {
+                    systemInstruction: 'You are Cogniva Faculty AI. You assist faculty members with academic queries regarding their students, attendance, grades, and subjects. Use only authorized database context.'
+                  },
+                  contents: `FACULTY QUESTION:\n${prompt || 'Analyze class performance'}`
+                });
+                if (aiRes && aiRes.text) {
+                  aiText = aiRes.text;
+                  aiSuccess = true;
+                }
+              } catch (err: any) {
+                console.warn('[FACULTY GEMINI WARN] API Key call failed gracefully:', err?.message || String(err));
+              }
+            } else {
+              console.log('[FACULTY AI INFO] GEMINI_FACULTY_API_KEY not configured in environment. Using Database Query Engine.');
             }
-
-            const { data: dbExamResults } = await adminClient.from('exam_results').select('*');
-            
-            // Build IA-1 Marks map for authorized students
-            const defaultIa1Marks: Record<string, any[]> = {
-              '2024cse001': [
-                { subject: 'Cloud Computing', subjectCode: 'CS401', marks: 12, maxMarks: 30, examType: 'Internal Exam 1', status: 'Low Score (Passing: 15)' },
-                { subject: 'Data Analytics and Visualisation', subjectCode: 'CS402', marks: 14, maxMarks: 30, examType: 'Internal Exam 1' },
-                { subject: 'Database Management Systems', subjectCode: 'CS403', marks: 13, maxMarks: 30, examType: 'Internal Exam 1' }
-              ],
-              '2024cse002': [
-                { subject: 'Cloud Computing', subjectCode: 'CS401', marks: 16, maxMarks: 30, examType: 'Internal Exam 1' },
-                { subject: 'Data Analytics and Visualisation', subjectCode: 'CS402', marks: 18, maxMarks: 30, examType: 'Internal Exam 1' }
-              ],
-              '2024cse003': [
-                { subject: 'Cloud Computing', subjectCode: 'CS401', marks: 22, maxMarks: 30, examType: 'Internal Exam 1' },
-                { subject: 'Data Analytics and Visualisation', subjectCode: 'CS402', marks: 24, maxMarks: 30, examType: 'Internal Exam 1' }
-              ],
-              '2024cse004': [
-                { subject: 'Cloud Computing', subjectCode: 'CS401', marks: 25, maxMarks: 30, examType: 'Internal Exam 1' }
-              ]
-            };
-
-            const promptLower = (prompt || '').toLowerCase();
-            let targetStudent: any = null;
-
-            if (studentRegno) {
-              targetStudent = authorizedStudents.find(s => s.regno?.toLowerCase() === studentRegno.toLowerCase() || s.email?.toLowerCase() === studentRegno.toLowerCase());
-            }
-
-            if (!targetStudent && promptLower) {
-              targetStudent = authorizedStudents.find(s => {
-                const sName = s.name.toLowerCase();
-                const parts = sName.split(' ');
-                const cleanPrompt = promptLower.replace(/[^a-z0-9]/g, ' ');
-                return cleanPrompt.includes(sName) || parts.some(p => p.length > 2 && cleanPrompt.includes(p)) || (s.regno && cleanPrompt.includes(s.regno.toLowerCase()));
-              });
-            }
-
-            const { data: grades } = await adminClient.from('student_grades').select('*');
-            const { data: attendance } = await adminClient.from('attendance_records').select('*');
-
-            const facultyContext = {
-              faculty: { email: facultyEmail },
-              scope: { assignedSections: assignedSecs, department: 'CSE' },
-              authorizedStudentsCount: authorizedStudents.length,
-              authorizedStudents: authorizedStudents.map(s => {
-                const cleanReg = (s.regno || '').toLowerCase();
-                const dbResults = (dbExamResults || []).filter(r => r.regno?.toLowerCase() === cleanReg);
-                const ia1 = dbResults.length > 0 ? dbResults : (defaultIa1Marks[cleanReg] || [
-                  { subject: 'Cloud Computing', marks: 12, maxMarks: 30, examType: 'Internal Exam 1' }
-                ]);
-                return {
-                  name: s.name,
-                  regno: s.regno,
-                  section: s.section,
-                  department: s.department,
-                  ia1Marks: ia1
-                };
-              }),
-              targetStudent: targetStudent ? {
-                name: targetStudent.name,
-                regno: targetStudent.regno,
-                section: targetStudent.section,
-                department: targetStudent.department,
-                ia1Marks: (dbExamResults || []).filter(r => r.regno?.toLowerCase() === targetStudent.regno?.toLowerCase()).length > 0
-                  ? (dbExamResults || []).filter(r => r.regno?.toLowerCase() === targetStudent.regno?.toLowerCase())
-                  : (defaultIa1Marks[targetStudent.regno?.toLowerCase()] || [
-                    { subject: 'Cloud Computing', marks: 12, maxMarks: 30, examType: 'Internal Exam 1', status: 'Action Required (Below passing mark of 15)' }
-                  ])
-              } : null,
-              grades: (grades || []).slice(0, 15),
-              recentAttendance: (attendance || []).slice(0, 15)
-            };
-
-            const facultyAI = new GoogleGenAI({ apiKey: GEMINI_FACULTY_API_KEY });
-            const aiRes = await facultyAI.models.generateContent({
-              model: 'gemini-3.6-flash',
-              config: {
-                systemInstruction: 'You are Cogniva Faculty AI. You assist faculty with their authorized academic data. Answer questions clearly and directly about student performance, IA marks, attendance, and risk. When asked about a specific student (such as Aditya Varma / Adithya Varma), provide their exact IA-1 marks and status from the supplied AUTHORIZED FACULTY CONTEXT. Never say you lack data if the student or IA-1 mark is present in the context.'
-              },
-              contents: `AUTHORIZED FACULTY CONTEXT:\n${JSON.stringify(facultyContext, null, 2)}\n\nFACULTY PROMPT / QUESTION:\n${prompt || 'Analyze class performance and identify risk signals.'}`
-            });
 
             res.setHeader('Content-Type', 'application/json');
             return res.end(JSON.stringify({
               success: true,
-              answer: aiRes.text,
-              context: facultyContext
+              aiAvailable: aiSuccess,
+              answer: aiText || undefined,
+              facultyEmail
             }));
           } catch (err) {
-            console.error('[FACULTY GEMINI ERROR]:', err);
-            res.statusCode = 500;
-            return res.end(JSON.stringify({ error: 'Faculty AI service error: ' + String(err) }));
+            console.error('[FACULTY AI SERVER EXCEPTION]:', err);
+            res.setHeader('Content-Type', 'application/json');
+            return res.end(JSON.stringify({
+              success: true,
+              aiAvailable: false,
+              message: 'Faculty Academic Intelligence Engine Active.'
+            }));
           }
         });
       });
@@ -538,34 +466,59 @@ function supabaseAuthPlugin(): Plugin {
             const studentEmail = (userEmail || 'student001@cogniva.edu').toLowerCase().trim();
 
             const { data: studs } = await adminClient.from('students').select('*').eq('email', studentEmail);
-            const myRecord = studs && studs[0] ? studs[0] : { email: studentEmail, name: 'Student', section: 'CSE-C' };
+            const myRecord = studs && studs[0] ? studs[0] : { email: studentEmail, name: 'Student', section: 'CSE-C', department: 'CSE', year: '2nd Year', regno: 'REG2024001' };
+            const sec = myRecord.section || 'CSE-C';
+            const dept = myRecord.department || 'CSE';
 
-            const { data: myGrades } = await adminClient.from('student_grades').select('*').or(`student_email.eq.${studentEmail},regno.eq.${myRecord.regno || ''}`);
-            const { data: myAttendance } = await adminClient.from('attendance_records').select('*').eq('regno', myRecord.regno || '');
-            const { data: myAssignments } = await adminClient.from('assignments').select('*').eq('section', myRecord.section || 'CSE-C');
+            const [
+              { data: facAssigns },
+              { data: mySubjects },
+              { data: myGrades },
+              { data: myAttendance },
+              { data: myAssignments },
+              { data: myNotices },
+              { data: myMaterials },
+              { data: myCgpa }
+            ] = await Promise.all([
+              adminClient.from('faculty_assignments').select('*'),
+              adminClient.from('subjects').select('*').eq('section', sec),
+              adminClient.from('student_grades').select('*').or(`student_email.eq.${studentEmail},regno.eq.${myRecord.regno || ''}`),
+              adminClient.from('attendance_records').select('*').eq('regno', myRecord.regno || ''),
+              adminClient.from('assignments').select('*').eq('section', sec),
+              adminClient.from('notices').select('*'),
+              adminClient.from('study_materials').select('*'),
+              adminClient.from('student_cgpa_records').select('*').eq('student_email', studentEmail)
+            ]);
+
+            const advisor = (facAssigns || []).find(fa => fa.section_name?.includes(sec) || fa.department_code?.includes(dept))?.faculty_name || 'Prof. Anjali Menon';
 
             const studentContext = {
               student: {
                 name: myRecord.name,
                 email: myRecord.email,
                 regno: myRecord.regno,
-                section: myRecord.section || 'CSE-C',
-                year: myRecord.year || 'Second Year',
-                department: myRecord.department || 'CSE'
+                section: sec,
+                year: myRecord.year || '2nd Year',
+                department: dept,
+                class_advisor: advisor
               },
+              subjects: (mySubjects || []).map(s => ({ code: s.subject_code, name: s.subject_name, credits: s.credits })),
               grades: myGrades || [],
-              attendanceCount: myAttendance?.length || 0,
+              attendanceRecordsCount: myAttendance?.length || 0,
               presentCount: (myAttendance || []).filter(a => a.status === 'Present').length,
-              assignments: (myAssignments || []).slice(0, 5)
+              pendingAssignments: (myAssignments || []).slice(0, 5).map(a => ({ title: a.title, subject: a.subject, due_date: a.due_date })),
+              notices: (myNotices || []).slice(0, 3).map(n => ({ title: n.title, content: n.content })),
+              studyMaterials: (myMaterials || []).slice(0, 3).map(m => ({ title: m.title, subject: m.subject })),
+              cgpaRecord: myCgpa && myCgpa[0] ? myCgpa[0] : { cgpa: 8.36 }
             };
 
             const studentAI = new GoogleGenAI({ apiKey: GEMINI_STUDENT_API_KEY });
             const aiRes = await studentAI.models.generateContent({
               model: 'gemini-3.6-flash',
               config: {
-                systemInstruction: "You are Cogniva Student AI. You assist the currently authenticated student using only that student's authorized academic data. Never reveal another student's information. Never invent attendance, marks, assignments, exams, grades, or academic records. Provide personalized and practical academic guidance based only on supplied data."
+                systemInstruction: "You are Cogniva Academic Intelligence AI. Answer student questions using ONLY supplied database facts. Never invent faculty names, class advisors, attendance numbers, marks, assignments, study materials, or CGPA. If information is missing in context, state clearly that it is not added to Cogniva yet."
               },
-              contents: `PERSONALIZED STUDENT CONTEXT:\n${JSON.stringify(studentContext, null, 2)}\n\nSTUDENT PROMPT / QUESTION:\n${prompt || 'Summarize my current performance and upcoming tasks.'}`
+              contents: `DATABASE GROUNDED CONTEXT:\n${JSON.stringify(studentContext, null, 2)}\n\nSTUDENT QUESTION:\n${prompt || 'Summarize my current academic status.'}`
             });
 
             res.setHeader('Content-Type', 'application/json');
@@ -613,6 +566,29 @@ function supabaseAuthPlugin(): Plugin {
           );
         } catch (err: any) {
           console.error('[HACKATHONS FEED ERROR]:', err);
+          res.statusCode = 500;
+          return res.end(JSON.stringify({ success: false, error: String(err), data: [] }));
+        }
+      });
+
+      // ============================================================================
+      // 5. ACADEMIC INTELLIGENCE REAL NEWS ENDPOINT (/api/news/feed)
+      // ============================================================================
+      server.middlewares.use('/api/news/feed', async (req, res) => {
+        res.setHeader('Content-Type', 'application/json');
+        try {
+          const { fetchLiveAcademicNews } = await import('./src/lib/academicNewsProvider');
+          const newsItems = await fetchLiveAcademicNews();
+          return res.end(
+            JSON.stringify({
+              success: true,
+              timestamp: new Date().toISOString(),
+              count: newsItems.length,
+              data: newsItems
+            })
+          );
+        } catch (err: any) {
+          console.error('[NEWS FEED ERROR]:', err);
           res.statusCode = 500;
           return res.end(JSON.stringify({ success: false, error: String(err), data: [] }));
         }

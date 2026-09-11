@@ -22,6 +22,7 @@ import { askAdminAi, askFacultyAi, askStudentAi, generateIa2ComebackPlan, Comeba
 import { StrategyCenter } from '@/components/StrategyCenter';
 import { StudentHackathonsView } from '@/components/StudentHackathonsView';
 import { StudentExplainPanel } from '@/components/StudentExplainPanel';
+import { StudentEntryAlertModal } from '@/components/StudentEntryAlertModal';
 import {
   AdminHomeView,
   AcademicStructureView,
@@ -455,6 +456,7 @@ function Shell({ children }: { children: React.ReactNode }) {
           </div>
         </header>
         <div className="content-wrap">
+          {role === 'student' && <StudentEntryAlertModal />}
           <ErrorBoundary resetKey={location}>{children}</ErrorBoundary>
         </div>
       </main>
@@ -2019,8 +2021,12 @@ Subject Attendance Breakdown:
 ${rec.subjectAttendances.map(s => `- ${s.subjectName}: ${s.attendancePercentage}% (${s.status})`).join('\n')}
 
 Provide a concise, 2-3 sentence personalized academic advice/warning to this student about maintaining mandatory 75% attendance criteria and avoiding eligibility issues.`;
-      const response = await askStudentAi(prompt);
-      setAiAdvice(response);
+      const response = await askStudentAi(prompt, user?.email);
+      if (response && response.answer) {
+        setAiAdvice(response.answer);
+      } else {
+        setAiAdvice("Maintain at least 75% attendance across all subjects to fulfill department examination eligibility requirements.");
+      }
     } catch {
       setAiAdvice("Maintain at least 75% attendance across all subjects to fulfill department examination eligibility requirements.");
     } finally {
@@ -2192,8 +2198,12 @@ Strongest Subject: ${rec.highestGradeSubject ? rec.highestGradeSubject.subjectNa
 Subject Needing Attention: ${rec.lowestGradeSubject ? rec.lowestGradeSubject.subjectName + ' (' + rec.lowestGradeSubject.grade + ')' : 'None'}
 
 Provide a concise, 2-3 sentence personalized academic advice to this student on maintaining their strengths and improving lower-graded subjects.`;
-      const response = await askStudentAi(prompt);
-      setAiAdvice(response);
+      const response = await askStudentAi(prompt, user?.email);
+      if (response && response.answer) {
+        setAiAdvice(response.answer);
+      } else {
+        setAiAdvice("Cogniva Insight: Your strongest performance is in " + (rec.highestGradeSubject?.subjectName || "core subjects") + ". Focus revision time on " + (rec.lowestGradeSubject?.subjectName || "weaker subjects") + " to lift your overall grade.");
+      }
     } catch {
       setAiAdvice("Cogniva Insight: Your strongest performance is in " + (rec.highestGradeSubject?.subjectName || "core subjects") + ". Focus revision time on " + (rec.lowestGradeSubject?.subjectName || "weaker subjects") + " to lift your overall grade.");
     } finally {

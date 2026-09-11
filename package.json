@@ -9,7 +9,8 @@
   },
   "private": true,
   "dependencies": {
-    "@replit/connectors-sdk": "^0.4.1"
+    "@replit/connectors-sdk": "^0.4.1",
+    "pnpm": "^12.3.4"
   },
   "devDependencies": {
     "@esbuild/win32-x64": "0.27.3",

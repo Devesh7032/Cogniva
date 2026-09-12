@@ -3,7 +3,7 @@ import {
   Building2, CalendarDays, CheckCircle2, ChevronRight, Database, GraduationCap,
   Layers, LogOut, Plus, ShieldCheck, SlidersHorizontal, UserCheck, UserCog,
   UsersRound, BookOpen, Search, Filter, X, Upload, FileSpreadsheet, ArrowRight,
-  AlertTriangle, RefreshCw, Check, Edit, Trash2
+  AlertTriangle, RefreshCw, Check, Edit, Edit2, Trash2, Users
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { useAuth } from '@/lib/auth-context';
@@ -50,39 +50,39 @@ export function AdminHomeView({ onNavigate }: { onNavigate: (path: string, param
       <div className="welcome-row">
         <div>
           <div className="eyebrow">COGNIVA Administration</div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-100 tracking-tight">Academic Structure & User Management</h1>
-          <p className="lede text-slate-400 mt-1">Configure academic years, branches, sections, students and faculty access.</p>
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">Academic Structure & User Management</h1>
+          <p className="lede text-slate-500 mt-1">Configure academic years, branches, sections, students and faculty access.</p>
         </div>
       </div>
 
       {/* Quick Action Buttons & Real Database Counts */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        <div className="p-5 rounded-2xl bg-slate-900/80 border border-slate-800 flex items-center justify-between">
+        <div className="p-5 rounded-2xl bg-slate-50 border border-slate-200 flex items-center justify-between">
           <div>
-            <div className="text-xs uppercase font-semibold tracking-wider text-slate-400 mb-1">Students</div>
-            <div className="text-3xl font-black text-slate-100 font-mono">{loading ? '...' : counts.students}</div>
+            <div className="text-xs uppercase font-semibold tracking-wider text-slate-500 mb-1">Students</div>
+            <div className="text-3xl font-black text-slate-900 font-mono">{loading ? '...' : counts.students}</div>
             <div className="text-xs text-slate-500 mt-1">Real database count</div>
           </div>
-          <div className="w-12 h-12 rounded-xl bg-teal-500/10 border border-teal-500/30 flex items-center justify-center text-teal-400">
+          <div className="w-12 h-12 rounded-xl bg-teal-50 border border-teal-500/30 flex items-center justify-center text-teal-700">
             <GraduationCap size={22} />
           </div>
         </div>
 
-        <div className="p-5 rounded-2xl bg-slate-900/80 border border-slate-800 flex items-center justify-between">
+        <div className="p-5 rounded-2xl bg-slate-50 border border-slate-200 flex items-center justify-between">
           <div>
-            <div className="text-xs uppercase font-semibold tracking-wider text-slate-400 mb-1">Faculty</div>
-            <div className="text-3xl font-black text-slate-100 font-mono">{loading ? '...' : counts.faculty}</div>
+            <div className="text-xs uppercase font-semibold tracking-wider text-slate-500 mb-1">Faculty</div>
+            <div className="text-3xl font-black text-slate-900 font-mono">{loading ? '...' : counts.faculty}</div>
             <div className="text-xs text-slate-500 mt-1">Real database count</div>
           </div>
-          <div className="w-12 h-12 rounded-xl bg-violet-500/10 border border-violet-500/30 flex items-center justify-center text-violet-400">
+          <div className="w-12 h-12 rounded-xl bg-violet-500/10 border border-violet-500/30 flex items-center justify-center text-violet-700">
             <UsersRound size={22} />
           </div>
         </div>
 
-        <div className="p-5 rounded-2xl bg-slate-900/80 border border-slate-800 flex items-center justify-between">
+        <div className="p-5 rounded-2xl bg-slate-50 border border-slate-200 flex items-center justify-between">
           <div>
-            <div className="text-xs uppercase font-semibold tracking-wider text-slate-400 mb-1">Sections</div>
-            <div className="text-3xl font-black text-slate-100 font-mono">{loading ? '...' : counts.sections}</div>
+            <div className="text-xs uppercase font-semibold tracking-wider text-slate-500 mb-1">Sections</div>
+            <div className="text-3xl font-black text-slate-900 font-mono">{loading ? '...' : counts.sections}</div>
             <div className="text-xs text-slate-500 mt-1">Real database count</div>
           </div>
           <div className="w-12 h-12 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400">
@@ -90,10 +90,10 @@ export function AdminHomeView({ onNavigate }: { onNavigate: (path: string, param
           </div>
         </div>
 
-        <div className="p-5 rounded-2xl bg-slate-900/80 border border-slate-800 flex items-center justify-between">
+        <div className="p-5 rounded-2xl bg-slate-50 border border-slate-200 flex items-center justify-between">
           <div>
-            <div className="text-xs uppercase font-semibold tracking-wider text-slate-400 mb-1">Departments</div>
-            <div className="text-3xl font-black text-slate-100 font-mono">{loading ? '...' : counts.departments}</div>
+            <div className="text-xs uppercase font-semibold tracking-wider text-slate-500 mb-1">Departments</div>
+            <div className="text-3xl font-black text-slate-900 font-mono">{loading ? '...' : counts.departments}</div>
             <div className="text-xs text-slate-500 mt-1">Real database count</div>
           </div>
           <div className="w-12 h-12 rounded-xl bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center text-cyan-400">
@@ -103,8 +103,8 @@ export function AdminHomeView({ onNavigate }: { onNavigate: (path: string, param
       </div>
 
       {/* Quick Action Toolbar */}
-      <div className="p-4 rounded-2xl bg-slate-900/90 border border-slate-800 mb-8 flex flex-wrap gap-3 items-center justify-between">
-        <div className="text-sm font-semibold text-slate-300">Quick Administrative Actions:</div>
+      <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 mb-8 flex flex-wrap gap-3 items-center justify-between">
+        <div className="text-sm font-semibold text-slate-700">Quick Administrative Actions:</div>
         <div className="flex flex-wrap gap-3">
           <button className="button button-secondary text-xs flex items-center gap-2 py-2 px-4" onClick={() => setShowStudentImport(true)}>
             <FileSpreadsheet size={15} /> Import Students
@@ -120,13 +120,13 @@ export function AdminHomeView({ onNavigate }: { onNavigate: (path: string, param
 
       {/* Academic Structure Section Header */}
       <div className="mb-4">
-        <h2 className="text-xl font-bold text-slate-100">Academic Structure</h2>
-        <p className="text-xs text-slate-400">Select an academic year to drill down into departments and class sections.</p>
+        <h2 className="text-xl font-bold text-slate-900">Academic Structure</h2>
+        <p className="text-xs text-slate-500">Select an academic year to drill down into departments and class sections.</p>
       </div>
 
       {/* 4 Academic Year Primary Navigation Cards */}
       {loading ? (
-        <div className="p-8 text-center text-teal-400 bg-slate-900/50 rounded-2xl border border-slate-800">
+        <div className="p-8 text-center text-teal-700 bg-slate-50 rounded-2xl border border-slate-200">
           Loading Academic Structure from Supabase...
         </div>
       ) : (
@@ -135,18 +135,18 @@ export function AdminHomeView({ onNavigate }: { onNavigate: (path: string, param
             <div
               key={year.id}
               onClick={() => onNavigate('/admin/structure', { yearId: year.id })}
-              className="group p-6 rounded-2xl bg-slate-900/90 border border-slate-800 hover:border-teal-500/40 hover:bg-slate-900 transition-all cursor-pointer flex flex-col justify-between"
+              className="group p-6 rounded-2xl bg-slate-50 border border-slate-200 hover:border-teal-500/40 hover:bg-slate-50 transition-all cursor-pointer flex flex-col justify-between"
             >
               <div>
-                <div className="w-10 h-10 rounded-xl bg-teal-500/10 border border-teal-500/30 flex items-center justify-center text-teal-400 font-bold text-sm mb-4">
+                <div className="w-10 h-10 rounded-xl bg-teal-50 border border-teal-500/30 flex items-center justify-center text-teal-700 font-bold text-sm mb-4">
                   {year.code}
                 </div>
-                <h3 className="text-lg font-bold text-slate-100 group-hover:text-teal-300 transition-colors">
+                <h3 className="text-lg font-bold text-slate-900 group-hover:text-teal-700 transition-colors">
                   {year.name.toUpperCase()}
                 </h3>
-                <p className="text-xs text-slate-400 mt-1">{year.code} Cohort</p>
+                <p className="text-xs text-slate-500 mt-1">{year.code} Cohort</p>
               </div>
-              <div className="mt-6 pt-4 border-t border-slate-800/80 flex items-center justify-between text-xs font-semibold text-teal-400 group-hover:text-teal-300">
+              <div className="mt-6 pt-4 border-t border-slate-200 flex items-center justify-between text-xs font-semibold text-teal-700 group-hover:text-teal-700">
                 <span>View Branches →</span>
                 <ChevronRight size={16} className="transform group-hover:translate-x-1 transition-transform" />
               </div>
@@ -356,8 +356,8 @@ export function AcademicStructureView({ defaultYearId }: { defaultYearId?: strin
       <div className="welcome-row">
         <div>
           <div className="eyebrow">Academic Structure Drilldown</div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-100">Academic Hierarchy Management</h1>
-          <p className="lede text-slate-400 mt-1">Select Year → Select Branch (CSE) → Select Section.</p>
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900">Academic Hierarchy Management</h1>
+          <p className="lede text-slate-500 mt-1">Select Year → Select Branch (CSE) → Select Section.</p>
         </div>
         <div className="flex gap-3">
           <button className="button button-secondary text-xs py-2 px-3" onClick={() => setShowDeptModal(true)}>
@@ -370,14 +370,14 @@ export function AcademicStructureView({ defaultYearId }: { defaultYearId?: strin
       </div>
 
       {loading ? (
-        <div className="p-8 text-center text-teal-400 bg-slate-900/50 rounded-2xl border border-slate-800">
+        <div className="p-8 text-center text-teal-700 bg-slate-50 rounded-2xl border border-slate-200">
           Loading Academic Hierarchy from Supabase...
         </div>
       ) : (
         <div className="space-y-6">
           {/* STEP 1: ACADEMIC YEAR SELECTION TABS */}
           <div className="panel p-5">
-            <div className="text-xs uppercase font-bold tracking-wider text-slate-400 mb-3">1. Select Academic Year</div>
+            <div className="text-xs uppercase font-bold tracking-wider text-slate-500 mb-3">1. Select Academic Year</div>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               {years.map((year) => (
                 <button
@@ -385,15 +385,15 @@ export function AcademicStructureView({ defaultYearId }: { defaultYearId?: strin
                   onClick={() => { setSelectedYearId(year.id); setSelectedSectionId(null); }}
                   className={`p-4 rounded-xl border text-left flex items-center justify-between transition-all ${
                     selectedYearId === year.id
-                      ? 'bg-teal-500/10 border-teal-500/50 text-teal-300 font-bold shadow-lg shadow-teal-950/40'
-                      : 'bg-slate-950/60 border-slate-800 text-slate-300 hover:border-slate-700'
+                      ? 'bg-teal-50 border-teal-200 text-teal-700 font-bold shadow-lg shadow-teal-950/40'
+                      : 'bg-white border-slate-200 text-slate-700 hover:border-slate-300'
                   }`}
                 >
                   <div>
                     <div className="text-sm uppercase font-extrabold">{year.name}</div>
-                    <div className="text-xs text-slate-400">{year.code}</div>
+                    <div className="text-xs text-slate-500">{year.code}</div>
                   </div>
-                  <ChevronRight size={16} className={selectedYearId === year.id ? 'text-teal-400' : 'text-slate-600'} />
+                  <ChevronRight size={16} className={selectedYearId === year.id ? 'text-teal-700' : 'text-slate-600'} />
                 </button>
               ))}
             </div>
@@ -401,7 +401,7 @@ export function AcademicStructureView({ defaultYearId }: { defaultYearId?: strin
 
           {/* STEP 2: DEPARTMENT / BRANCH SELECTION */}
           <div className="panel p-5">
-            <div className="text-xs uppercase font-bold tracking-wider text-slate-400 mb-3">
+            <div className="text-xs uppercase font-bold tracking-wider text-slate-500 mb-3">
               2. Select Branch / Department ({activeYear?.name})
             </div>
             <div className="flex flex-wrap gap-3">
@@ -412,7 +412,7 @@ export function AcademicStructureView({ defaultYearId }: { defaultYearId?: strin
                   className={`px-5 py-3 rounded-xl border text-sm font-semibold transition-all flex items-center gap-3 ${
                     selectedDeptId === dept.id
                       ? 'bg-teal-600 border-teal-500 text-white shadow-lg shadow-teal-900/50'
-                      : 'bg-slate-900 border-slate-800 text-slate-300 hover:border-slate-700'
+                      : 'bg-slate-50 border-slate-200 text-slate-700 hover:border-slate-300'
                   }`}
                 >
                   <Building2 size={16} />
@@ -427,10 +427,10 @@ export function AcademicStructureView({ defaultYearId }: { defaultYearId?: strin
             {/* Sections List */}
             <div className="panel p-5 md:col-span-1">
               <div className="flex items-center justify-between mb-4">
-                <div className="text-xs uppercase font-bold tracking-wider text-slate-400">
+                <div className="text-xs uppercase font-bold tracking-wider text-slate-500">
                   3. Sections under {activeDept?.code} ({activeYear?.code})
                 </div>
-                <button className="text-xs text-teal-400 hover:underline flex items-center gap-1" onClick={() => setShowSecModal(true)}>
+                <button className="text-xs text-teal-700 hover:underline flex items-center gap-1" onClick={() => setShowSecModal(true)}>
                   <Plus size={12} /> Add
                 </button>
               </div>
@@ -443,8 +443,8 @@ export function AcademicStructureView({ defaultYearId }: { defaultYearId?: strin
                       onClick={() => setSelectedSectionId(sec.id)}
                       className={`p-3.5 rounded-xl border text-left flex items-center justify-between transition-all ${
                         activeSection?.id === sec.id
-                          ? 'bg-teal-500/10 border-teal-500/50 text-teal-300 font-bold'
-                          : 'bg-slate-950/60 border-slate-800/80 text-slate-300 hover:border-slate-700'
+                          ? 'bg-teal-50 border-teal-200 text-teal-700 font-bold'
+                          : 'bg-white border-slate-200 text-slate-700 hover:border-slate-300'
                       }`}
                     >
                       <span className="font-bold text-sm">{sec.name}</span>
@@ -453,7 +453,7 @@ export function AcademicStructureView({ defaultYearId }: { defaultYearId?: strin
                   ))}
                 </div>
               ) : (
-                <div className="p-6 text-center text-slate-500 bg-slate-950/40 border border-slate-800/60 rounded-xl text-xs">
+                <div className="p-6 text-center text-slate-500 bg-white border border-slate-200 rounded-xl text-xs">
                   No sections created for {activeDept?.code} in {activeYear?.name} yet.
                 </div>
               )}
@@ -463,30 +463,30 @@ export function AcademicStructureView({ defaultYearId }: { defaultYearId?: strin
             <div className="panel p-6 md:col-span-2 space-y-6">
               {activeSection ? (
                 <div>
-                  <div className="flex items-center justify-between border-b border-slate-800 pb-4 mb-5">
+                  <div className="flex items-center justify-between border-b border-slate-200 pb-4 mb-5">
                     <div>
-                      <div className="eyebrow text-teal-400">{activeYear?.name} → {activeDept?.code}</div>
-                      <h2 className="text-2xl font-black text-slate-100">{activeSection.name}</h2>
+                      <div className="eyebrow text-teal-700">{activeYear?.name} → {activeDept?.code}</div>
+                      <h2 className="text-2xl font-black text-slate-900">{activeSection.name}</h2>
                     </div>
                     <span className="chip chip-teal text-sm py-1 px-3">Active Section</span>
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-                    <div className="p-4 rounded-xl bg-slate-950/80 border border-slate-800">
-                      <div className="text-xs uppercase font-semibold text-slate-400 mb-1">Students</div>
-                      <div className="text-2xl font-bold text-slate-200 font-mono">{sectionStudents.length}</div>
+                    <div className="p-4 rounded-xl bg-white border border-slate-200">
+                      <div className="text-xs uppercase font-semibold text-slate-500 mb-1">Students</div>
+                      <div className="text-2xl font-bold text-slate-800 font-mono">{sectionStudents.length}</div>
                       <p className="text-xs text-slate-500 mt-1">Enrolled in {activeSection.name}</p>
                     </div>
 
-                    <div className="p-4 rounded-xl bg-slate-950/80 border border-slate-800">
-                      <div className="text-xs uppercase font-semibold text-slate-400 mb-1">Subjects / Courses</div>
-                      <div className="text-2xl font-bold text-teal-400 font-mono">{sectionSubjects.length}</div>
+                    <div className="p-4 rounded-xl bg-white border border-slate-200">
+                      <div className="text-xs uppercase font-semibold text-slate-500 mb-1">Subjects / Courses</div>
+                      <div className="text-2xl font-bold text-teal-700 font-mono">{sectionSubjects.length}</div>
                       <p className="text-xs text-slate-500 mt-1">Created for {activeSection.name}</p>
                     </div>
 
-                    <div className="p-4 rounded-xl bg-slate-950/80 border border-slate-800">
-                      <div className="text-xs uppercase font-semibold text-slate-400 mb-1">Faculty Assigned</div>
-                      <div className="text-2xl font-bold text-violet-400 font-mono">{sectionAssignments.length}</div>
+                    <div className="p-4 rounded-xl bg-white border border-slate-200">
+                      <div className="text-xs uppercase font-semibold text-slate-500 mb-1">Faculty Assigned</div>
+                      <div className="text-2xl font-bold text-violet-700 font-mono">{sectionAssignments.length}</div>
                       <p className="text-xs text-slate-500 mt-1">Subject assignments</p>
                     </div>
                   </div>
@@ -494,8 +494,8 @@ export function AcademicStructureView({ defaultYearId }: { defaultYearId?: strin
                   {/* SUBJECTS MANAGEMENT FOR THIS SECTION */}
                   <div className="mb-6 space-y-3">
                     <div className="flex items-center justify-between">
-                      <h3 className="text-sm font-bold text-slate-200 uppercase tracking-wider flex items-center gap-2">
-                        <BookOpen size={16} className="text-teal-400" /> Subjects / Courses ({activeSection.name})
+                      <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider flex items-center gap-2">
+                        <BookOpen size={16} className="text-teal-700" /> Subjects / Courses ({activeSection.name})
                       </h3>
                       <button
                         className="button button-secondary text-xs py-1.5 px-3 flex items-center gap-1 cursor-pointer"
@@ -508,14 +508,14 @@ export function AcademicStructureView({ defaultYearId }: { defaultYearId?: strin
                     {sectionSubjects.length > 0 ? (
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         {sectionSubjects.map((sub) => (
-                          <div key={sub.id} className="p-3 rounded-xl bg-slate-950/80 border border-slate-800 flex items-center justify-between text-xs">
+                          <div key={sub.id} className="p-3 rounded-xl bg-white border border-slate-200 flex items-center justify-between text-xs">
                             <div>
-                              <div className="font-bold text-slate-100">{sub.subject_name}</div>
-                              <div className="text-slate-400 font-mono">{sub.subject_code} • {sub.semester || 'Sem 4'}</div>
+                              <div className="font-bold text-slate-900">{sub.subject_name}</div>
+                              <div className="text-slate-500 font-mono">{sub.subject_code} • {sub.semester || 'Sem 4'}</div>
                             </div>
                             <button
                               onClick={() => handleDeleteSubjectClick(sub.id)}
-                              className="p-1.5 rounded-lg bg-slate-900 text-slate-500 hover:text-rose-400 hover:bg-slate-800 transition-colors"
+                              className="p-1.5 rounded-lg bg-slate-50 text-slate-500 hover:text-rose-400 hover:bg-slate-100 transition-colors"
                               title="Delete Subject"
                             >
                               <Trash2 size={13} />
@@ -524,7 +524,7 @@ export function AcademicStructureView({ defaultYearId }: { defaultYearId?: strin
                         ))}
                       </div>
                     ) : (
-                      <div className="p-4 text-center text-slate-500 bg-slate-950/60 border border-slate-800 rounded-xl text-xs">
+                      <div className="p-4 text-center text-slate-500 bg-white border border-slate-200 rounded-xl text-xs">
                         No subjects created for {activeSection.name} yet. Click "+ Add Subject" to create one.
                       </div>
                     )}
@@ -533,8 +533,8 @@ export function AcademicStructureView({ defaultYearId }: { defaultYearId?: strin
                   {/* FACULTY SUBJECT ASSIGNMENTS FOR THIS SECTION */}
                   <div className="mb-6 space-y-3">
                     <div className="flex items-center justify-between">
-                      <h3 className="text-sm font-bold text-slate-200 uppercase tracking-wider flex items-center gap-2">
-                        <UserCheck size={16} className="text-violet-400" /> Faculty Subject Assignments ({activeSection.name})
+                      <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider flex items-center gap-2">
+                        <UserCheck size={16} className="text-violet-700" /> Faculty Subject Assignments ({activeSection.name})
                       </h3>
                       <button
                         className="button button-secondary text-xs py-1.5 px-3 flex items-center gap-1 cursor-pointer"
@@ -548,15 +548,15 @@ export function AcademicStructureView({ defaultYearId }: { defaultYearId?: strin
                     {sectionAssignments.length > 0 ? (
                       <div className="space-y-2">
                         {sectionAssignments.map((asg) => (
-                          <div key={asg.id} className="p-3 rounded-xl bg-slate-950/80 border border-slate-800 flex items-center justify-between text-xs">
+                          <div key={asg.id} className="p-3 rounded-xl bg-white border border-slate-200 flex items-center justify-between text-xs">
                             <div>
-                              <strong className="text-slate-100">{asg.faculty_name || asg.faculty_email}</strong>
-                              <span className="text-slate-400 ml-2 font-mono">({asg.faculty_email})</span>
-                              <div className="text-teal-400 font-semibold mt-0.5">Assigned Subject: {asg.subject_name} ({asg.subject_code})</div>
+                              <strong className="text-slate-900">{asg.faculty_name || asg.faculty_email}</strong>
+                              <span className="text-slate-500 ml-2 font-mono">({asg.faculty_email})</span>
+                              <div className="text-teal-700 font-semibold mt-0.5">Assigned Subject: {asg.subject_name} ({asg.subject_code})</div>
                             </div>
                             <button
                               onClick={() => handleRemoveAssignmentClick(asg.id)}
-                              className="p-1.5 rounded-lg bg-slate-900 text-slate-500 hover:text-rose-400 hover:bg-slate-800 transition-colors"
+                              className="p-1.5 rounded-lg bg-slate-50 text-slate-500 hover:text-rose-400 hover:bg-slate-100 transition-colors"
                               title="Remove Assignment"
                             >
                               <X size={13} />
@@ -565,7 +565,7 @@ export function AcademicStructureView({ defaultYearId }: { defaultYearId?: strin
                         ))}
                       </div>
                     ) : (
-                      <div className="p-4 text-center text-slate-500 bg-slate-950/60 border border-slate-800 rounded-xl text-xs">
+                      <div className="p-4 text-center text-slate-500 bg-white border border-slate-200 rounded-xl text-xs">
                         No faculty assigned to subjects in {activeSection.name} yet.
                       </div>
                     )}
@@ -574,15 +574,15 @@ export function AcademicStructureView({ defaultYearId }: { defaultYearId?: strin
                   {/* ENROLLED STUDENTS LIST */}
                   {sectionStudents.length > 0 ? (
                     <div className="mb-6 space-y-2">
-                      <div className="text-xs font-bold text-slate-300 uppercase tracking-wider">Enrolled Students ({activeSection.name}):</div>
-                      <div className="max-h-40 overflow-y-auto space-y-1.5 p-2 bg-slate-950/80 border border-slate-800 rounded-xl">
+                      <div className="text-xs font-bold text-slate-700 uppercase tracking-wider">Enrolled Students ({activeSection.name}):</div>
+                      <div className="max-h-40 overflow-y-auto space-y-1.5 p-2 bg-white border border-slate-200 rounded-xl">
                         {sectionStudents.map((s) => (
-                          <div key={s.id} className="p-2.5 rounded-lg bg-slate-900/60 border border-slate-800 flex items-center justify-between text-xs">
+                          <div key={s.id} className="p-2.5 rounded-lg bg-slate-50 border border-slate-200 flex items-center justify-between text-xs">
                             <div>
-                              <strong className="text-slate-100">{s.name}</strong>
-                              <span className="text-slate-400 font-mono ml-2">({s.regno})</span>
+                              <strong className="text-slate-900">{s.name}</strong>
+                              <span className="text-slate-500 font-mono ml-2">({s.regno})</span>
                             </div>
-                            <span className="text-slate-400 font-mono">{s.email}</span>
+                            <span className="text-slate-500 font-mono">{s.email}</span>
                           </div>
                         ))}
                       </div>
@@ -611,40 +611,40 @@ export function AcademicStructureView({ defaultYearId }: { defaultYearId?: strin
       {/* CREATE SUBJECT MODAL */}
       {showSubjectModal && activeSection && (
         <div className="drawer-backdrop" onClick={() => setShowSubjectModal(false)}>
-          <div className="modal-card p-6 bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full" onClick={(e) => e.stopPropagation()}>
+          <div className="modal-card p-6 bg-slate-50 border border-slate-200 rounded-2xl max-w-md w-full" onClick={(e) => e.stopPropagation()}>
             <div className="flex justify-between items-center mb-4">
-              <h2 className="text-lg font-bold text-slate-100">Add Subject to {activeSection.name}</h2>
+              <h2 className="text-lg font-bold text-slate-900">Add Subject to {activeSection.name}</h2>
               <button className="icon-button" onClick={() => setShowSubjectModal(false)}><X size={18} /></button>
             </div>
             <form onSubmit={handleCreateSubjectSubmit} className="space-y-4 text-xs">
               <div>
-                <label className="block text-slate-400 font-semibold mb-1">Subject Name</label>
+                <label className="block text-slate-500 font-semibold mb-1">Subject Name</label>
                 <input
                   required
                   value={subjName}
                   onChange={(e) => setSubjName(e.target.value)}
                   placeholder="e.g. Database Management Systems"
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-slate-100"
+                  className="w-full bg-white border border-slate-200 rounded-xl p-2.5 text-slate-900"
                 />
               </div>
               <div>
-                <label className="block text-slate-400 font-semibold mb-1">Subject Code</label>
+                <label className="block text-slate-500 font-semibold mb-1">Subject Code</label>
                 <input
                   required
                   value={subjCode}
                   onChange={(e) => setSubjCode(e.target.value)}
                   placeholder="e.g. DBMS or CS301"
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-slate-100 uppercase font-mono"
+                  className="w-full bg-white border border-slate-200 rounded-xl p-2.5 text-slate-900 uppercase font-mono"
                 />
               </div>
               <div>
-                <label className="block text-slate-400 font-semibold mb-1">Semester</label>
+                <label className="block text-slate-500 font-semibold mb-1">Semester</label>
                 <input
                   required
                   value={subjSem}
                   onChange={(e) => setSubjSem(e.target.value)}
                   placeholder="e.g. Semester 4"
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-slate-100"
+                  className="w-full bg-white border border-slate-200 rounded-xl p-2.5 text-slate-900"
                 />
               </div>
               <button type="submit" className="button button-primary full-width py-2.5">Save Subject to Supabase</button>
@@ -656,18 +656,18 @@ export function AcademicStructureView({ defaultYearId }: { defaultYearId?: strin
       {/* ASSIGN FACULTY TO SUBJECT MODAL */}
       {showAssignSubjModal && activeSection && (
         <div className="drawer-backdrop" onClick={() => setShowAssignSubjModal(false)}>
-          <div className="modal-card p-6 bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full" onClick={(e) => e.stopPropagation()}>
+          <div className="modal-card p-6 bg-slate-50 border border-slate-200 rounded-2xl max-w-md w-full" onClick={(e) => e.stopPropagation()}>
             <div className="flex justify-between items-center mb-4">
-              <h2 className="text-lg font-bold text-slate-100">Assign Faculty to Subject ({activeSection.name})</h2>
+              <h2 className="text-lg font-bold text-slate-900">Assign Faculty to Subject ({activeSection.name})</h2>
               <button className="icon-button" onClick={() => setShowAssignSubjModal(false)}><X size={18} /></button>
             </div>
             <form onSubmit={handleAssignFacultySubmit} className="space-y-4 text-xs">
               <div>
-                <label className="block text-slate-400 font-semibold mb-1">Select Faculty Member</label>
+                <label className="block text-slate-500 font-semibold mb-1">Select Faculty Member</label>
                 <select
                   value={selectedFacEmail}
                   onChange={(e) => setSelectedFacEmail(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-slate-100"
+                  className="w-full bg-white border border-slate-200 rounded-xl p-2.5 text-slate-900"
                 >
                   {allFaculty.map((f) => (
                     <option key={f.id} value={f.email}>{f.name} ({f.email})</option>
@@ -675,11 +675,11 @@ export function AcademicStructureView({ defaultYearId }: { defaultYearId?: strin
                 </select>
               </div>
               <div>
-                <label className="block text-slate-400 font-semibold mb-1">Select Subject / Course</label>
+                <label className="block text-slate-500 font-semibold mb-1">Select Subject / Course</label>
                 <select
                   value={selectedSubjCode}
                   onChange={(e) => setSelectedSubjCode(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-slate-100 font-mono"
+                  className="w-full bg-white border border-slate-200 rounded-xl p-2.5 text-slate-900 font-mono"
                 >
                   {sectionSubjects.map((s) => (
                     <option key={s.id} value={s.subject_code}>{s.subject_name} ({s.subject_code})</option>
@@ -695,31 +695,31 @@ export function AcademicStructureView({ defaultYearId }: { defaultYearId?: strin
       {/* Add Department Modal */}
       {showDeptModal && (
         <div className="drawer-backdrop" onClick={() => setShowDeptModal(false)}>
-          <div className="modal-card p-6 bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full" onClick={(e) => e.stopPropagation()}>
+          <div className="modal-card p-6 bg-slate-50 border border-slate-200 rounded-2xl max-w-md w-full" onClick={(e) => e.stopPropagation()}>
             <div className="flex justify-between items-center mb-4">
-              <h2 className="text-lg font-bold text-slate-100">Add New Branch / Department</h2>
+              <h2 className="text-lg font-bold text-slate-900">Add New Branch / Department</h2>
               <button className="icon-button" onClick={() => setShowDeptModal(false)}><X size={18} /></button>
             </div>
             {actionError && <p className="text-rose-400 text-xs mb-3">{actionError}</p>}
             <form onSubmit={handleAddDept} className="space-y-4">
               <div>
-                <label className="block text-xs text-slate-400 mb-1">Department Name</label>
+                <label className="block text-xs text-slate-500 mb-1">Department Name</label>
                 <input
                   required
                   value={newDeptName}
                   onChange={(e) => setNewDeptName(e.target.value)}
                   placeholder="e.g. Information Technology"
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-sm text-slate-100"
+                  className="w-full bg-white border border-slate-200 rounded-xl p-2.5 text-sm text-slate-900"
                 />
               </div>
               <div>
-                <label className="block text-xs text-slate-400 mb-1">Department Code</label>
+                <label className="block text-xs text-slate-500 mb-1">Department Code</label>
                 <input
                   required
                   value={newDeptCode}
                   onChange={(e) => setNewDeptCode(e.target.value)}
                   placeholder="e.g. IT"
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-sm text-slate-100 uppercase"
+                  className="w-full bg-white border border-slate-200 rounded-xl p-2.5 text-sm text-slate-900 uppercase"
                 />
               </div>
               <button type="submit" className="button button-primary full-width">Create Department</button>
@@ -731,21 +731,21 @@ export function AcademicStructureView({ defaultYearId }: { defaultYearId?: strin
       {/* Add Section Modal */}
       {showSecModal && (
         <div className="drawer-backdrop" onClick={() => setShowSecModal(false)}>
-          <div className="modal-card p-6 bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full" onClick={(e) => e.stopPropagation()}>
+          <div className="modal-card p-6 bg-slate-50 border border-slate-200 rounded-2xl max-w-md w-full" onClick={(e) => e.stopPropagation()}>
             <div className="flex justify-between items-center mb-4">
-              <h2 className="text-lg font-bold text-slate-100">Add Section to {activeDept?.code}</h2>
+              <h2 className="text-lg font-bold text-slate-900">Add Section to {activeDept?.code}</h2>
               <button className="icon-button" onClick={() => setShowSecModal(false)}><X size={18} /></button>
             </div>
             {actionError && <p className="text-rose-400 text-xs mb-3">{actionError}</p>}
             <form onSubmit={handleAddSection} className="space-y-4">
               <div>
-                <label className="block text-xs text-slate-400 mb-1">Section Name</label>
+                <label className="block text-xs text-slate-500 mb-1">Section Name</label>
                 <input
                   required
                   value={newSecName}
                   onChange={(e) => setNewSecName(e.target.value)}
                   placeholder={`e.g. ${activeDept?.code}-K`}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-sm text-slate-100 uppercase"
+                  className="w-full bg-white border border-slate-200 rounded-xl p-2.5 text-sm text-slate-900 uppercase"
                 />
               </div>
               <button type="submit" className="button button-primary full-width">Create Section</button>
@@ -907,8 +907,8 @@ export function FacultyAccessView() {
       <div className="welcome-row flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
           <div className="eyebrow">Access & Course Administration</div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-100">Faculty Access & Subject Management</h1>
-          <p className="lede text-slate-400 mt-1">Assign class section boundaries and subjects to faculty members.</p>
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900">Faculty Access & Subject Management</h1>
+          <p className="lede text-slate-500 mt-1">Assign class section boundaries and subjects to faculty members.</p>
         </div>
         <button
           className="button button-primary text-xs py-2 px-4 flex items-center gap-2"
@@ -922,13 +922,13 @@ export function FacultyAccessView() {
       </div>
 
       {toastMessage && (
-        <div className="p-4 mb-4 rounded-xl bg-teal-500/20 border border-teal-500/40 text-teal-300 text-sm font-semibold flex items-center gap-2">
+        <div className="p-4 mb-4 rounded-xl bg-teal-500/20 border border-teal-500/40 text-teal-700 text-sm font-semibold flex items-center gap-2">
           <CheckCircle2 size={16} /> {toastMessage}
         </div>
       )}
 
       {loading ? (
-        <div className="p-8 text-center text-teal-400 bg-slate-900/50 rounded-2xl border border-slate-800">
+        <div className="p-8 text-center text-teal-700 bg-slate-50 rounded-2xl border border-slate-200">
           Loading Faculty Access & Subject Data from Supabase...
         </div>
       ) : (
@@ -936,15 +936,15 @@ export function FacultyAccessView() {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* ASSIGNMENT FORM */}
             <div className="panel p-6 lg:col-span-2">
-              <h2 className="text-lg font-bold text-slate-100 mb-4">Assign Section Access</h2>
+              <h2 className="text-lg font-bold text-slate-900 mb-4">Assign Section Access</h2>
 
               <div className="space-y-5">
                 {/* Search & Select Faculty */}
                 <div>
-                  <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5 flex justify-between items-center">
+                  <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5 flex justify-between items-center">
                     <span>Search & Select Faculty Member</span>
                     {facSearchTerm && (
-                      <button type="button" className="text-teal-400 hover:underline font-normal text-[11px]" onClick={() => setFacSearchTerm('')}>
+                      <button type="button" className="text-teal-700 hover:underline font-normal text-[11px]" onClick={() => setFacSearchTerm('')}>
                         Clear Search
                       </button>
                     )}
@@ -957,7 +957,7 @@ export function FacultyAccessView() {
                       placeholder="Search by Name, Email, or Employee ID..."
                       value={facSearchTerm}
                       onChange={(e) => setFacSearchTerm(e.target.value)}
-                      className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-9 pr-3 py-2 text-xs text-slate-100 placeholder-slate-500 focus:border-teal-500"
+                      className="w-full bg-white border border-slate-200 rounded-xl pl-9 pr-3 py-2 text-xs text-slate-900 placeholder-slate-500 focus:border-teal-500"
                     />
                   </div>
 
@@ -965,7 +965,7 @@ export function FacultyAccessView() {
                     <select
                       value={selectedFacultyId}
                       onChange={(e) => setSelectedFacultyId(e.target.value)}
-                      className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-slate-100 focus:border-teal-500 font-medium"
+                      className="w-full bg-white border border-slate-200 rounded-xl p-3 text-sm text-slate-900 focus:border-teal-500 font-medium"
                     >
                       {facultyMembers
                         .filter((f) => {
@@ -984,7 +984,7 @@ export function FacultyAccessView() {
                         ))}
                     </select>
                   ) : (
-                    <p className="text-xs text-slate-500 bg-slate-950/60 p-3 rounded-xl border border-slate-800">
+                    <p className="text-xs text-slate-500 bg-white p-3 rounded-xl border border-slate-200">
                       No faculty profiles imported yet. Click "Import Faculty" on the dashboard.
                     </p>
                   )}
@@ -992,13 +992,13 @@ export function FacultyAccessView() {
 
                 {/* Select Year */}
                 <div>
-                  <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
+                  <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">
                     Academic Year
                   </label>
                   <select
                     value={selectedYearId}
                     onChange={(e) => setSelectedYearId(e.target.value)}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-slate-100 focus:border-teal-500"
+                    className="w-full bg-white border border-slate-200 rounded-xl p-3 text-sm text-slate-900 focus:border-teal-500"
                   >
                     {years.map((y) => (
                       <option key={y.id} value={y.id}>
@@ -1010,13 +1010,13 @@ export function FacultyAccessView() {
 
                 {/* Select Department */}
                 <div>
-                  <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
+                  <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">
                     Department
                   </label>
                   <select
                     value={selectedDeptId}
                     onChange={(e) => setSelectedDeptId(e.target.value)}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-slate-100 focus:border-teal-500"
+                    className="w-full bg-white border border-slate-200 rounded-xl p-3 text-sm text-slate-900 focus:border-teal-500"
                   >
                     {departments.map((d) => (
                       <option key={d.id} value={d.id}>
@@ -1028,11 +1028,11 @@ export function FacultyAccessView() {
 
                 {/* Checkboxes for Sections */}
                 <div>
-                  <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
+                  <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
                     Sections
                   </label>
                   {filteredSections.length > 0 ? (
-                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 p-4 bg-slate-950/80 border border-slate-800 rounded-xl">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 p-4 bg-white border border-slate-200 rounded-xl">
                       {filteredSections.map((sec) => {
                         const isChecked = selectedSectionIds.includes(sec.id);
                         return (
@@ -1040,15 +1040,15 @@ export function FacultyAccessView() {
                             key={sec.id}
                             className={`flex items-center gap-2.5 p-3 rounded-lg border cursor-pointer transition-all ${
                               isChecked
-                                ? 'bg-teal-500/10 border-teal-500/50 text-teal-300 font-semibold'
-                                : 'bg-slate-900/60 border-slate-800 text-slate-300 hover:border-slate-700'
+                                ? 'bg-teal-50 border-teal-200 text-teal-700 font-semibold'
+                                : 'bg-slate-50 border-slate-200 text-slate-700 hover:border-slate-300'
                             }`}
                           >
                             <input
                               type="checkbox"
                               checked={isChecked}
                               onChange={() => toggleSectionCheckbox(sec.id)}
-                              className="rounded border-slate-700 text-teal-600 focus:ring-teal-500"
+                              className="rounded border-slate-300 text-teal-600 focus:ring-teal-500"
                             />
                             <span className="text-sm">{sec.name}</span>
                           </label>
@@ -1056,7 +1056,7 @@ export function FacultyAccessView() {
                       })}
                     </div>
                   ) : (
-                    <p className="text-xs text-slate-500 p-3 bg-slate-950/60 border border-slate-800 rounded-xl">
+                    <p className="text-xs text-slate-500 p-3 bg-white border border-slate-200 rounded-xl">
                       No sections found for this year and department.
                     </p>
                   )}
@@ -1076,15 +1076,15 @@ export function FacultyAccessView() {
 
             {/* CURRENT ASSIGNMENTS SUMMARY PANEL */}
             <div className="panel p-6 lg:col-span-1">
-              <h2 className="text-lg font-bold text-slate-100 mb-4">Assigned Access List</h2>
+              <h2 className="text-lg font-bold text-slate-900 mb-4">Assigned Access List</h2>
               {facultyMembers.length > 0 ? (
                 <div className="space-y-4 max-h-[500px] overflow-y-auto pr-1">
                   {facultyMembers.map((fac) => {
                     const facSecs = assignments.filter((a) => a.faculty_id === fac.id);
                     return (
-                      <div key={fac.id} className="p-4 rounded-xl bg-slate-950/80 border border-slate-800">
-                        <div className="font-bold text-slate-100 text-sm">{fac.full_name}</div>
-                        <div className="text-xs text-slate-400 font-mono">{fac.email}</div>
+                      <div key={fac.id} className="p-4 rounded-xl bg-white border border-slate-200">
+                        <div className="font-bold text-slate-900 text-sm">{fac.full_name}</div>
+                        <div className="text-xs text-slate-500 font-mono">{fac.email}</div>
                         <div className="mt-3 flex flex-wrap gap-1.5">
                           {facSecs.length > 0 ? (
                             facSecs.map((a) => (
@@ -1112,8 +1112,8 @@ export function FacultyAccessView() {
           <div className="panel p-6">
             <div className="flex items-center justify-between mb-4">
               <div>
-                <h2 className="text-lg font-bold text-slate-100">SUBJECT MANAGEMENT</h2>
-                <p className="text-xs text-slate-400 mt-0.5">Assign subjects to faculty members for their section boundary.</p>
+                <h2 className="text-lg font-bold text-slate-900">SUBJECT MANAGEMENT</h2>
+                <p className="text-xs text-slate-500 mt-0.5">Assign subjects to faculty members for their section boundary.</p>
               </div>
               <button
                 className="button button-primary text-xs py-2 px-3.5 flex items-center gap-1.5 cursor-pointer"
@@ -1129,21 +1129,21 @@ export function FacultyAccessView() {
             {allSubjectAssignments.length > 0 ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 {allSubjectAssignments.map((subAsg) => (
-                  <div key={subAsg.id} className="p-4 rounded-2xl bg-slate-950/80 border border-slate-800 flex items-start justify-between text-xs">
+                  <div key={subAsg.id} className="p-4 rounded-2xl bg-white border border-slate-200 flex items-start justify-between text-xs">
                     <div>
                       <div className="flex items-center gap-2 mb-1">
-                        <span className="font-mono font-bold text-teal-400 px-2 py-0.5 bg-teal-500/10 border border-teal-500/30 rounded text-[11px]">
+                        <span className="font-mono font-bold text-teal-700 px-2 py-0.5 bg-teal-50 border border-teal-500/30 rounded text-[11px]">
                           {subAsg.subject_code}
                         </span>
-                        <span className="text-slate-400 font-medium">({subAsg.section_name || subAsg.section})</span>
+                        <span className="text-slate-500 font-medium">({subAsg.section_name || subAsg.section})</span>
                       </div>
-                      <h4 className="text-sm font-bold text-slate-100">{subAsg.subject_name}</h4>
-                      <div className="text-slate-300 font-semibold mt-1">Faculty: {subAsg.faculty_name}</div>
-                      <div className="text-slate-400 font-mono text-[11px]">{subAsg.faculty_email}</div>
+                      <h4 className="text-sm font-bold text-slate-900">{subAsg.subject_name}</h4>
+                      <div className="text-slate-700 font-semibold mt-1">Faculty: {subAsg.faculty_name}</div>
+                      <div className="text-slate-500 font-mono text-[11px]">{subAsg.faculty_email}</div>
                     </div>
                     <button
                       onClick={() => handleRemoveSubjectAssignment(subAsg.id)}
-                      className="p-1.5 rounded-lg bg-slate-900 text-slate-500 hover:text-rose-400 hover:bg-slate-800 transition-colors"
+                      className="p-1.5 rounded-lg bg-slate-50 text-slate-500 hover:text-rose-400 hover:bg-slate-100 transition-colors"
                       title="Delete Subject Assignment"
                     >
                       <Trash2 size={13} />
@@ -1152,7 +1152,7 @@ export function FacultyAccessView() {
                 ))}
               </div>
             ) : (
-              <div className="p-8 text-center text-slate-500 bg-slate-950/60 border border-slate-800 rounded-2xl text-xs">
+              <div className="p-8 text-center text-slate-500 bg-white border border-slate-200 rounded-2xl text-xs">
                 No subjects assigned yet. Click "+ Add Subject" to create and assign a subject to a faculty member.
               </div>
             )}
@@ -1163,9 +1163,9 @@ export function FacultyAccessView() {
       {/* ADD SUBJECT MODAL */}
       {showAddSubjectModal && (
         <div className="drawer-backdrop" onClick={() => setShowAddSubjectModal(false)}>
-          <div className="modal-card p-6 bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full" onClick={(e) => e.stopPropagation()}>
+          <div className="modal-card p-6 bg-slate-50 border border-slate-200 rounded-2xl max-w-md w-full" onClick={(e) => e.stopPropagation()}>
             <div className="flex justify-between items-center mb-4">
-              <h2 className="text-lg font-bold text-slate-100">Add Subject / Assign Subject</h2>
+              <h2 className="text-lg font-bold text-slate-900">Add Subject / Assign Subject</h2>
               <button className="icon-button" onClick={() => setShowAddSubjectModal(false)}><X size={18} /></button>
             </div>
 
@@ -1177,12 +1177,12 @@ export function FacultyAccessView() {
 
             <form onSubmit={handleAddSubjectSubmit} className="space-y-4 text-xs">
               <div>
-                <label className="block text-slate-400 font-semibold mb-1">Faculty:</label>
+                <label className="block text-slate-500 font-semibold mb-1">Faculty:</label>
                 <select
                   required
                   value={subjFormFacultyId}
                   onChange={(e) => setSubjFormFacultyId(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-slate-100"
+                  className="w-full bg-white border border-slate-200 rounded-xl p-2.5 text-slate-900"
                 >
                   <option value="">[ Select Faculty ▼ ]</option>
                   {facultyMembers.map((fac) => (
@@ -1194,13 +1194,13 @@ export function FacultyAccessView() {
               </div>
 
               <div>
-                <label className="block text-slate-400 font-semibold mb-1">Section:</label>
+                <label className="block text-slate-500 font-semibold mb-1">Section:</label>
                 {allowedFacultyAssignments.length > 0 ? (
                   <select
                     required
                     value={subjFormSectionName}
                     onChange={(e) => setSubjFormSectionName(e.target.value)}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-slate-100"
+                    className="w-full bg-white border border-slate-200 rounded-xl p-2.5 text-slate-900"
                   >
                     {allowedFacultyAssignments.map((a) => (
                       <option key={a.id} value={a.section_name}>
@@ -1216,17 +1216,17 @@ export function FacultyAccessView() {
               </div>
 
               <div>
-                <label className="block text-slate-400 font-semibold mb-1">Subject Name:</label>
+                <label className="block text-slate-500 font-semibold mb-1">Subject Name:</label>
                 <input
                   required
                   value={subjFormSubjectName}
                   onChange={(e) => setSubjFormSubjectName(e.target.value)}
                   placeholder="Enter subject name (e.g. Database Management Systems)"
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-slate-100"
+                  className="w-full bg-white border border-slate-200 rounded-xl p-2.5 text-slate-900"
                 />
               </div>
 
-              <div className="flex justify-end gap-3 pt-4 border-t border-slate-800">
+              <div className="flex justify-end gap-3 pt-4 border-t border-slate-200">
                 <button
                   type="button"
                   className="button button-secondary py-2 px-4 text-xs"
@@ -1255,6 +1255,13 @@ export function FacultyAccessView() {
 // ============================================================================
 export function StudentManagementView() {
   const [students, setStudents] = useState<StudentMember[]>([]);
+  const [years, setYears] = useState<AcademicYear[]>([]);
+  const [departments, setDepartments] = useState<Department[]>([]);
+  const [sections, setSections] = useState<Section[]>([]);
+  const [selectedYearId, setSelectedYearId] = useState('');
+  const [selectedDeptId, setSelectedDeptId] = useState('');
+  const [selectedSectionId, setSelectedSectionId] = useState('');
+
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [showImportModal, setShowImportModal] = useState(false);
@@ -1263,22 +1270,47 @@ export function StudentManagementView() {
   const [actionLoading, setActionLoading] = useState(false);
 
   useEffect(() => {
-    loadStudents();
+    loadData();
   }, []);
 
-  const loadStudents = async () => {
+  const loadData = async () => {
     setLoading(true);
-    const list = await fetchStudentMembers();
+    const [yData, dData, sData, list] = await Promise.all([
+      fetchAcademicYears(),
+      fetchDepartments(),
+      fetchSections(),
+      fetchStudentMembers()
+    ]);
+    setYears(yData);
+    setDepartments(dData);
+    setSections(sData);
     setStudents(list);
+    
+    if (yData.length > 0) setSelectedYearId(yData[0].id);
+    if (dData.length > 0) setSelectedDeptId(dData[0].id);
     setLoading(false);
   };
 
-  const filteredStudents = students.filter((s) => {
+  const activeYear = years.find((y) => y.id === selectedYearId) || years[0];
+  const activeDept = departments.find((d) => d.id === selectedDeptId) || departments[0];
+
+  const filteredSections = sections.filter(
+    (s) => s.academic_year_id === selectedYearId && s.department_id === selectedDeptId
+  );
+
+  const activeSection = sections.find(s => s.id === selectedSectionId);
+
+  const sectionStudents = students.filter(s => {
+    if (!activeSection) return false;
+    return s.section === activeSection.name;
+  });
+
+  const filteredStudents = sectionStudents.filter((s) => {
     const q = searchTerm.toLowerCase();
     return (
       (s.name && s.name.toLowerCase().includes(q)) ||
-      (s.regno && s.regno.toLowerCase().includes(q)) ||
       (s.email && s.email.toLowerCase().includes(q)) ||
+      (s.regno && s.regno.toLowerCase().includes(q)) ||
       (s.department && s.department.toLowerCase().includes(q)) ||
       (s.year && s.year.toLowerCase().includes(q)) ||
       (s.section && s.section.toLowerCase().includes(q)) ||
@@ -1289,176 +1321,232 @@ export function StudentManagementView() {
   const handleDelete = async () => {
     if (!deletingStudent) return;
     setActionLoading(true);
-    await deleteStudentMember(deletingStudent.id);
-    setDeletingStudent(null);
+    try {
+      await deleteStudentMember(deletingStudent.id);
+      setStudents(students.filter(s => s.id !== deletingStudent.id));
+      setDeletingStudent(null);
+    } catch (err) {
+      console.error(err);
+      alert('Failed to delete student');
+    }
     setActionLoading(false);
-    await loadStudents();
   };
 
+  if (loading) {
+    return <div className="p-8 text-center text-slate-500">Loading student directory...</div>;
+  }
+
   return (
-    <div className="page-frame animate-fade space-y-6">
-      {/* Header */}
-      <div className="welcome-row flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+    <div className="space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
         <div>
-          <div className="eyebrow flex items-center gap-2">
-            <span>Student Roster</span>
-            <span className="px-2 py-0.5 rounded-full bg-teal-500/10 border border-teal-500/30 text-teal-400 text-[11px] font-mono font-bold">
-              Total Students: {students.length}
-            </span>
+          <div className="flex items-center gap-3 mb-1">
+            <span className="text-xs font-bold uppercase tracking-wider text-teal-600">Student Roster</span>
+            <span className="px-2.5 py-0.5 rounded-full bg-teal-100 text-teal-800 text-[10px] font-bold">TOTAL STUDENTS: {students.length}</span>
           </div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-100">Student Management</h1>
-          <p className="lede text-slate-400 mt-1">
-            Real-time Supabase dynamic student records with Excel import, search, and edit capability.
-          </p>
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">Student Management</h1>
+          <p className="text-sm text-slate-500 mt-1">Select Year, Department, and Section to view records.</p>
+        </div>
+        <div className="flex items-center gap-3">
+          <button onClick={() => setShowImportModal(true)} className="button button-primary flex items-center gap-2 text-xs py-2"><Upload size={14} /><span>Import Data</span></button><button onClick={loadData} className="button button-secondary flex items-center gap-2 text-xs py-2">
+            <RefreshCw size={14} />
+            <span>Refresh</span>
+          </button>
+        </div>
+      </div>
+
+      {/* STEP 1: ACADEMIC YEAR SELECTION */}
+      <div className="panel p-5">
+        <div className="text-xs uppercase font-bold tracking-wider text-slate-500 mb-3">1. Select Academic Year</div>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          {years.map((year) => (
+            <button
+              key={year.id}
+              onClick={() => { setSelectedYearId(year.id); setSelectedSectionId(''); }}
+              className={`p-4 rounded-xl border text-left flex items-center justify-between transition-all ${
+                selectedYearId === year.id
+                  ? 'bg-teal-50 border-teal-200 text-teal-700 font-bold shadow-lg shadow-teal-950/40'
+                  : 'bg-white border-slate-200 text-slate-700 hover:border-slate-300'
+              }`}
+            >
+              <div>
+                <div className="text-sm uppercase font-extrabold">{year.name}</div>
+                <div className="text-xs text-slate-500">{year.code}</div>
+              </div>
+              <ChevronRight size={16} className={selectedYearId === year.id ? 'text-teal-700' : 'text-slate-600'} />
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* STEP 2: DEPARTMENT / BRANCH SELECTION */}
+      <div className="panel p-5">
+        <div className="text-xs uppercase font-bold tracking-wider text-slate-500 mb-3">
+          2. Select Branch / Department ({activeYear?.name})
         </div>
         <div className="flex flex-wrap gap-3">
-          <button className="button button-secondary text-xs py-2 px-3 flex items-center gap-2" onClick={loadStudents}>
-            <RefreshCw size={14} className={loading ? 'animate-spin' : ''} /> Refresh
-          </button>
-          <button className="button button-primary text-xs py-2 px-4 flex items-center gap-2" onClick={() => setShowImportModal(true)}>
-            <FileSpreadsheet size={15} /> Import Student Excel
-          </button>
-        </div>
-      </div>
-
-      {/* Search & Filter Bar */}
-      <div className="p-4 rounded-2xl bg-slate-900/90 border border-slate-800 flex flex-col sm:flex-row gap-3 items-center justify-between">
-        <div className="relative w-full sm:w-80">
-          <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500" />
-          <input
-            type="text"
-            placeholder="Search by Reg No, Name, Email, Dept, Section..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-9 pr-4 py-2 text-xs text-slate-100 placeholder-slate-500 focus:border-teal-500"
-          />
-          {searchTerm && (
-            <button className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300" onClick={() => setSearchTerm('')}>
-              <X size={14} />
+          {departments.map((dept) => (
+            <button
+              key={dept.id}
+              onClick={() => { setSelectedDeptId(dept.id); setSelectedSectionId(''); }}
+              className={`px-5 py-3 rounded-xl border text-sm font-semibold transition-all flex items-center gap-3 ${
+                selectedDeptId === dept.id
+                  ? 'bg-teal-600 border-teal-500 text-white shadow-lg shadow-teal-900/50'
+                  : 'bg-slate-50 border-slate-200 text-slate-700 hover:border-slate-300'
+              }`}
+            >
+              <Building2 size={16} />
+              <span>{dept.code} ({dept.name})</span>
             </button>
-          )}
-        </div>
-        <div className="text-xs text-slate-400 font-mono">
-          Showing {filteredStudents.length} of {students.length} students
+          ))}
         </div>
       </div>
 
-      {/* Dynamic Student Table */}
-      {loading ? (
-        <div className="p-12 text-center text-teal-400 bg-slate-900/50 rounded-2xl border border-slate-800 font-medium">
-          Loading Students from Supabase...
+      {/* STEP 3: SECTION SELECTION */}
+      <div className="panel p-5">
+        <div className="text-xs uppercase font-bold tracking-wider text-slate-500 mb-3">
+          3. Select Section ({activeDept?.code})
         </div>
-      ) : filteredStudents.length > 0 ? (
-        <div className="panel overflow-hidden border border-slate-800 rounded-2xl">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="bg-slate-950/80 border-b border-slate-800 text-[11px] font-bold uppercase tracking-wider text-slate-400">
-                  <th className="p-4">Reg No</th>
-                  <th className="p-4">Name</th>
-                  <th className="p-4">Email</th>
-                  <th className="p-4">Department</th>
-                  <th className="p-4">Year</th>
-                  <th className="p-4">Section</th>
-                  <th className="p-4">Semester</th>
-                  <th className="p-4 text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-800/60 text-xs">
-                {filteredStudents.map((s) => (
-                  <tr key={s.id} className="hover:bg-slate-900/40 transition-colors">
-                    <td className="p-4 font-mono font-bold text-teal-400">{s.regno}</td>
-                    <td className="p-4 font-semibold text-slate-100">{s.name}</td>
-                    <td className="p-4 font-mono text-slate-400">{s.email}</td>
-                    <td className="p-4">
-                      <span className="chip chip-teal text-[11px]">{s.department || 'CSE'}</span>
-                    </td>
-                    <td className="p-4 text-slate-300">{s.year || '-'}</td>
-                    <td className="p-4 text-slate-300">{s.section || '-'}</td>
-                    <td className="p-4 text-slate-300">{s.semester || '-'}</td>
-                    <td className="p-4 text-right space-x-2">
-                      <button
-                        onClick={() => setEditingStudent(s)}
-                        className="p-1.5 rounded-lg bg-slate-800 text-slate-300 hover:text-teal-400 hover:bg-slate-700 transition-colors"
-                        title="Edit Student"
-                      >
-                        <Edit size={14} />
-                      </button>
-                      <button
-                        onClick={() => setDeletingStudent(s)}
-                        className="p-1.5 rounded-lg bg-slate-800 text-slate-300 hover:text-rose-400 hover:bg-slate-700 transition-colors"
-                        title="Delete Student"
-                      >
-                        <Trash2 size={14} />
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+        {filteredSections.length === 0 ? (
+          <div className="p-4 bg-slate-50 text-slate-500 text-sm rounded-xl border border-slate-200 text-center">
+            No sections defined for this department. Add sections in Academic Structure first.
           </div>
-        </div>
-      ) : (
-        <div className="panel p-12 text-center text-slate-400 border border-slate-800 rounded-2xl">
-          <GraduationCap size={40} className="mx-auto text-slate-600 mb-3" />
-          <h3 className="text-lg font-bold text-slate-200">No students imported yet.</h3>
-          <p className="text-xs text-slate-500 mt-1 max-w-md mx-auto">
-            Upload a Student Excel spreadsheet to dynamically populate student records into Supabase.
-          </p>
-          <button className="button button-primary text-xs py-2 px-4 mt-4 inline-flex items-center gap-2" onClick={() => setShowImportModal(true)}>
-            <FileSpreadsheet size={15} /> Import Student Excel
-          </button>
+        ) : (
+          <div className="flex flex-wrap gap-3">
+            {filteredSections.map((sec) => (
+              <button
+                key={sec.id}
+                onClick={() => setSelectedSectionId(sec.id)}
+                className={`px-5 py-3 rounded-xl border text-sm font-semibold transition-all flex items-center gap-3 ${
+                  selectedSectionId === sec.id
+                    ? 'bg-teal-600 border-teal-500 text-white shadow-lg shadow-teal-900/50'
+                    : 'bg-slate-50 border-slate-200 text-slate-700 hover:border-slate-300'
+                }`}
+              >
+                <span>{sec.name}</span>
+                <span className="text-[10px] bg-white/20 px-2 py-0.5 rounded-full">{students.filter(s => s.section === sec.name).length}</span>
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* STEP 4: DATA TABLE */}
+      {selectedSectionId && (
+        <div className="panel p-6 animate-fade-in">
+          {sectionStudents.length === 0 ? (
+            <div className="text-center py-12">
+              <div className="w-16 h-16 rounded-full bg-slate-100 flex items-center justify-center mx-auto mb-4 border border-slate-200">
+                <Users size={32} className="text-slate-400" />
+              </div>
+              <h3 className="text-lg font-bold text-slate-900 mb-2">No Students in {activeSection?.name}</h3>
+              <p className="text-sm text-slate-500 max-w-md mx-auto mb-6">There are currently no students mapped to this section. You can insert data manually, via Excel, or PDF upload.</p>
+              <button onClick={() => setShowImportModal(true)} className="button button-primary inline-flex items-center gap-2">
+                <Upload size={16} />
+                <span>Import Data</span>
+              </button>
+            </div>
+          ) : (
+            <>
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-bold text-slate-900">{activeSection?.name} Roster</h3>
+                <button onClick={() => setShowImportModal(true)} className="button button-primary flex items-center gap-2 text-xs py-2">
+                  <Upload size={14} />
+                  <span>Import Data</span>
+                </button>
+              </div>
+
+              {/* Search Bar */}
+              <div className="relative mb-6">
+                <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500" />
+                <input
+                  type="text"
+                  placeholder="Search by Reg No, Name, Email..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full bg-white border border-slate-200 rounded-xl pl-9 pr-4 py-2 text-xs text-slate-900 placeholder-slate-500 focus:border-teal-500"
+                />
+              </div>
+
+              <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white">
+                <table className="w-full text-left border-collapse min-w-[800px]">
+                  <thead>
+                    <tr className="bg-slate-50 border-b border-slate-200 text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                      <th className="p-4">Reg No</th>
+                      <th className="p-4">Name</th>
+                      <th className="p-4">Email</th>
+                      <th className="p-4">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 text-xs">
+                    {filteredStudents.map((s) => (
+                      <tr key={s.id} className="hover:bg-slate-50/50 transition-colors">
+                        <td className="p-4 font-mono font-bold text-teal-700">{s.regno}</td>
+                        <td className="p-4 font-semibold text-slate-900">{s.name}</td>
+                        <td className="p-4 font-mono text-slate-500">{s.email}</td>
+                        <td className="p-4 space-x-2">
+                          <button onClick={() => setEditingStudent(s)} className="p-1.5 rounded-lg bg-slate-100 text-slate-700 hover:text-teal-700 transition-colors">
+                            <Edit2 size={14} />
+                          </button>
+                          <button onClick={() => setDeletingStudent(s)} className="p-1.5 rounded-lg bg-rose-50 text-rose-600 hover:bg-rose-100 transition-colors">
+                            <Trash2 size={14} />
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                    {filteredStudents.length === 0 && (
+                      <tr>
+                        <td colSpan={4} className="p-8 text-center text-slate-500">No students match your search.</td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </>
+          )}
         </div>
       )}
 
-      {/* Edit Student Modal */}
+      {showImportModal && (
+        <StudentImportModal onClose={() => { setShowImportModal(false); loadData(); }} sectionName={activeSection?.name} />
+      )}
+
       {editingStudent && (
         <EditStudentModal
           student={editingStudent}
           onClose={() => setEditingStudent(null)}
-          onSave={async (updatedData) => {
-            await updateStudentMember(editingStudent.id, updatedData);
-            setEditingStudent(null);
-            await loadStudents();
+          onSave={async (updates) => {
+            try {
+              await updateStudentMember(editingStudent.id, updates);
+              setStudents(students.map(s => s.id === editingStudent.id ? { ...s, ...updates } : s));
+              setEditingStudent(null);
+            } catch(e) { alert('Failed to update'); }
           }}
         />
       )}
 
-      {/* Delete Confirmation Modal */}
       {deletingStudent && (
-        <div className="drawer-backdrop" onClick={() => setDeletingStudent(null)}>
-          <div className="modal-card p-6 bg-slate-900 border border-slate-800 rounded-2xl max-w-sm w-full space-y-4" onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-center gap-3 text-rose-400">
-              <AlertTriangle size={24} />
-              <h2 className="text-lg font-bold text-slate-100">Delete Student</h2>
+        <div className="drawer-backdrop" onClick={() => !actionLoading && setDeletingStudent(null)}>
+          <div className="modal-card max-w-sm p-6 bg-slate-50 rounded-2xl border border-slate-200 text-center" onClick={e => e.stopPropagation()}>
+            <div className="w-16 h-16 rounded-full bg-rose-100 flex items-center justify-center mx-auto mb-4">
+              <AlertTriangle size={28} className="text-rose-600" />
             </div>
-            <p className="text-xs text-slate-300">
-              Are you sure you want to delete <strong className="text-slate-100">{deletingStudent.name}</strong> ({deletingStudent.regno})?
-              This record will be permanently removed from Supabase.
-            </p>
-            <div className="flex gap-3 pt-2">
-              <button className="button button-secondary flex-1 text-xs py-2" onClick={() => setDeletingStudent(null)}>
-                Cancel
-              </button>
-              <button className="button button-primary flex-1 text-xs py-2 bg-rose-600 hover:bg-rose-500 border-rose-500" onClick={handleDelete} disabled={actionLoading}>
+            <h3 className="text-lg font-bold text-slate-900 mb-2">Delete Student?</h3>
+            <p className="text-xs text-slate-500 mb-6">Are you sure you want to remove <strong className="text-slate-900">{deletingStudent.name}</strong>? This action cannot be undone.</p>
+            <div className="flex gap-3">
+              <button className="button button-secondary flex-1" onClick={() => setDeletingStudent(null)} disabled={actionLoading}>Cancel</button>
+              <button className="button button-primary flex-1 bg-rose-600 hover:bg-rose-700" onClick={handleDelete} disabled={actionLoading}>
                 {actionLoading ? 'Deleting...' : 'Delete'}
               </button>
             </div>
           </div>
         </div>
       )}
-
-      {/* Excel Import Modal */}
-      {showImportModal && (
-        <StudentImportModal onClose={() => { setShowImportModal(false); loadStudents(); }} />
-      )}
     </div>
   );
 }
 
-// ============================================================================
-// EDIT STUDENT MODAL
-// ============================================================================
+
 function EditStudentModal({
   student,
   onClose,
@@ -1496,48 +1584,48 @@ function EditStudentModal({
 
   return (
     <div className="drawer-backdrop" onClick={onClose}>
-      <div className="modal-card p-6 bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full space-y-4" onClick={(e) => e.stopPropagation()}>
-        <div className="flex justify-between items-center border-b border-slate-800 pb-3">
-          <h2 className="text-lg font-bold text-slate-100">Edit Student Profile</h2>
+      <div className="modal-card p-6 bg-slate-50 border border-slate-200 rounded-2xl max-w-md w-full space-y-4" onClick={(e) => e.stopPropagation()}>
+        <div className="flex justify-between items-center border-b border-slate-200 pb-3">
+          <h2 className="text-lg font-bold text-slate-900">Edit Student Profile</h2>
           <button className="icon-button" onClick={onClose}><X size={18} /></button>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-3 text-xs">
           <div>
-            <label className="block text-slate-400 font-semibold mb-1">Registration No (Regno)</label>
-            <input type="text" value={regno} onChange={(e) => setRegno(e.target.value)} required className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-slate-100 focus:border-teal-500 font-mono" />
+            <label className="block text-slate-500 font-semibold mb-1">Registration No (Regno)</label>
+            <input type="text" value={regno} onChange={(e) => setRegno(e.target.value)} required className="w-full bg-white border border-slate-200 rounded-xl p-2.5 text-slate-900 focus:border-teal-500 font-mono" />
           </div>
           <div>
-            <label className="block text-slate-400 font-semibold mb-1">Full Name</label>
-            <input type="text" value={name} onChange={(e) => setName(e.target.value)} required className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-slate-100 focus:border-teal-500" />
+            <label className="block text-slate-500 font-semibold mb-1">Full Name</label>
+            <input type="text" value={name} onChange={(e) => setName(e.target.value)} required className="w-full bg-white border border-slate-200 rounded-xl p-2.5 text-slate-900 focus:border-teal-500" />
           </div>
           <div>
-            <label className="block text-slate-400 font-semibold mb-1">Email Address</label>
-            <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-slate-100 focus:border-teal-500 font-mono" />
+            <label className="block text-slate-500 font-semibold mb-1">Email Address</label>
+            <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required className="w-full bg-white border border-slate-200 rounded-xl p-2.5 text-slate-900 focus:border-teal-500 font-mono" />
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-slate-400 font-semibold mb-1">Department</label>
-              <input type="text" value={department} onChange={(e) => setDepartment(e.target.value)} className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-slate-100 focus:border-teal-500" />
+              <label className="block text-slate-500 font-semibold mb-1">Department</label>
+              <input type="text" value={department} onChange={(e) => setDepartment(e.target.value)} className="w-full bg-white border border-slate-200 rounded-xl p-2.5 text-slate-900 focus:border-teal-500" />
             </div>
             <div>
-              <label className="block text-slate-400 font-semibold mb-1">Year</label>
-              <input type="text" value={year} onChange={(e) => setYear(e.target.value)} placeholder="e.g. Second Year" className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-slate-100 focus:border-teal-500" />
+              <label className="block text-slate-500 font-semibold mb-1">Year</label>
+              <input type="text" value={year} onChange={(e) => setYear(e.target.value)} placeholder="e.g. Second Year" className="w-full bg-white border border-slate-200 rounded-xl p-2.5 text-slate-900 focus:border-teal-500" />
             </div>
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-slate-400 font-semibold mb-1">Section</label>
-              <input type="text" value={section} onChange={(e) => setSection(e.target.value)} placeholder="e.g. CSE-A" className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-slate-100 focus:border-teal-500" />
+              <label className="block text-slate-500 font-semibold mb-1">Section</label>
+              <input type="text" value={section} onChange={(e) => setSection(e.target.value)} placeholder="e.g. CSE-A" className="w-full bg-white border border-slate-200 rounded-xl p-2.5 text-slate-900 focus:border-teal-500" />
             </div>
             <div>
-              <label className="block text-slate-400 font-semibold mb-1">Semester</label>
-              <input type="text" value={semester} onChange={(e) => setSemester(e.target.value)} placeholder="e.g. Sem 3" className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-slate-100 focus:border-teal-500" />
+              <label className="block text-slate-500 font-semibold mb-1">Semester</label>
+              <input type="text" value={semester} onChange={(e) => setSemester(e.target.value)} placeholder="e.g. Sem 3" className="w-full bg-white border border-slate-200 rounded-xl p-2.5 text-slate-900 focus:border-teal-500" />
             </div>
           </div>
           <div>
-            <label className="block text-slate-400 font-semibold mb-1">Date of Birth (DOB)</label>
-            <input type="text" value={dob} onChange={(e) => setDob(e.target.value)} placeholder="YYYY-MM-DD" className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-slate-100 focus:border-teal-500" />
+            <label className="block text-slate-500 font-semibold mb-1">Date of Birth (DOB)</label>
+            <input type="text" value={dob} onChange={(e) => setDob(e.target.value)} placeholder="YYYY-MM-DD" className="w-full bg-white border border-slate-200 rounded-xl p-2.5 text-slate-900 focus:border-teal-500" />
           </div>
 
           <div className="flex gap-3 pt-3">
@@ -1557,6 +1645,12 @@ function EditStudentModal({
 // ============================================================================
 export function FacultyManagementView() {
   const [faculty, setFaculty] = useState<FacultyMember[]>([]);
+  const [years, setYears] = useState<AcademicYear[]>([]);
+  const [departments, setDepartments] = useState<Department[]>([]);
+
+  const [selectedYearId, setSelectedYearId] = useState('');
+  const [selectedDeptId, setSelectedDeptId] = useState('');
+
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [showImportModal, setShowImportModal] = useState(false);
@@ -1565,25 +1659,39 @@ export function FacultyManagementView() {
   const [actionLoading, setActionLoading] = useState(false);
 
   useEffect(() => {
-    loadFaculty();
+    loadData();
   }, []);
 
-  const loadFaculty = async () => {
+  const loadData = async () => {
     setLoading(true);
-    const list = await fetchFacultyMembers();
-    setFaculty(list);
+    const [facs, yrs, depts] = await Promise.all([
+      fetchFacultyMembers(),
+      fetchAcademicYears(),
+      fetchDepartments()
+    ]);
+    setFaculty(facs);
+    setYears(yrs);
+    setDepartments(depts);
+
+    if (yrs.length > 0) setSelectedYearId(yrs[0].id);
+    if (depts.length > 0) setSelectedDeptId(depts[0].id);
     setLoading(false);
   };
 
-  const filteredFaculty = faculty.filter((f) => {
+  const activeYear = years.find((y) => y.id === selectedYearId) || years[0];
+  const activeDept = departments.find((d) => d.id === selectedDeptId) || departments[0];
+
+  const deptFaculty = faculty.filter(f => {
+    if (!activeDept) return false;
+    return f.department === activeDept.name || f.department === activeDept.code;
+  });
+
+  const filteredFaculty = deptFaculty.filter((f) => {
     const q = searchTerm.toLowerCase();
     return (
       (f.name && f.name.toLowerCase().includes(q)) ||
-      (f.employee_id && f.employee_id.toLowerCase().includes(q)) ||
       (f.email && f.email.toLowerCase().includes(q)) ||
-      (f.department && f.department.toLowerCase().includes(q)) ||
-      (f.year && f.year.toLowerCase().includes(q)) ||
-      (f.section && f.section.toLowerCase().includes(q)) ||
+      (f.employee_id && f.employee_id.toLowerCase().includes(q)) ||
       (f.subject && f.subject.toLowerCase().includes(q))
     );
   });
@@ -1591,176 +1699,206 @@ export function FacultyManagementView() {
   const handleDelete = async () => {
     if (!deletingFaculty) return;
     setActionLoading(true);
-    await deleteFacultyMember(deletingFaculty.id);
-    setDeletingFaculty(null);
+    try {
+      await deleteFacultyMember(deletingFaculty.id);
+      setFaculty(faculty.filter(f => f.id !== deletingFaculty.id));
+      setDeletingFaculty(null);
+    } catch (err) {
+      alert('Failed to delete faculty');
+    }
     setActionLoading(false);
-    await loadFaculty();
   };
 
+  if (loading) {
+    return <div className="p-8 text-center text-slate-500">Loading faculty directory...</div>;
+  }
+
   return (
-    <div className="page-frame animate-fade space-y-6">
-      {/* Header */}
-      <div className="welcome-row flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+    <div className="space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
         <div>
-          <div className="eyebrow flex items-center gap-2">
-            <span>Faculty Directory</span>
-            <span className="px-2 py-0.5 rounded-full bg-violet-500/10 border border-violet-500/30 text-violet-400 text-[11px] font-mono font-bold">
-              Total Faculty: {faculty.length}
-            </span>
+          <div className="flex items-center gap-3 mb-1">
+            <span className="text-xs font-bold uppercase tracking-wider text-teal-600">Faculty Directory</span>
+            <span className="px-2.5 py-0.5 rounded-full bg-teal-100 text-teal-800 text-[10px] font-bold">TOTAL FACULTY: {faculty.length}</span>
           </div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-100">Faculty Management</h1>
-          <p className="lede text-slate-400 mt-1">
-            Real-time Supabase dynamic faculty records with Excel import, search, and edit capability.
-          </p>
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">Faculty Management</h1>
+          <p className="text-sm text-slate-500 mt-1">Select Year and Department to view records.</p>
+        </div>
+        <div className="flex items-center gap-3">
+          <button onClick={() => setShowImportModal(true)} className="button button-primary flex items-center gap-2 text-xs py-2"><Upload size={14} /><span>Import Data</span></button><button onClick={loadData} className="button button-secondary flex items-center gap-2 text-xs py-2">
+            <RefreshCw size={14} />
+            <span>Refresh</span>
+          </button>
+        </div>
+      </div>
+
+      {/* STEP 1: ACADEMIC YEAR SELECTION */}
+      <div className="panel p-5">
+        <div className="text-xs uppercase font-bold tracking-wider text-slate-500 mb-3">1. Select Academic Year</div>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          {years.map((year) => (
+            <button
+              key={year.id}
+              onClick={() => setSelectedYearId(year.id)}
+              className={`p-4 rounded-xl border text-left flex items-center justify-between transition-all ${
+                selectedYearId === year.id
+                  ? 'bg-teal-50 border-teal-200 text-teal-700 font-bold shadow-lg shadow-teal-950/40'
+                  : 'bg-white border-slate-200 text-slate-700 hover:border-slate-300'
+              }`}
+            >
+              <div>
+                <div className="text-sm uppercase font-extrabold">{year.name}</div>
+                <div className="text-xs text-slate-500">{year.code}</div>
+              </div>
+              <ChevronRight size={16} className={selectedYearId === year.id ? 'text-teal-700' : 'text-slate-600'} />
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* STEP 2: DEPARTMENT / BRANCH SELECTION */}
+      <div className="panel p-5">
+        <div className="text-xs uppercase font-bold tracking-wider text-slate-500 mb-3">
+          2. Select Branch / Department ({activeYear?.name})
         </div>
         <div className="flex flex-wrap gap-3">
-          <button className="button button-secondary text-xs py-2 px-3 flex items-center gap-2" onClick={loadFaculty}>
-            <RefreshCw size={14} className={loading ? 'animate-spin' : ''} /> Refresh
-          </button>
-          <button className="button button-primary text-xs py-2 px-4 flex items-center gap-2" onClick={() => setShowImportModal(true)}>
-            <FileSpreadsheet size={15} /> Import Faculty Excel
-          </button>
-        </div>
-      </div>
-
-      {/* Search & Filter Bar */}
-      <div className="p-4 rounded-2xl bg-slate-900/90 border border-slate-800 flex flex-col sm:flex-row gap-3 items-center justify-between">
-        <div className="relative w-full sm:w-80">
-          <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500" />
-          <input
-            type="text"
-            placeholder="Search by ID, Name, Email, Dept, Subject..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-9 pr-4 py-2 text-xs text-slate-100 placeholder-slate-500 focus:border-violet-500"
-          />
-          {searchTerm && (
-            <button className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300" onClick={() => setSearchTerm('')}>
-              <X size={14} />
+          {departments.map((dept) => (
+            <button
+              key={dept.id}
+              onClick={() => setSelectedDeptId(dept.id)}
+              className={`px-5 py-3 rounded-xl border text-sm font-semibold transition-all flex items-center gap-3 ${
+                selectedDeptId === dept.id
+                  ? 'bg-teal-600 border-teal-500 text-white shadow-lg shadow-teal-900/50'
+                  : 'bg-slate-50 border-slate-200 text-slate-700 hover:border-slate-300'
+              }`}
+            >
+              <Building2 size={16} />
+              <span>{dept.code} ({dept.name})</span>
             </button>
-          )}
-        </div>
-        <div className="text-xs text-slate-400 font-mono">
-          Showing {filteredFaculty.length} of {faculty.length} faculty members
+          ))}
         </div>
       </div>
 
-      {/* Dynamic Faculty Table */}
-      {loading ? (
-        <div className="p-12 text-center text-violet-400 bg-slate-900/50 rounded-2xl border border-slate-800 font-medium">
-          Loading Faculty Directory from Supabase...
-        </div>
-      ) : filteredFaculty.length > 0 ? (
-        <div className="panel overflow-hidden border border-slate-800 rounded-2xl">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="bg-slate-950/80 border-b border-slate-800 text-[11px] font-bold uppercase tracking-wider text-slate-400">
-                  <th className="p-4">Employee ID</th>
-                  <th className="p-4">Name</th>
-                  <th className="p-4">Email</th>
-                  <th className="p-4">Department</th>
-                  <th className="p-4">Year</th>
-                  <th className="p-4">Section</th>
-                  <th className="p-4">Subject</th>
-                  <th className="p-4 text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-800/60 text-xs">
-                {filteredFaculty.map((fac) => (
-                  <tr key={fac.id} className="hover:bg-slate-900/40 transition-colors">
-                    <td className="p-4 font-mono font-bold text-violet-400">{fac.employee_id}</td>
-                    <td className="p-4 font-semibold text-slate-100">{fac.name}</td>
-                    <td className="p-4 font-mono text-slate-400">{fac.email}</td>
-                    <td className="p-4">
-                      <span className="chip chip-violet text-[11px]">{fac.department || 'CSE'}</span>
-                    </td>
-                    <td className="p-4 text-slate-300">{fac.year || '-'}</td>
-                    <td className="p-4 text-slate-300">{fac.section || '-'}</td>
-                    <td className="p-4 text-slate-300">{fac.subject || '-'}</td>
-                    <td className="p-4 text-right space-x-2">
-                      <button
-                        onClick={() => setEditingFaculty(fac)}
-                        className="p-1.5 rounded-lg bg-slate-800 text-slate-300 hover:text-violet-400 hover:bg-slate-700 transition-colors"
-                        title="Edit Faculty"
-                      >
-                        <Edit size={14} />
-                      </button>
-                      <button
-                        onClick={() => setDeletingFaculty(fac)}
-                        className="p-1.5 rounded-lg bg-slate-800 text-slate-300 hover:text-rose-400 hover:bg-slate-700 transition-colors"
-                        title="Delete Faculty"
-                      >
-                        <Trash2 size={14} />
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      ) : (
-        <div className="panel p-12 text-center text-slate-400 border border-slate-800 rounded-2xl">
-          <UsersRound size={40} className="mx-auto text-slate-600 mb-3" />
-          <h3 className="text-lg font-bold text-slate-200">No faculty members imported yet.</h3>
-          <p className="text-xs text-slate-500 mt-1 max-w-md mx-auto">
-            Upload a Faculty Excel spreadsheet to dynamically populate faculty records into Supabase.
-          </p>
-          <button className="button button-primary text-xs py-2 px-4 mt-4 inline-flex items-center gap-2" onClick={() => setShowImportModal(true)}>
-            <FileSpreadsheet size={15} /> Import Faculty Excel
-          </button>
+      {/* STEP 3: DATA TABLE */}
+      {selectedDeptId && (
+        <div className="panel p-6 animate-fade-in">
+          {deptFaculty.length === 0 ? (
+            <div className="text-center py-12">
+              <div className="w-16 h-16 rounded-full bg-slate-100 flex items-center justify-center mx-auto mb-4 border border-slate-200">
+                <Users size={32} className="text-slate-400" />
+              </div>
+              <h3 className="text-lg font-bold text-slate-900 mb-2">No Faculty in {activeDept?.code}</h3>
+              <p className="text-sm text-slate-500 max-w-md mx-auto mb-6">There are currently no faculty members assigned to this department. You can insert data manually, via Excel, or PDF upload.</p>
+              <button onClick={() => setShowImportModal(true)} className="button button-primary inline-flex items-center gap-2">
+                <Upload size={16} />
+                <span>Import Data</span>
+              </button>
+            </div>
+          ) : (
+            <>
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-bold text-slate-900">{activeDept?.name} Faculty Roster</h3>
+                <button onClick={() => setShowImportModal(true)} className="button button-primary flex items-center gap-2 text-xs py-2">
+                  <Upload size={14} />
+                  <span>Import Data</span>
+                </button>
+              </div>
+
+              {/* Search Bar */}
+              <div className="relative mb-6">
+                <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500" />
+                <input
+                  type="text"
+                  placeholder="Search by ID, Name, Email, Subject..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full bg-white border border-slate-200 rounded-xl pl-9 pr-4 py-2 text-xs text-slate-900 placeholder-slate-500 focus:border-teal-500"
+                />
+              </div>
+
+              <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white">
+                <table className="w-full text-left border-collapse min-w-[800px]">
+                  <thead>
+                    <tr className="bg-slate-50 border-b border-slate-200 text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                      <th className="p-4">Employee ID</th>
+                      <th className="p-4">Name</th>
+                      <th className="p-4">Email</th>
+                      <th className="p-4">Subject</th>
+                      <th className="p-4">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 text-xs">
+                    {filteredFaculty.map((f) => (
+                      <tr key={f.id} className="hover:bg-slate-50/50 transition-colors">
+                        <td className="p-4 font-mono font-bold text-teal-700">{f.employee_id}</td>
+                        <td className="p-4 font-semibold text-slate-900">{f.name}</td>
+                        <td className="p-4 font-mono text-slate-500">{f.email}</td>
+                        <td className="p-4">
+                          <span className="chip chip-teal text-[11px]">{f.subject || '-'}</span>
+                        </td>
+                        <td className="p-4 space-x-2">
+                          <button onClick={() => setEditingFaculty(f)} className="p-1.5 rounded-lg bg-slate-100 text-slate-700 hover:text-teal-700 transition-colors">
+                            <Edit2 size={14} />
+                          </button>
+                          <button onClick={() => setDeletingFaculty(f)} className="p-1.5 rounded-lg bg-rose-50 text-rose-600 hover:bg-rose-100 transition-colors">
+                            <Trash2 size={14} />
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                    {filteredFaculty.length === 0 && (
+                      <tr>
+                        <td colSpan={5} className="p-8 text-center text-slate-500">No faculty match your search.</td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </>
+          )}
         </div>
       )}
 
-      {/* Edit Faculty Modal */}
+      {showImportModal && (
+        <FacultyImportModal onClose={() => { setShowImportModal(false); loadData(); }} />
+      )}
+
       {editingFaculty && (
         <EditFacultyModal
           faculty={editingFaculty}
           onClose={() => setEditingFaculty(null)}
-          onSave={async (updatedData) => {
-            await updateFacultyMember(editingFaculty.id, updatedData);
-            setEditingFaculty(null);
-            await loadFaculty();
+          onSave={async (updates) => {
+            try {
+              await updateFacultyMember(editingFaculty.id, updates);
+              setFaculty(faculty.map(f => f.id === editingFaculty.id ? { ...f, ...updates } : f));
+              setEditingFaculty(null);
+            } catch(e) { alert('Failed to update'); }
           }}
         />
       )}
 
-      {/* Delete Confirmation Modal */}
       {deletingFaculty && (
-        <div className="drawer-backdrop" onClick={() => setDeletingFaculty(null)}>
-          <div className="modal-card p-6 bg-slate-900 border border-slate-800 rounded-2xl max-w-sm w-full space-y-4" onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-center gap-3 text-rose-400">
-              <AlertTriangle size={24} />
-              <h2 className="text-lg font-bold text-slate-100">Delete Faculty</h2>
+        <div className="drawer-backdrop" onClick={() => !actionLoading && setDeletingFaculty(null)}>
+          <div className="modal-card max-w-sm p-6 bg-slate-50 rounded-2xl border border-slate-200 text-center" onClick={e => e.stopPropagation()}>
+            <div className="w-16 h-16 rounded-full bg-rose-100 flex items-center justify-center mx-auto mb-4">
+              <AlertTriangle size={28} className="text-rose-600" />
             </div>
-            <p className="text-xs text-slate-300">
-              Are you sure you want to delete <strong className="text-slate-100">{deletingFaculty.name}</strong> ({deletingFaculty.employee_id})?
-              This record will be permanently removed from Supabase.
-            </p>
-            <div className="flex gap-3 pt-2">
-              <button className="button button-secondary flex-1 text-xs py-2" onClick={() => setDeletingFaculty(null)}>
-                Cancel
-              </button>
-              <button className="button button-primary flex-1 text-xs py-2 bg-rose-600 hover:bg-rose-500 border-rose-500" onClick={handleDelete} disabled={actionLoading}>
+            <h3 className="text-lg font-bold text-slate-900 mb-2">Delete Faculty?</h3>
+            <p className="text-xs text-slate-500 mb-6">Are you sure you want to remove <strong className="text-slate-900">{deletingFaculty.name}</strong>?</p>
+            <div className="flex gap-3">
+              <button className="button button-secondary flex-1" onClick={() => setDeletingFaculty(null)} disabled={actionLoading}>Cancel</button>
+              <button className="button button-primary flex-1 bg-rose-600 hover:bg-rose-700" onClick={handleDelete} disabled={actionLoading}>
                 {actionLoading ? 'Deleting...' : 'Delete'}
               </button>
             </div>
           </div>
         </div>
       )}
-
-      {/* Excel Import Modal */}
-      {showImportModal && (
-        <FacultyImportModal onClose={() => { setShowImportModal(false); loadFaculty(); }} />
-      )}
     </div>
   );
 }
 
-// ============================================================================
-// EDIT FACULTY MODAL
-// ============================================================================
+
 function EditFacultyModal({
   faculty,
   onClose,
@@ -1798,48 +1936,48 @@ function EditFacultyModal({
 
   return (
     <div className="drawer-backdrop" onClick={onClose}>
-      <div className="modal-card p-6 bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full space-y-4" onClick={(e) => e.stopPropagation()}>
-        <div className="flex justify-between items-center border-b border-slate-800 pb-3">
-          <h2 className="text-lg font-bold text-slate-100">Edit Faculty Profile</h2>
+      <div className="modal-card p-6 bg-slate-50 border border-slate-200 rounded-2xl max-w-md w-full space-y-4" onClick={(e) => e.stopPropagation()}>
+        <div className="flex justify-between items-center border-b border-slate-200 pb-3">
+          <h2 className="text-lg font-bold text-slate-900">Edit Faculty Profile</h2>
           <button className="icon-button" onClick={onClose}><X size={18} /></button>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-3 text-xs">
           <div>
-            <label className="block text-slate-400 font-semibold mb-1">Employee ID</label>
-            <input type="text" value={empId} onChange={(e) => setEmpId(e.target.value)} required className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-slate-100 focus:border-violet-500 font-mono" />
+            <label className="block text-slate-500 font-semibold mb-1">Employee ID</label>
+            <input type="text" value={empId} onChange={(e) => setEmpId(e.target.value)} required className="w-full bg-white border border-slate-200 rounded-xl p-2.5 text-slate-900 focus:border-violet-500 font-mono" />
           </div>
           <div>
-            <label className="block text-slate-400 font-semibold mb-1">Full Name</label>
-            <input type="text" value={name} onChange={(e) => setName(e.target.value)} required className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-slate-100 focus:border-violet-500" />
+            <label className="block text-slate-500 font-semibold mb-1">Full Name</label>
+            <input type="text" value={name} onChange={(e) => setName(e.target.value)} required className="w-full bg-white border border-slate-200 rounded-xl p-2.5 text-slate-900 focus:border-violet-500" />
           </div>
           <div>
-            <label className="block text-slate-400 font-semibold mb-1">Email Address</label>
-            <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-slate-100 focus:border-violet-500 font-mono" />
+            <label className="block text-slate-500 font-semibold mb-1">Email Address</label>
+            <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required className="w-full bg-white border border-slate-200 rounded-xl p-2.5 text-slate-900 focus:border-violet-500 font-mono" />
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-slate-400 font-semibold mb-1">Department</label>
-              <input type="text" value={department} onChange={(e) => setDepartment(e.target.value)} className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-slate-100 focus:border-violet-500" />
+              <label className="block text-slate-500 font-semibold mb-1">Department</label>
+              <input type="text" value={department} onChange={(e) => setDepartment(e.target.value)} className="w-full bg-white border border-slate-200 rounded-xl p-2.5 text-slate-900 focus:border-violet-500" />
             </div>
             <div>
-              <label className="block text-slate-400 font-semibold mb-1">Year</label>
-              <input type="text" value={year} onChange={(e) => setYear(e.target.value)} placeholder="e.g. 3" className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-slate-100 focus:border-violet-500" />
+              <label className="block text-slate-500 font-semibold mb-1">Year</label>
+              <input type="text" value={year} onChange={(e) => setYear(e.target.value)} placeholder="e.g. 3" className="w-full bg-white border border-slate-200 rounded-xl p-2.5 text-slate-900 focus:border-violet-500" />
             </div>
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-slate-400 font-semibold mb-1">Section</label>
-              <input type="text" value={section} onChange={(e) => setSection(e.target.value)} placeholder="e.g. C" className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-slate-100 focus:border-violet-500" />
+              <label className="block text-slate-500 font-semibold mb-1">Section</label>
+              <input type="text" value={section} onChange={(e) => setSection(e.target.value)} placeholder="e.g. C" className="w-full bg-white border border-slate-200 rounded-xl p-2.5 text-slate-900 focus:border-violet-500" />
             </div>
             <div>
-              <label className="block text-slate-400 font-semibold mb-1">Subject</label>
-              <input type="text" value={subject} onChange={(e) => setSubject(e.target.value)} placeholder="e.g. DBMS" className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-slate-100 focus:border-violet-500" />
+              <label className="block text-slate-500 font-semibold mb-1">Subject</label>
+              <input type="text" value={subject} onChange={(e) => setSubject(e.target.value)} placeholder="e.g. DBMS" className="w-full bg-white border border-slate-200 rounded-xl p-2.5 text-slate-900 focus:border-violet-500" />
             </div>
           </div>
           <div>
-            <label className="block text-slate-400 font-semibold mb-1">Date of Birth (DOB)</label>
-            <input type="text" value={dob} onChange={(e) => setDob(e.target.value)} placeholder="YYYY-MM-DD" className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-slate-100 focus:border-violet-500" />
+            <label className="block text-slate-500 font-semibold mb-1">Date of Birth (DOB)</label>
+            <input type="text" value={dob} onChange={(e) => setDob(e.target.value)} placeholder="YYYY-MM-DD" className="w-full bg-white border border-slate-200 rounded-xl p-2.5 text-slate-900 focus:border-violet-500" />
           </div>
 
           <div className="flex gap-3 pt-3">
@@ -1861,232 +1999,132 @@ function StudentImportModal({
   defaultYearId,
   defaultDeptId,
   defaultSecId,
+  sectionName,
   onClose
 }: {
   defaultYearId?: string;
   defaultDeptId?: string;
   defaultSecId?: string;
+  sectionName?: string;
   onClose: () => void;
 }) {
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const [file, setFile] = useState<File | null>(null);
-  const [fileError, setFileError] = useState<string | null>(null);
-  const [importing, setImporting] = useState(false);
-  const [result, setResult] = useState<ImportResult | null>(null);
-
-  const handleDropzoneClick = () => {
-    fileInputRef.current?.click();
-  };
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
+  const [file, setFile] = React.useState<File | null>(null);
+  const [fileError, setFileError] = React.useState<string | null>(null);
+  const [importing, setImporting] = React.useState(false);
+  const [result, setResult] = React.useState<any | null>(null);
+  const [activeTab, setActiveTab] = React.useState<'excel' | 'text' | 'pdf'>('excel');
+  const [isProcessing, setIsProcessing] = React.useState(false);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFileError(null);
     setResult(null);
-    if (e.target.files && e.target.files[0]) {
-      const selected = e.target.files[0];
-      const ext = selected.name.split('.').pop()?.toLowerCase();
-      if (!['xlsx', 'xls', 'csv'].includes(ext || '')) {
-        setFileError('Please upload an Excel file (.xlsx, .xls, or .csv).');
+    const selected = e.target.files?.[0];
+    if (selected) {
+      if (!selected.name.match(/\.(xlsx|xls|csv)$/i)) {
+        setFileError('Invalid file type. Please select .xlsx or .csv');
         setFile(null);
-        if (fileInputRef.current) fileInputRef.current.value = '';
         return;
       }
       setFile(selected);
     }
   };
 
-  const handleRemoveFile = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    setFile(null);
-    setFileError(null);
-    setResult(null);
-    if (fileInputRef.current) fileInputRef.current.value = '';
-  };
+  const handleDropzoneClick = () => { fileInputRef.current?.click(); };
 
   const processImport = async () => {
-    if (!file || importing) return;
+    if (!file) return;
     setImporting(true);
     setResult(null);
-    setFileError(null);
-
     try {
-      const data = await file.arrayBuffer();
-      const workbook = XLSX.read(data, { type: 'array' });
-
-      if (!workbook.SheetNames || workbook.SheetNames.length === 0) {
-        setFileError('Excel file is empty or corrupted.');
-        setImporting(false);
-        return;
-      }
-
-      const sheetName = workbook.SheetNames[0];
-      const sheet = workbook.Sheets[sheetName];
-      const rawRows: any[] = XLSX.utils.sheet_to_json(sheet, { header: 1 });
-
-      if (!rawRows || rawRows.length < 2) {
-        setFileError('Excel file contains no student data rows.');
-        setImporting(false);
-        return;
-      }
-
-      const headers: string[] = (rawRows[0] || []).map((h: any) => String(h || '').trim());
-      const headerValidation = validateStudentExcelHeaders(headers);
-
-      if (!headerValidation.valid) {
-        setFileError(`Missing required columns: ${headerValidation.missingColumns.join(', ')}`);
-        setImporting(false);
-        return;
-      }
-
-      const parsedDataRows: any[] = XLSX.utils.sheet_to_json(sheet);
-      const m = headerValidation.mappedHeaders;
-
-      const formattedRows: StudentImportRow[] = parsedDataRows.map((r) => ({
-        name: String(r[m.name] || r.Name || r.name || '').trim(),
-        regno: String(r[m.regno] || r.Regno || r.regno || '').trim(),
-        email: String(r[m.email] || r.Email || r.email || '').trim().toLowerCase(),
-        department: String(r[m.department] || r.Department || r.department || 'CSE').trim(),
-        year: String(r[m.year] || r.Year || r.year || 'First Year').trim(),
-        section: String(r[m.section] || r.Section || r.section || 'CSE-A').trim(),
-        dob: String(r[m.dob] || r.DOB || r.dob || '').trim(),
-        semester: String(r.Semester || r.semester || '').trim(),
-      }));
-
-      const res = await importStudentsBatch(formattedRows, defaultYearId, defaultDeptId, defaultSecId);
+      const res = await processExcelData(file, 'students', { year_id: defaultYearId, department_id: defaultDeptId, section_id: defaultSecId });
       setResult(res);
-    } catch (err) {
-      setFileError(`Failed to process Excel file: ${err instanceof Error ? err.message : String(err)}`);
-    } finally {
-      setImporting(false);
-    }
+    } catch (err: any) { setFileError(err.message || 'Failed to process file'); }
+    setImporting(false);
   };
 
-  return (
-    <div className="drawer-backdrop" onClick={onClose}>
-      <div className="modal-card p-6 bg-slate-900 border border-slate-800 rounded-2xl max-w-lg w-full" onClick={(e) => e.stopPropagation()}>
-        <div className="flex justify-between items-center mb-4 border-b border-slate-800 pb-3">
+  return createPortal(
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in" onClick={onClose}>
+      <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl w-full max-w-xl overflow-hidden flex flex-col" onClick={e => e.stopPropagation()}>
+        <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50">
           <div>
-            <h2 className="text-lg font-bold text-slate-100">Import Student Excel</h2>
-            <p className="text-xs text-slate-400">Upload .xlsx or .csv containing student details.</p>
+            <span className="text-xs font-bold uppercase tracking-wider text-teal-600">Data Ingestion Engine</span>
+            <h2 className="text-lg font-bold text-slate-900">Import Students {sectionName ? `for ${sectionName}` : ''}</h2>
           </div>
-          <button className="icon-button" onClick={onClose}><X size={18} /></button>
+          <button onClick={onClose} className="w-8 h-8 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-500 flex items-center justify-center transition-colors">
+            <X size={18} />
+          </button>
         </div>
 
-        <div className="space-y-4">
-          <div
-            onClick={handleDropzoneClick}
-            className="p-6 border-2 border-dashed border-slate-700 hover:border-teal-500 rounded-2xl text-center bg-slate-950/80 cursor-pointer transition-all flex flex-col items-center justify-center space-y-2 group"
-          >
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept=".xlsx,.xls,.csv"
-              onChange={handleFileChange}
-              className="hidden"
-            />
+        <div className="flex border-b border-slate-100 bg-white">
+          <button onClick={() => setActiveTab('excel')} className={`flex-1 py-3 text-xs font-bold tracking-wider uppercase transition-colors ${activeTab === 'excel' ? 'border-b-2 border-teal-500 text-teal-700' : 'text-slate-500 hover:text-slate-700'}`}>Excel / CSV</button>
+          <button onClick={() => setActiveTab('text')} className={`flex-1 py-3 text-xs font-bold tracking-wider uppercase transition-colors ${activeTab === 'text' ? 'border-b-2 border-teal-500 text-teal-700' : 'text-slate-500 hover:text-slate-700'}`}>Raw Text</button>
+          <button onClick={() => setActiveTab('pdf')} className={`flex-1 py-3 text-xs font-bold tracking-wider uppercase transition-colors ${activeTab === 'pdf' ? 'border-b-2 border-teal-500 text-teal-700' : 'text-slate-500 hover:text-slate-700'}`}>PDF Document</button>
+        </div>
 
-            {!file ? (
-              <>
-                <div className="w-12 h-12 rounded-full bg-teal-500/10 border border-teal-500/30 flex items-center justify-center text-teal-400 group-hover:scale-110 transition-transform">
-                  <Upload size={22} />
-                </div>
-                <div className="text-sm font-bold text-slate-200">Choose File</div>
-                <div className="text-xs text-slate-500">No file chosen</div>
-                <div className="text-[11px] text-slate-400 pt-2 border-t border-slate-800/80 w-full">
-                  <strong className="text-slate-300 block mb-0.5">Required Columns:</strong>
-                  Name, Regno, Email, Department, Year, Section, DOB
-                </div>
-              </>
-            ) : (
-              <div className="w-full flex items-center justify-between p-3 bg-slate-900 border border-teal-500/40 rounded-xl" onClick={(e) => e.stopPropagation()}>
-                <div className="flex items-center gap-3 text-left overflow-hidden">
-                  <FileSpreadsheet size={24} className="text-teal-400 shrink-0" />
-                  <div className="truncate">
-                    <div className="text-sm font-bold text-teal-300 truncate">✓ {file.name}</div>
-                    <div className="text-xs text-slate-400 font-mono">File size: {(file.size / 1024).toFixed(1)} KB</div>
-                  </div>
-                </div>
-                <button
-                  type="button"
-                  onClick={handleRemoveFile}
-                  className="button button-secondary text-xs py-1 px-3 border-rose-500/30 text-rose-300 hover:bg-rose-500/10 cursor-pointer"
-                >
-                  Remove
-                </button>
+        <div className="p-6 bg-white min-h-[300px]">
+          {activeTab === 'excel' && (
+            <div className="text-center space-y-4">
+              <div className="w-16 h-16 rounded-2xl bg-teal-50 text-teal-600 flex items-center justify-center mx-auto mb-4 border border-teal-100">
+                <FileSpreadsheet size={28} />
               </div>
-            )}
-          </div>
-
-          {fileError && (
-            <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs font-semibold flex items-center gap-2">
-              <AlertTriangle size={16} /> {fileError}
-            </div>
-          )}
-
-          {result && (
-            <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 text-xs space-y-3">
-              <div className="font-bold text-slate-200 border-b border-slate-800 pb-2 flex justify-between items-center">
-                <span>Student Import Complete</span>
-                <span className="text-teal-400 font-mono text-[11px]">Saved to Supabase</span>
-              </div>
-
-              <div className="grid grid-cols-4 gap-2 text-center py-1">
-                <div className="p-2 rounded-lg bg-teal-500/10 border border-teal-500/20">
-                  <div className="text-base font-black text-teal-300 font-mono">✓ {result.importedCount}</div>
-                  <div className="text-[10px] text-teal-400/90 font-medium">Imported</div>
-                </div>
-                <div className="p-2 rounded-lg bg-cyan-500/10 border border-cyan-500/20">
-                  <div className="text-base font-black text-cyan-300 font-mono">↻ {result.updatedCount}</div>
-                  <div className="text-[10px] text-cyan-400/90 font-medium">Updated</div>
-                </div>
-                <div className="p-2 rounded-lg bg-amber-500/10 border border-amber-500/20">
-                  <div className="text-base font-black text-amber-300 font-mono">⚠ {result.skippedCount}</div>
-                  <div className="text-[10px] text-amber-400/90 font-medium">Skipped</div>
-                </div>
-                <div className="p-2 rounded-lg bg-rose-500/10 border border-rose-500/20">
-                  <div className="text-base font-black text-rose-300 font-mono">✕ {result.invalidCount}</div>
-                  <div className="text-[10px] text-rose-400/90 font-medium">Invalid</div>
-                </div>
-              </div>
-
-              <div className="p-2.5 rounded-lg bg-slate-900/90 border border-slate-800 text-[11px] text-slate-300 flex items-center justify-between">
-                <span className="font-semibold text-slate-400 uppercase tracking-wider">Academic Location:</span>
-                <span className="font-bold text-teal-300">
-                  {defaultYearId || '2nd Year'} → {defaultDeptId || 'CSE'} → {defaultSecId || 'CSE-C'}
+              <h3 className="font-bold text-slate-900">Upload Excel Spreadsheet</h3>
+              <p className="text-sm text-slate-500 max-w-sm mx-auto">Select an .xlsx or .csv file. Columns should include Name, Email, Reg No, Department, Year, Section.</p>
+              
+              <div onClick={handleDropzoneClick} className="mt-6 p-8 border-2 border-dashed border-slate-200 rounded-2xl hover:border-teal-400 hover:bg-teal-50/30 transition-colors cursor-pointer group flex flex-col items-center">
+                <input ref={fileInputRef} type="file" accept=".xlsx,.xls,.csv" onChange={handleFileChange} className="hidden" />
+                <Upload size={24} className="text-slate-400 group-hover:text-teal-500 mb-3" />
+                <span className="text-sm font-semibold text-slate-700 group-hover:text-teal-700">
+                  {file ? file.name : 'Click to browse or drag file here'}
                 </span>
               </div>
-
-              {result.errors.length > 0 && (
-                <div className="mt-2 pt-2 border-t border-slate-800">
-                  <div className="font-semibold text-rose-400 mb-1">Validation Errors:</div>
-                  <div className="text-rose-300 max-h-32 overflow-y-auto space-y-1 font-mono text-[11px] bg-slate-900/80 p-2 rounded-lg border border-slate-800">
-                    {result.errors.map((err, i) => (
-                      <div key={i}>• {err}</div>
-                    ))}
-                  </div>
-                </div>
-              )}
+              
+              {fileError && <div className="text-rose-500 text-xs font-bold p-3 bg-rose-50 rounded-xl border border-rose-100">{fileError}</div>}
+              
+              <div className="flex gap-3 mt-6">
+                <button className="button button-secondary flex-1 text-xs py-2.5" onClick={onClose}>Cancel</button>
+                <button onClick={processImport} disabled={!file || importing} className={`button button-primary flex-1 text-xs py-2.5 ${!file || importing ? 'opacity-50 cursor-not-allowed' : ''}`}>
+                  {importing ? 'Importing...' : 'Upload & Import'}
+                </button>
+              </div>
+            </div>
+          )}
+          
+          {activeTab === 'text' && (
+            <div className="space-y-4 h-full flex flex-col">
+              <h3 className="font-bold text-slate-900">Paste Raw Data</h3>
+              <p className="text-xs text-slate-500">Paste tabular data from Excel, Word, or plain text. Our AI will automatically parse names, emails, and identifiers.</p>
+              <textarea 
+                className="w-full flex-1 min-h-[160px] p-4 rounded-xl border border-slate-200 bg-slate-50 text-sm font-mono text-slate-700 focus:border-teal-500 focus:bg-white transition-colors"
+                placeholder="Name, Email, ID...&#10;John Doe, john@example.edu, 24CSE001..."
+              ></textarea>
+              <button className="button button-primary w-full py-3" onClick={() => setIsProcessing(true)}>
+                {isProcessing ? 'Processing AI...' : 'Parse Data with AI'}
+              </button>
             </div>
           )}
 
-          <div className="flex gap-3">
-            <button className="button button-secondary flex-1 text-xs py-2.5" onClick={onClose}>Close</button>
-            <button
-              onClick={processImport}
-              disabled={!file || importing}
-              className={`button button-primary flex-1 text-xs py-2.5 ${!file || importing ? 'opacity-50 cursor-not-allowed' : ''}`}
-            >
-              {importing ? 'Importing...' : 'Upload & Import'}
-            </button>
-          </div>
+          {activeTab === 'pdf' && (
+            <div className="text-center space-y-4 h-full flex flex-col items-center justify-center">
+              <div className="w-16 h-16 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center mx-auto mb-4 border border-blue-100">
+                <Layers size={28} />
+              </div>
+              <h3 className="font-bold text-slate-900">Upload PDF Document</h3>
+              <p className="text-sm text-slate-500 max-w-sm mx-auto">Upload an official student list PDF. The Vision AI engine will extract names and IDs automatically.</p>
+              
+              <div className="mt-4 p-8 border-2 border-dashed border-slate-200 rounded-2xl hover:border-blue-400 hover:bg-blue-50/30 transition-colors cursor-pointer group flex flex-col items-center w-full">
+                <Upload size={24} className="text-slate-400 group-hover:text-blue-500 mb-3" />
+                <span className="text-sm font-semibold text-slate-700 group-hover:text-blue-700">Select PDF File</span>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>
-  );
+  , document.body);
 }
 
-// ============================================================================
-// FACULTY EXCEL IMPORT MODAL WITH NATIVE FILE PICKER FIX
-// ============================================================================
+
 function FacultyImportModal({ onClose }: { onClose: () => void }) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [file, setFile] = useState<File | null>(null);
@@ -2199,11 +2237,11 @@ function FacultyImportModal({ onClose }: { onClose: () => void }) {
 
   return (
     <div className="drawer-backdrop" onClick={onClose}>
-      <div className="modal-card p-6 bg-slate-900 border border-slate-800 rounded-2xl max-w-lg w-full" onClick={(e) => e.stopPropagation()}>
-        <div className="flex justify-between items-center mb-4 border-b border-slate-800 pb-3">
+      <div className="modal-card p-6 bg-slate-50 border border-slate-200 rounded-2xl max-w-lg w-full" onClick={(e) => e.stopPropagation()}>
+        <div className="flex justify-between items-center mb-4 border-b border-slate-200 pb-3">
           <div>
-            <h2 className="text-lg font-bold text-slate-100">Import Faculty Excel</h2>
-            <p className="text-xs text-slate-400 font-normal">Upload .xlsx or .csv containing faculty details.</p>
+            <h2 className="text-lg font-bold text-slate-900">Import Faculty Excel</h2>
+            <p className="text-xs text-slate-500 font-normal">Upload .xlsx or .csv containing faculty details.</p>
           </div>
           <button className="icon-button" onClick={onClose}><X size={18} /></button>
         </div>
@@ -2212,7 +2250,7 @@ function FacultyImportModal({ onClose }: { onClose: () => void }) {
           {/* NATIVE FILE PICKER CLICKABLE DROPZONE */}
           <div
             onClick={handleDropzoneClick}
-            className="p-6 border-2 border-dashed border-slate-700 hover:border-violet-500 rounded-2xl text-center bg-slate-950/80 cursor-pointer transition-all flex flex-col items-center justify-center space-y-2 group"
+            className="p-6 border-2 border-dashed border-slate-300 hover:border-violet-500 rounded-2xl text-center bg-white cursor-pointer transition-all flex flex-col items-center justify-center space-y-2 group"
           >
             <input
               ref={fileInputRef}
@@ -2224,23 +2262,23 @@ function FacultyImportModal({ onClose }: { onClose: () => void }) {
 
             {!file ? (
               <>
-                <div className="w-12 h-12 rounded-full bg-violet-500/10 border border-violet-500/30 flex items-center justify-center text-violet-400 group-hover:scale-110 transition-transform">
+                <div className="w-12 h-12 rounded-full bg-violet-500/10 border border-violet-500/30 flex items-center justify-center text-violet-700 group-hover:scale-110 transition-transform">
                   <Upload size={22} />
                 </div>
-                <div className="text-sm font-bold text-slate-200">Choose File</div>
+                <div className="text-sm font-bold text-slate-800">Choose File</div>
                 <div className="text-xs text-slate-500">No file chosen</div>
-                <div className="text-[11px] text-slate-400 pt-2 border-t border-slate-800/80 w-full">
-                  <strong className="text-slate-300 block mb-0.5">Required Columns:</strong>
+                <div className="text-[11px] text-slate-500 pt-2 border-t border-slate-200 w-full">
+                  <strong className="text-slate-700 block mb-0.5">Required Columns:</strong>
                   Name, Employee ID, Email, Department, DOB
                 </div>
               </>
             ) : (
-              <div className="w-full flex items-center justify-between p-3 bg-slate-900 border border-violet-500/40 rounded-xl" onClick={(e) => e.stopPropagation()}>
+              <div className="w-full flex items-center justify-between p-3 bg-slate-50 border border-violet-500/40 rounded-xl" onClick={(e) => e.stopPropagation()}>
                 <div className="flex items-center gap-3 text-left overflow-hidden">
-                  <FileSpreadsheet size={24} className="text-violet-400 shrink-0" />
+                  <FileSpreadsheet size={24} className="text-violet-700 shrink-0" />
                   <div className="truncate">
                     <div className="text-sm font-bold text-violet-300 truncate">✓ {file.name}</div>
-                    <div className="text-xs text-slate-400 font-mono">File size: {(file.size / 1024).toFixed(1)} KB</div>
+                    <div className="text-xs text-slate-500 font-mono">File size: {(file.size / 1024).toFixed(1)} KB</div>
                   </div>
                 </div>
                 <button
@@ -2263,15 +2301,15 @@ function FacultyImportModal({ onClose }: { onClose: () => void }) {
 
           {/* Import Summary Results */}
           {result && (
-            <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 text-xs space-y-2">
-              <div className="font-bold text-slate-200 border-b border-slate-800 pb-1.5 flex justify-between items-center">
+            <div className="p-4 rounded-xl bg-white border border-slate-200 text-xs space-y-2">
+              <div className="font-bold text-slate-800 border-b border-slate-200 pb-1.5 flex justify-between items-center">
                 <span>Import Summary</span>
                 <span className="text-emerald-400 font-mono">{result.importedCount} faculty members imported successfully.</span>
               </div>
               <div className="grid grid-cols-3 gap-2 text-center py-1">
-                <div className="p-2 rounded-lg bg-teal-500/10 border border-teal-500/20">
-                  <div className="text-base font-black text-teal-300 font-mono">{result.importedCount}</div>
-                  <div className="text-[10px] text-teal-400/90">Imported / Upserted</div>
+                <div className="p-2 rounded-lg bg-teal-50 border border-teal-500/20">
+                  <div className="text-base font-black text-teal-700 font-mono">{result.importedCount}</div>
+                  <div className="text-[10px] text-teal-700/90">Imported / Upserted</div>
                 </div>
                 <div className="p-2 rounded-lg bg-amber-500/10 border border-amber-500/20">
                   <div className="text-base font-black text-amber-300 font-mono">{result.skippedCount}</div>
@@ -2284,9 +2322,9 @@ function FacultyImportModal({ onClose }: { onClose: () => void }) {
               </div>
 
               {result.errors.length > 0 && (
-                <div className="mt-2 pt-2 border-t border-slate-800">
+                <div className="mt-2 pt-2 border-t border-slate-200">
                   <div className="font-semibold text-rose-400 mb-1">Validation Errors:</div>
-                  <div className="text-rose-300 max-h-32 overflow-y-auto space-y-1 font-mono text-[11px] bg-slate-900/80 p-2 rounded-lg border border-slate-800">
+                  <div className="text-rose-300 max-h-32 overflow-y-auto space-y-1 font-mono text-[11px] bg-slate-50 p-2 rounded-lg border border-slate-200">
                     {result.errors.map((err, i) => (
                       <div key={i}>• {err}</div>
                     ))}

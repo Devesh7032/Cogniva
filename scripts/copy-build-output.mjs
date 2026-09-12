@@ -7,9 +7,9 @@ const __dirname = path.dirname(__filename);
 const rootDir = path.resolve(__dirname, '..');
 const platformDir = path.resolve(rootDir, 'artifacts/cogniva-platform');
 
-let srcDir = path.resolve(platformDir, 'dist/public');
+let srcDir = path.resolve(platformDir, 'dist');
 if (!fs.existsSync(srcDir) || !fs.existsSync(path.join(srcDir, 'index.html'))) {
-  srcDir = path.resolve(platformDir, 'dist');
+  srcDir = path.resolve(platformDir, 'dist/public');
 }
 if (!fs.existsSync(srcDir) || !fs.existsSync(path.join(srcDir, 'index.html'))) {
   srcDir = path.resolve(platformDir, 'public');
@@ -27,7 +27,9 @@ const targets = [
 ];
 
 for (const target of targets) {
-  if (path.resolve(target) === path.resolve(srcDir)) continue;
+  const normTarget = path.resolve(target);
+  const normSrc = path.resolve(srcDir);
+  if (normTarget === normSrc || normTarget.startsWith(normSrc + path.sep)) continue;
   try {
     fs.mkdirSync(target, { recursive: true });
     fs.cpSync(srcDir, target, { recursive: true, force: true });

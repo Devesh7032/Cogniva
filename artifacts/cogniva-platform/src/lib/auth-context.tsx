@@ -1,58 +1,17 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from './supabase';
-import { fetchFacultyMembers, fetchStudentMembers } from './academic-api';
+import { fetchFacultyMembers, fetchStudentMembers, normalizeDobToPassword, setActiveSessionCollegeId, getCurrentCollegeId, COLLEGE_A_ID, COLLEGE_B_ID, GUEST_COLLEGE_ID, GUEST_COLLEGE_NAME, resetGuestDataStore } from './academic-api';
 
-type UserRole = 'admin' | 'faculty' | 'student' | null;
+export { COLLEGE_A_ID, COLLEGE_B_ID, GUEST_COLLEGE_ID };
+export const COLLEGE_A_NAME = 'Cogniva Engineering College (College A)';
+export const COLLEGE_B_NAME = 'Test College 1';
 
-export function normalizeDobToPassword(dobInput: any): string {
-  if (!dobInput) return '';
+const ADMIN_EMAILS_COLLEGE_A = ['cdc@gmail.com', 'hod@gmail.com'];
+const ADMIN_EMAILS_COLLEGE_B = ['cdc1@gmail.com', 'hod1@gmail.com', 'admin1@gmail.com'];
+const ADMIN_EMAILS = [...ADMIN_EMAILS_COLLEGE_A, ...ADMIN_EMAILS_COLLEGE_B];
 
-  if (dobInput instanceof Date) {
-    const dd = String(dobInput.getDate()).padStart(2, '0');
-    const mm = String(dobInput.getMonth() + 1).padStart(2, '0');
-    const yyyy = String(dobInput.getFullYear());
-    return `${dd}${mm}${yyyy}`;
-  }
-
-  const clean = String(dobInput).trim();
-  if (!clean) return '';
-
-  // Case 1: Excel serial date number (e.g. 36655 -> 09/05/2000)
-  if (!isNaN(Number(clean)) && Number(clean) > 20000 && Number(clean) < 60000) {
-    const excelDate = new Date((Number(clean) - (25567 + 2)) * 86400 * 1000);
-    const dd = String(excelDate.getUTCDate()).padStart(2, '0');
-    const mm = String(excelDate.getUTCMonth() + 1).padStart(2, '0');
-    const yyyy = String(excelDate.getUTCFullYear());
-    return `${dd}${mm}${yyyy}`;
-  }
-
-  // Case 2: YYYY-MM-DD or YYYY/MM/DD or YYYY.MM.DD (e.g. 2000-05-09 -> 09052000)
-  const ymdMatch = clean.match(/^(\d{4})[-/.](\d{1,2})[-/.](\d{1,2})/);
-  if (ymdMatch) {
-    const yyyy = ymdMatch[1];
-    const mm = ymdMatch[2].padStart(2, '0');
-    const dd = ymdMatch[3].padStart(2, '0');
-    return `${dd}${mm}${yyyy}`;
-  }
-
-  // Case 3: DD-MM-YYYY or DD/MM/YYYY or DD.MM.YYYY (e.g. 09/05/2000 -> 09052000 or 14-03-1985 -> 14031985)
-  const dmyMatch = clean.match(/^(\d{1,2})[-/.](\d{1,2})[-/.](\d{4})/);
-  if (dmyMatch) {
-    const dd = dmyMatch[1].padStart(2, '0');
-    const mm = dmyMatch[2].padStart(2, '0');
-    const yyyy = dmyMatch[3];
-    return `${dd}${mm}${yyyy}`;
-  }
-
-  // Case 4: Digits only (e.g. 14031985 or 09052000)
-  const digitsOnly = clean.replace(/[^0-9]/g, '');
-  if (digitsOnly.length >= 6) {
-    return digitsOnly;
-  }
-
-  return clean;
-}
+export type UserRole = 'admin' | 'faculty' | 'student' | null;
 
 interface LoginResult {
   success: boolean;
@@ -64,20 +23,32 @@ interface AuthContextType {
   user: User | null;
   session: Session | null;
   role: UserRole;
+  collegeId: string;
+  collegeName: string;
   loading: boolean;
+  isGuestMode: boolean;
+  guestRole: 'admin' | 'faculty' | 'student' | null;
   login: (email: string, pass: string) => Promise<LoginResult>;
+  enterGuestMode: (guestRole: 'admin' | 'faculty' | 'student') => void;
+  exitGuestMode: () => void;
   logout: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const ADMIN_EMAILS = ['cdc@gmail.com', 'hod@gmail.com'];
-
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [role, setRole] = useState<UserRole>(null);
+  const [collegeId, setCollegeId] = useState<string>(() => getCurrentCollegeId());
+  const [collegeName, setCollegeName] = useState<string>(() => getCurrentCollegeId() === GUEST_COLLEGE_ID ? GUEST_COLLEGE_NAME : getCurrentCollegeId() === COLLEGE_B_ID ? COLLEGE_B_NAME : COLLEGE_A_NAME);
   const [loading, setLoading] = useState(true);
+  const [isGuestMode, setIsGuestMode] = useState<boolean>(false);
+  const [guestRole, setGuestRole] = useState<'admin' | 'faculty' | 'student' | null>(null);
+
+  useEffect(() => {
+    setActiveSessionCollegeId(collegeId);
+  }, [collegeId]);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -107,6 +78,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
   }, []);
 
+  const resolveCollege = (email: string, profileCollegeId?: string, userMetadataCollegeId?: string) => {
+    let targetId = COLLEGE_A_ID;
+    if (profileCollegeId) {
+      targetId = profileCollegeId;
+    } else if (userMetadataCollegeId) {
+      targetId = userMetadataCollegeId;
+    } else if (ADMIN_EMAILS_COLLEGE_B.includes(email) || email.includes('admin1') || email.includes('cdc1') || email.includes('hod1')) {
+      targetId = COLLEGE_B_ID;
+    } else {
+      targetId = COLLEGE_A_ID;
+    }
+
+    const cName = targetId === COLLEGE_B_ID ? COLLEGE_B_NAME : COLLEGE_A_NAME;
+    setCollegeId(targetId);
+    setCollegeName(cName);
+    setActiveSessionCollegeId(targetId);
+    return targetId;
+  };
+
   const fetchRoleAndSetUser = async (u: User): Promise<UserRole> => {
     const email = u.email?.toLowerCase() || '';
 
@@ -114,13 +104,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       const { data: profile, error } = await supabase
         .from('profiles')
-        .select('role')
+        .select('role, college_id')
         .eq('user_id', u.id)
         .maybeSingle();
 
       if (!error && profile?.role) {
         const assignedRole = String(profile.role).toLowerCase() as UserRole;
         setRole(assignedRole);
+        resolveCollege(email, profile.college_id, u.user_metadata?.college_id);
         setLoading(false);
         return assignedRole;
       }
@@ -132,13 +123,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (u.user_metadata?.role) {
       const assignedRole = String(u.user_metadata.role).toLowerCase() as UserRole;
       setRole(assignedRole);
+      resolveCollege(email, undefined, u.user_metadata?.college_id);
       setLoading(false);
       return assignedRole;
     }
 
     // 3. Fallback check for admin accounts
-    if (ADMIN_EMAILS.includes(email) || email.includes('admin') || email.includes('cdc') || email.includes('hod')) {
+    if (ADMIN_EMAILS_COLLEGE_A.includes(email) || ADMIN_EMAILS_COLLEGE_B.includes(email) || email.includes('admin') || email.includes('cdc') || email.includes('hod')) {
       setRole('admin');
+      resolveCollege(email);
       setLoading(false);
       return 'admin';
     }
@@ -204,6 +197,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // 2. Check for Admin Account
     const isAdmin = ADMIN_EMAILS.includes(cleanEmail) || cleanEmail.includes('admin') || cleanEmail.includes('cdc') || cleanEmail.includes('hod');
     if (isAdmin) {
+      const adminCollegeId = (ADMIN_EMAILS_COLLEGE_B.includes(cleanEmail) || cleanEmail.includes('admin1') || cleanEmail.includes('cdc1') || cleanEmail.includes('hod1'))
+        ? COLLEGE_B_ID
+        : COLLEGE_A_ID;
+
+      resolveCollege(cleanEmail, adminCollegeId, adminCollegeId);
+      setActiveSessionCollegeId(adminCollegeId);
+
       try {
         let { data, error } = await supabase.auth.signInWithPassword({
           email: cleanEmail,
@@ -214,7 +214,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           await fetch('/api/sync-user', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email: cleanEmail, dob: cleanPass, role: 'admin', name: 'Admin User' })
+            body: JSON.stringify({ email: cleanEmail, dob: cleanPass, role: 'admin', name: 'Admin User', college_id: adminCollegeId })
           }).catch(() => undefined);
 
           const retry = await supabase.auth.signInWithPassword({
@@ -229,6 +229,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setSession(data.session);
           setUser(data.user);
           setRole('admin');
+          resolveCollege(cleanEmail, data.user.user_metadata?.college_id || adminCollegeId, data.user.user_metadata?.college_id || adminCollegeId);
+          setActiveSessionCollegeId(adminCollegeId);
           return { success: true, role: 'admin' };
         }
       } catch (err) {
@@ -261,6 +263,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         };
       }
 
+      const facultyCollegeId = (facultyRecord as any).college_id || COLLEGE_A_ID;
+      resolveCollege(cleanEmail, facultyCollegeId, facultyCollegeId);
+      setActiveSessionCollegeId(facultyCollegeId);
+
       try {
         await fetch('/api/sync-user', {
           method: 'POST',
@@ -271,7 +277,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             role: 'faculty',
             name: facultyRecord.name,
             employee_id: facultyRecord.employee_id,
-            department: facultyRecord.department
+            department: facultyRecord.department,
+            college_id: facultyCollegeId
           })
         }).catch(() => undefined);
 
@@ -317,6 +324,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         };
       }
 
+      const studentCollegeId = (studentRecord as any).college_id || COLLEGE_A_ID;
+      resolveCollege(cleanEmail, studentCollegeId, studentCollegeId);
+      setActiveSessionCollegeId(studentCollegeId);
+
       try {
         const studentEmail = studentRecord.email?.toLowerCase() || cleanEmail;
         await fetch('/api/sync-user', {
@@ -328,7 +339,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             role: 'student',
             name: studentRecord.name,
             regno: studentRecord.regno,
-            section: studentRecord.section
+            section: studentRecord.section,
+            college_id: studentCollegeId
           })
         }).catch(() => undefined);
 
@@ -358,15 +370,79 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
   };
 
+  const enterGuestMode = (gRole: 'admin' | 'faculty' | 'student') => {
+    resetGuestDataStore();
+    setIsGuestMode(true);
+    setGuestRole(gRole);
+    setRole(gRole);
+    setCollegeId(GUEST_COLLEGE_ID);
+    setCollegeName(GUEST_COLLEGE_NAME);
+    setActiveSessionCollegeId(GUEST_COLLEGE_ID);
+
+    const syntheticUser = {
+      id: `guest-${gRole}-user`,
+      email: `guest-${gRole}@cogniva.demo`,
+      user_metadata: {
+        role: gRole,
+        full_name: `Guest ${gRole.toUpperCase()}`,
+        isGuest: true
+      }
+    } as any;
+
+    setUser(syntheticUser);
+    setSession({
+      access_token: 'guest-access-token',
+      token_type: 'bearer',
+      expires_in: 3600,
+      refresh_token: 'guest-refresh-token',
+      user: syntheticUser
+    } as any);
+    setLoading(false);
+  };
+
+  const exitGuestMode = () => {
+    resetGuestDataStore();
+    setIsGuestMode(false);
+    setGuestRole(null);
+    setRole(null);
+    setUser(null);
+    setSession(null);
+    setCollegeId(COLLEGE_A_ID);
+    setCollegeName(COLLEGE_A_NAME);
+    setActiveSessionCollegeId(COLLEGE_A_ID);
+    setLoading(false);
+  };
+
   const logout = async () => {
-    await supabase.auth.signOut();
+    resetGuestDataStore();
+    setIsGuestMode(false);
+    setGuestRole(null);
+    await supabase.auth.signOut().catch(() => {});
     setUser(null);
     setSession(null);
     setRole(null);
+    setCollegeId(COLLEGE_A_ID);
+    setCollegeName(COLLEGE_A_NAME);
+    setActiveSessionCollegeId(null);
   };
 
   return (
-    <AuthContext.Provider value={{ user, session, role, loading, login, logout }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        session,
+        role,
+        collegeId,
+        collegeName,
+        loading,
+        isGuestMode,
+        guestRole,
+        login,
+        enterGuestMode,
+        exitGuestMode,
+        logout
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );

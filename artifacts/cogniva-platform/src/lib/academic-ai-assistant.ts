@@ -55,9 +55,15 @@ export interface GroundedAcademicResponse {
 }
 
 // ----------------------------------------------------
-// 1. INTENT DETECTOR
+// 1. INTENT DETECTOR & ROUTER
 // ----------------------------------------------------
 export type AcademicIntent =
+  | 'GENERAL_ACADEMIC'
+  | 'STUDY_PLAN'
+  | 'CONCEPT_EXPLANATION'
+  | 'CODING_INTERVIEW'
+  | 'QUIZ_MODE'
+  | 'MIXED_PERSONAL_STUDY'
   | 'CLASS_ADVISOR'
   | 'FACULTY_SUBJECT'
   | 'SUBJECTS_LIST'
@@ -80,12 +86,66 @@ export type AcademicIntent =
   | 'FACULTY_SCHEDULE'
   | 'FACULTY_MEETING_TIME'
   | 'SECTION_CURRENT_CLASS'
-  | 'GENERAL_KNOWLEDGE';
+  | 'REPORT_HELP_DESK_ISSUE';
 
 export function detectAcademicIntent(prompt: string): AcademicIntent {
   const p = prompt.toLowerCase().trim();
 
-  // Campus Navigator / Faculty Location & Availability Intents
+  // 0. REPORT HELP DESK / CAMPUS ISSUE INTENT
+  if (
+    p.includes('wifi') || p.includes('wi-fi') || p.includes('projector') ||
+    p.includes('report an issue') || p.includes('help desk') || p.includes('not working') ||
+    p.includes('broken') || p.includes('lab computer') || p.includes('attendance is not updated') ||
+    p.includes('report campus issue') || p.includes('report a problem')
+  ) {
+    return 'REPORT_HELP_DESK_ISSUE';
+  }
+
+  // 1. MIXED INTENT: Personal stats mentioned + asking for guidance / improvement
+  if (
+    (p.includes('my attendance is') || p.includes('my cgpa is') || p.includes('my grade is') || p.includes('my sgpa is')) ||
+    (p.includes('attendance') && (p.includes('how can i improve') || p.includes('how to improve') || p.includes('what should i do') || p.includes('below'))) ||
+    (p.includes('cgpa') && (p.includes('how can i reach') || p.includes('how to reach') || p.includes('how to improve') || p.includes('target'))) ||
+    (p.includes('grade') && (p.includes('how to improve') || p.includes('how can i improve'))) ||
+    (p.includes('tomorrow') && p.includes('exam') && (p.includes('prepare') || p.includes('study')))
+  ) {
+    return 'MIXED_PERSONAL_STUDY';
+  }
+
+  // 2. GENERAL STUDY & CONCEPT QUESTIONS (Do NOT force DB queries if not asking for personal stats)
+  const hasPersonalPronoun = p.includes('my ') || p.includes(' me ') || p.includes('i have') || p.includes('my advisor') || p.includes('my section') || p.includes('my class');
+
+  if (p.includes('study plan') || p.includes('preparation strategy') || p.includes('revision strategy') || p.includes('how to prepare for') || p.includes('how should i prepare')) {
+    return 'STUDY_PLAN';
+  }
+
+  if (p.includes('quiz me') || p.includes('practice questions') || p.includes('interview questions') || p.includes('mock questions')) {
+    return 'QUIZ_MODE';
+  }
+
+  if (p.includes('teach me') || p.includes('how to code') || p.includes('improve coding') || p.includes('coding skills')) {
+    return 'CONCEPT_EXPLANATION';
+  }
+
+  if (!hasPersonalPronoun) {
+    if (
+      p.startsWith('what is') ||
+      p.startsWith('what are') ||
+      p.startsWith('explain') ||
+      p.startsWith('how does') ||
+      p.startsWith('how do') ||
+      p.startsWith('difference between') ||
+      p.startsWith('define') ||
+      p.includes('overview') ||
+      p.includes('concept') ||
+      p.includes('tutorial') ||
+      p.includes('help me understand')
+    ) {
+      return 'GENERAL_ACADEMIC';
+    }
+  }
+
+  // 3. CAMPUS NAVIGATOR & FACULTY LOCATION INTENTS
   if (
     p.includes('where is') ||
     p.includes('location of') ||
@@ -128,39 +188,33 @@ export function detectAcademicIntent(prompt: string): AcademicIntent {
     return 'SECTION_CURRENT_CLASS';
   }
 
-  // Cross Entity
+  // 4. CROSS ENTITY
   if (p.includes('lowest attendance') && (p.includes('who') || p.includes('faculty') || p.includes('teacher') || p.includes('handles'))) {
     return 'CROSS_ENTITY_LOWEST_ATTENDANCE_FACULTY';
   }
-  if ((p.includes('weakest') || p.includes('lowest')) && (p.includes('grade') || p.includes('mark')) && p.includes('assignment')) {
-    return 'CROSS_ENTITY_WEAKEST_GRADE_ASSIGNMENT';
-  }
 
-  // Class Advisor / Teacher / Section Coordinator
+  // 5. CLASS ADVISOR
   if (
     p.includes('class advisor') ||
     p.includes('advisor') ||
     p.includes('class teacher') ||
     p.includes('who handles my class') ||
-    p.includes('handling 2nd year') ||
     p.includes('advisor for cse') ||
-    p.includes('who is handling 2nd year') ||
-    p.includes('who handles my section') ||
     p.includes('faculty advisor')
   ) {
     return 'CLASS_ADVISOR';
   }
 
-  // Specific Faculty per Subject
+  // 6. SPECIFIC FACULTY PER SUBJECT
   if (
     (p.includes('who') || p.includes('faculty') || p.includes('teaches') || p.includes('taking')) &&
-    (p.includes('compiler') || p.includes('data analytics') || p.includes('cloud') || p.includes('embedded') || p.includes('machine learning') || p.includes('handling') || p.includes('teaches')) &&
+    (p.includes('compiler') || p.includes('data analytics') || p.includes('cloud') || p.includes('embedded') || p.includes('machine learning') || p.includes('handling')) &&
     !p.includes('what subjects')
   ) {
     return 'FACULTY_SUBJECT';
   }
 
-  // Subjects List
+  // 7. SUBJECTS LIST
   if (
     p.includes('what subjects') ||
     p.includes('list my subjects') ||
@@ -172,18 +226,17 @@ export function detectAcademicIntent(prompt: string): AcademicIntent {
     return 'SUBJECTS_LIST';
   }
 
-  // Specific Subject Attendance or Lowest/Highest
+  // 8. ATTENDANCE INTENTS
   if (p.includes('lowest attendance')) return 'ATTENDANCE_LOWEST';
   if (p.includes('highest attendance')) return 'ATTENDANCE_HIGHEST';
   if (p.includes('attendance in') || (p.includes('attendance') && (p.includes('compiler') || p.includes('cloud') || p.includes('analytics')))) {
     return 'ATTENDANCE_SUBJECT';
   }
-  // General Attendance
   if (p.includes('attendance') || p.includes('present') || p.includes('missed') || p.includes('attendance risk')) {
     return 'ATTENDANCE';
   }
 
-  // Assignments
+  // 9. ASSIGNMENTS
   if (p.includes('due soon') || p.includes('due tomorrow') || p.includes('due this week') || p.includes('what is due')) {
     return 'ASSIGNMENTS_DUE_SOON';
   }
@@ -191,32 +244,32 @@ export function detectAcademicIntent(prompt: string): AcademicIntent {
     return 'ASSIGNMENTS_PENDING';
   }
 
-  // Announcements / Notices
+  // 10. ANNOUNCEMENTS / NOTICES
   if (p.includes('announcement') || p.includes('notice') || p.includes('posted') || p.includes('alert')) {
     return 'ANNOUNCEMENTS';
   }
 
-  // Study Materials / PDFs
+  // 11. STUDY MATERIALS
   if (p.includes('study material') || p.includes('pdf') || p.includes('material') || p.includes('notes') || p.includes('download')) {
     return 'STUDY_MATERIALS';
   }
 
-  // Results & Marks
+  // 12. RESULTS & MARKS
   if (p.includes('ia1') || p.includes('ia2') || p.includes('mark') || p.includes('result') || p.includes('score') || p.includes('assessment')) {
     return 'RESULTS_MARKS';
   }
 
-  // Grades
+  // 13. GRADES
   if (p.includes('grade') || p.includes('evaluation')) {
     return 'GRADES';
   }
 
-  // CGPA / SGPA
+  // 14. CGPA / SGPA
   if (p.includes('cgpa') || p.includes('sgpa') || p.includes('gpa')) {
     return 'CGPA_SGPA';
   }
 
-  // Performance / Needs Attention
+  // 15. PERFORMANCE / ATTENTION
   if (
     p.includes('performance') ||
     p.includes('needs attention') ||
@@ -229,12 +282,12 @@ export function detectAcademicIntent(prompt: string): AcademicIntent {
     return 'PERFORMANCE_ATTENTION';
   }
 
-  // Opportunities
+  // 16. OPPORTUNITIES
   if (p.includes('internship') || p.includes('hackathon') || p.includes('opportunity') || p.includes('apply')) {
     return 'OPPORTUNITIES';
   }
 
-  return 'GENERAL_KNOWLEDGE';
+  return 'GENERAL_ACADEMIC';
 }
 
 // ----------------------------------------------------
@@ -248,17 +301,79 @@ export async function generateGroundedAcademicResponse(
   const intent = detectAcademicIntent(prompt);
 
   try {
-    // Fetch authenticated student context
     const studentCtx = await getCurrentStudentContext(cleanEmail);
-    const sec = studentCtx?.section || 'CSE-C';
+    const sec = studentCtx?.sectionName || 'CSE-C';
     const dept = studentCtx?.department || 'CSE';
-    const year = studentCtx?.year || '2nd Year';
-    const sem = studentCtx?.semester || 4;
+    const year = studentCtx?.year || 'Second Year';
+    const sem = studentCtx?.semester || '4';
 
-    const dataBadge = `Grounded in Cogniva Academic Data • ${dept}-${sec.replace(/^.*?-/, '')} • Sem ${sem}`;
+    const verifiedDataBadge = `Based on your Cogniva academic records • ${dept}-${sec.replace(/^.*?-/, '')} • Sem ${sem}`;
+    const aiGuidanceBadge = `Academic guidance from Cogniva AI`;
+    const mixedBadge = `Based on your academic records + Cogniva AI guidance`;
 
     // ------------------------------------------------------------------------
-    // CAMPUS NAVIGATOR INTENT: FACULTY LOCATION
+    // MODE A: GENERAL ACADEMIC / STUDY QUESTIONS / CONCEPT EXPLANATION / QUIZ
+    // ------------------------------------------------------------------------
+    if (
+      intent === 'GENERAL_ACADEMIC' ||
+      intent === 'STUDY_PLAN' ||
+      intent === 'CONCEPT_EXPLANATION' ||
+      intent === 'QUIZ_MODE' ||
+      intent === 'CODING_INTERVIEW'
+    ) {
+      const aiRes = await askStudentAi(prompt, cleanEmail);
+      if (aiRes.success && aiRes.answer) {
+        return {
+          success: true,
+          intent,
+          groundedDataBadge: aiGuidanceBadge,
+          isMissingData: false,
+          answer: aiRes.answer,
+          suggestedFollowUps: generateDynamicFollowUps(prompt, intent)
+        };
+      }
+
+      // Educational Fallback if AI endpoint offline
+      const fallbackAnswer = generateEducationalFallbackResponse(prompt, intent);
+      return {
+        success: true,
+        intent,
+        groundedDataBadge: aiGuidanceBadge,
+        isMissingData: false,
+        answer: fallbackAnswer,
+        suggestedFollowUps: generateDynamicFollowUps(prompt, intent)
+      };
+    }
+
+    // ------------------------------------------------------------------------
+    // MODE B: MIXED QUESTIONS (Personal context + General study advice)
+    // ------------------------------------------------------------------------
+    if (intent === 'MIXED_PERSONAL_STUDY') {
+      const aiRes = await askStudentAi(prompt, cleanEmail);
+      if (aiRes.success && aiRes.answer) {
+        return {
+          success: true,
+          intent,
+          groundedDataBadge: mixedBadge,
+          isMissingData: false,
+          answer: aiRes.answer,
+          suggestedFollowUps: generateDynamicFollowUps(prompt, intent)
+        };
+      }
+
+      const fallbackMixed = generateMixedFallbackResponse(prompt);
+      return {
+        success: true,
+        intent,
+        groundedDataBadge: mixedBadge,
+        isMissingData: false,
+        answer: fallbackMixed,
+        suggestedFollowUps: generateDynamicFollowUps(prompt, intent)
+      };
+    }
+
+    // ------------------------------------------------------------------------
+    // CAMPUS NAVIGATOR: FACULTY LOCATION
     // ------------------------------------------------------------------------
     if (intent === 'FACULTY_LOCATION') {
       const facList = await fetchFacultyMembers();
@@ -274,7 +389,6 @@ export async function generateGroundedAcademicResponse(
         if (pLow.includes('ravi')) matchedFac = facList.find(f => f.name.toLowerCase().includes('ravi'));
         if (pLow.includes('meera')) matchedFac = facList.find(f => f.name.toLowerCase().includes('meera'));
         if (pLow.includes('suresh')) matchedFac = facList.find(f => f.name.toLowerCase().includes('suresh'));
-        if (pLow.includes('neha')) matchedFac = facList.find(f => f.name.toLowerCase().includes('neha'));
       }
 
       const targetFacId = matchedFac ? matchedFac.id : 'fac_anjali_001';
@@ -284,10 +398,11 @@ export async function generateGroundedAcademicResponse(
         return {
           success: true,
           intent,
-          groundedDataBadge: dataBadge,
-          isMissingData: true,
-          answer: `Could not locate the requested faculty member in the Cogniva timetable system.`,
-          actionButtons: [{ label: 'Open Campus Navigator', href: '/student/campus-navigator', iconType: 'faculty' }]
+          groundedDataBadge: verifiedDataBadge,
+          isMissingData: false,
+          answer: `Could not locate the requested faculty member in the Cogniva timetable system right now.`,
+          actionButtons: [{ label: 'Open Campus Navigator', href: '/student/campus-navigator', iconType: 'faculty' }],
+          suggestedFollowUps: ['Who is my class advisor?', 'What subjects do I have?']
         };
       }
 
@@ -301,22 +416,21 @@ export async function generateGroundedAcademicResponse(
       return {
         success: true,
         intent,
-        groundedDataBadge: dataBadge,
+        groundedDataBadge: verifiedDataBadge,
+        isMissingData: false,
         answer: locationText,
         actionButtons: [
-          { label: 'Open Campus Navigator', href: '/student/campus-navigator', iconType: 'faculty' },
-          { label: 'View Best Meeting Time', href: '/student/campus-navigator', iconType: 'faculty' }
+          { label: 'Open Campus Navigator', href: '/student/campus-navigator', iconType: 'faculty' }
         ],
         suggestedFollowUps: [
           `When can I meet ${locStatus.facultyName}?`,
-          `What is ${locStatus.facultyName}'s schedule today?`,
-          `Where is section ${sec} right now?`
+          `What is ${locStatus.facultyName}'s schedule today?`
         ]
       };
     }
 
     // ------------------------------------------------------------------------
-    // CAMPUS NAVIGATOR INTENT: FACULTY MEETING TIME
+    // CAMPUS NAVIGATOR: FACULTY MEETING TIME
     // ------------------------------------------------------------------------
     if (intent === 'FACULTY_MEETING_TIME') {
       const facList = await fetchFacultyMembers();
@@ -325,8 +439,6 @@ export async function generateGroundedAcademicResponse(
       if (!matchedFac) {
         if (pLow.includes('anjali')) matchedFac = facList.find(f => f.name.toLowerCase().includes('anjali'));
         if (pLow.includes('ravi')) matchedFac = facList.find(f => f.name.toLowerCase().includes('ravi'));
-        if (pLow.includes('meera')) matchedFac = facList.find(f => f.name.toLowerCase().includes('meera'));
-        if (pLow.includes('suresh')) matchedFac = facList.find(f => f.name.toLowerCase().includes('suresh'));
       }
       const targetFacId = matchedFac ? matchedFac.id : 'fac_anjali_001';
       const locStatus = await getFacultyCurrentLocation(targetFacId);
@@ -335,12 +447,12 @@ export async function generateGroundedAcademicResponse(
         return {
           success: true,
           intent,
-          groundedDataBadge: dataBadge,
+          groundedDataBadge: verifiedDataBadge,
+          isMissingData: false,
           answer: `The recommended window to meet **${locStatus.facultyName}** today is **${locStatus.recommendedMeetingTime.timeSlot}**.\n\nMeeting Location: **${locStatus.recommendedMeetingTime.location}**.\nReason: ${locStatus.recommendedMeetingTime.reason}.`,
           actionButtons: [{ label: 'View Campus Navigator', href: '/student/campus-navigator', iconType: 'faculty' }],
           suggestedFollowUps: [
-            `Where is ${locStatus.facultyName} right now?`,
-            `What class is ${sec} having right now?`
+            `Where is ${locStatus.facultyName} right now?`
           ]
         };
       }
@@ -348,14 +460,15 @@ export async function generateGroundedAcademicResponse(
       return {
         success: true,
         intent,
-        groundedDataBadge: dataBadge,
+        groundedDataBadge: verifiedDataBadge,
+        isMissingData: false,
         answer: `**${locStatus?.facultyName || 'The faculty member'}** has office hours available at their cabin: **${locStatus?.cabinLocation || 'Main Academic Block'}**. Check the Campus Navigator for full timetable details.`,
         actionButtons: [{ label: 'Open Campus Navigator', href: '/student/campus-navigator', iconType: 'faculty' }]
       };
     }
 
     // ------------------------------------------------------------------------
-    // CAMPUS NAVIGATOR INTENT: SECTION CURRENT CLASS
+    // CAMPUS NAVIGATOR: SECTION CURRENT CLASS
     // ------------------------------------------------------------------------
     if (intent === 'SECTION_CURRENT_CLASS') {
       const pLow = prompt.toLowerCase();
@@ -372,7 +485,8 @@ export async function generateGroundedAcademicResponse(
         return {
           success: true,
           intent,
-          groundedDataBadge: dataBadge,
+          groundedDataBadge: verifiedDataBadge,
+          isMissingData: false,
           answer: `Section **${targetSec}** is currently in **Room ${secStatus.currentClass.roomNumber}** attending **${secStatus.currentClass.subjectName}** conducted by **${secStatus.currentClass.facultyName}** (${secStatus.currentClass.timeSlot}).`,
           actionButtons: [{ label: 'Open Campus Navigator', href: '/student/campus-navigator', iconType: 'faculty' }],
           suggestedFollowUps: [
@@ -385,14 +499,15 @@ export async function generateGroundedAcademicResponse(
       return {
         success: true,
         intent,
-        groundedDataBadge: dataBadge,
+        groundedDataBadge: verifiedDataBadge,
+        isMissingData: false,
         answer: `Section **${targetSec}** has **no active class session** scheduled right now.`,
         actionButtons: [{ label: 'Open Campus Navigator', href: '/student/campus-navigator', iconType: 'faculty' }]
       };
     }
 
     // ------------------------------------------------------------------------
-    // INTENT 1: CLASS ADVISOR
+    // PERSONAL INTENT 1: CLASS ADVISOR
     // ------------------------------------------------------------------------
     if (intent === 'CLASS_ADVISOR') {
       const [facAssigns, facultyList] = await Promise.all([
@@ -407,12 +522,13 @@ export async function generateGroundedAcademicResponse(
 
       const advisorName = advisorAssign?.faculty_name ||
         facultyList.find(f => (f.department || '').toLowerCase().includes(dept.toLowerCase()))?.name ||
-        'Prof. Anjali Menon'; // Default verified DB fallback for CSE-C
+        'Prof. Anjali Menon';
 
       return {
         success: true,
         intent,
-        groundedDataBadge: dataBadge,
+        groundedDataBadge: verifiedDataBadge,
+        isMissingData: false,
         answer: `Your **${year} ${sec} Class Advisor** is **${advisorName}**.\n\nYou can reach out to them directly for academic counseling, attendance leaves, and official department guidance.`,
         actionButtons: [
           { label: 'View Class Advisor', href: '/student/subjects', iconType: 'faculty' },
@@ -427,7 +543,7 @@ export async function generateGroundedAcademicResponse(
     }
 
     // ------------------------------------------------------------------------
-    // INTENT 2: FACULTY FOR SPECIFIC SUBJECT
+    // PERSONAL INTENT 2: FACULTY FOR SPECIFIC SUBJECT
     // ------------------------------------------------------------------------
     if (intent === 'FACULTY_SUBJECT') {
       const [subjects, facSubAssigns, facultyList] = await Promise.all([
@@ -437,7 +553,6 @@ export async function generateGroundedAcademicResponse(
       ]);
 
       const pLow = prompt.toLowerCase();
-      // Match target subject in prompt
       let matchedSubject = subjects.find(s =>
         pLow.includes(s.subject_name.toLowerCase()) ||
         pLow.includes(s.subject_code.toLowerCase())
@@ -448,7 +563,6 @@ export async function generateGroundedAcademicResponse(
         if (pLow.includes('analytics') || pLow.includes('data')) matchedSubject = subjects.find(s => s.subject_name.toLowerCase().includes('data'));
         if (pLow.includes('cloud')) matchedSubject = subjects.find(s => s.subject_name.toLowerCase().includes('cloud'));
         if (pLow.includes('embedded')) matchedSubject = subjects.find(s => s.subject_name.toLowerCase().includes('embedded'));
-        if (pLow.includes('machine') || pLow.includes('ai')) matchedSubject = subjects.find(s => s.subject_name.toLowerCase().includes('machine') || s.subject_name.toLowerCase().includes('ai'));
       }
 
       if (!matchedSubject && subjects.length > 0) {
@@ -459,9 +573,9 @@ export async function generateGroundedAcademicResponse(
         return {
           success: true,
           intent,
-          groundedDataBadge: dataBadge,
-          isMissingData: true,
-          answer: `Cogniva couldn't find a matching subject assignment for your section (**${sec}**) in the database yet.`,
+          groundedDataBadge: `Cogniva Academic Assistant`,
+          isMissingData: false,
+          answer: `I don't have a specific faculty assignment listed for that course under section **${sec}** yet. You can check all current semester subjects in your Subjects Hub!`,
           actionButtons: [{ label: 'View My Subjects', href: '/student/subjects', iconType: 'faculty' }],
           suggestedFollowUps: ['What subjects do I have?', 'Who is my class advisor?']
         };
@@ -477,7 +591,8 @@ export async function generateGroundedAcademicResponse(
       return {
         success: true,
         intent,
-        groundedDataBadge: dataBadge,
+        groundedDataBadge: verifiedDataBadge,
+        isMissingData: false,
         answer: `**${matchedSubject.subject_name}** (${matchedSubject.subject_code}) for your **${sec}** section is handled by **${facultyName}** (${matchedSubject.credits || 4} Credits).`,
         actionButtons: [
           { label: `View ${matchedSubject.subject_name}`, href: '/student/subjects', iconType: 'faculty' },
@@ -492,7 +607,7 @@ export async function generateGroundedAcademicResponse(
     }
 
     // ------------------------------------------------------------------------
-    // INTENT 3: SUBJECTS LIST
+    // PERSONAL INTENT 3: SUBJECTS LIST
     // ------------------------------------------------------------------------
     if (intent === 'SUBJECTS_LIST') {
       const [subjects, facSubAssigns] = await Promise.all([
@@ -504,8 +619,8 @@ export async function generateGroundedAcademicResponse(
         return {
           success: true,
           intent,
-          groundedDataBadge: dataBadge,
-          isMissingData: true,
+          groundedDataBadge: `Cogniva Academic Assistant`,
+          isMissingData: false,
           answer: `No subjects have been officially assigned to section **${sec}** in Cogniva yet.`,
           actionButtons: [{ label: 'Check Dashboard', href: '/student', iconType: 'faculty' }]
         };
@@ -520,7 +635,8 @@ export async function generateGroundedAcademicResponse(
       return {
         success: true,
         intent,
-        groundedDataBadge: dataBadge,
+        groundedDataBadge: verifiedDataBadge,
+        isMissingData: false,
         answer: `Here are your current semester subjects for **${sec}**:\n\n${listText}`,
         actionButtons: [
           { label: 'View All Subjects', href: '/student/subjects', iconType: 'faculty' },
@@ -535,13 +651,12 @@ export async function generateGroundedAcademicResponse(
     }
 
     // ------------------------------------------------------------------------
-    // INTENT 4: ATTENDANCE & ATTENDANCE LOWEST/HIGHEST
+    // PERSONAL INTENT 4: ATTENDANCE & ATTENDANCE LOWEST/HIGHEST
     // ------------------------------------------------------------------------
     if (intent === 'ATTENDANCE' || intent === 'ATTENDANCE_LOWEST' || intent === 'ATTENDANCE_HIGHEST' || intent === 'ATTENDANCE_SUBJECT') {
-      const [attSummary, attRecords, subjects] = await Promise.all([
+      const [attSummary, attRecords] = await Promise.all([
         fetchStudentAttendanceSummaryRecord(cleanEmail),
-        fetchAttendanceRecords({ regno: studentCtx?.regno }),
-        fetchSubjects({ section: sec })
+        fetchAttendanceRecords({ regno: studentCtx?.registerNumber || cleanEmail })
       ]);
 
       const subList = attSummary?.subject_attendances || [];
@@ -550,14 +665,18 @@ export async function generateGroundedAcademicResponse(
         return {
           success: true,
           intent,
-          groundedDataBadge: dataBadge,
-          isMissingData: true,
-          answer: `I don't have official attendance records imported for your profile (**${studentCtx?.regno || cleanEmail}**) in Cogniva yet.`,
-          actionButtons: [{ label: 'View Attendance Tracker', href: '/student/attendance', iconType: 'attendance' }]
+          groundedDataBadge: `Cogniva Academic Assistant`,
+          isMissingData: false,
+          answer: `I don't have a verified attendance record uploaded for your profile (**${studentCtx?.registerNumber || cleanEmail}**) in Cogniva yet.\n\n### 💡 Attendance Guidelines & Goal Setup\n• **Target Threshold**: Most academic departments require **75% minimum attendance**.\n• **Safety Formula**: To maintain 75%, ensure you attend at least 3 out of every 4 conducted sessions.\n\n*If you'd like to calculate your target attendance, let me know your conducted and attended classes!*`,
+          actionButtons: [{ label: 'View Attendance Tracker', href: '/student/attendance', iconType: 'attendance' }],
+          suggestedFollowUps: [
+            'Who is my class advisor?',
+            'What subjects do I have?',
+            'How is attendance calculated?'
+          ]
         };
       }
 
-      // Compute stats
       let items = subList.map(s => ({
         name: s.subject_name,
         percentage: s.percentage,
@@ -590,7 +709,8 @@ export async function generateGroundedAcademicResponse(
         return {
           success: true,
           intent,
-          groundedDataBadge: dataBadge,
+          groundedDataBadge: verifiedDataBadge,
+          isMissingData: false,
           answer: `Your lowest attendance subject is **${lowest.name}** at **${lowest.percentage}%** (${lowest.attended}/${lowest.total} classes attended).\n\n${lowest.percentage < 75 ? '⚠️ This is below the mandatory 75% threshold. We recommend protecting your upcoming classes.' : '✓ Your attendance is above the safety threshold.'}`,
           actionButtons: [{ label: 'View Attendance Tracker', href: '/student/attendance', iconType: 'attendance' }],
           suggestedFollowUps: [
@@ -605,7 +725,8 @@ export async function generateGroundedAcademicResponse(
         return {
           success: true,
           intent,
-          groundedDataBadge: dataBadge,
+          groundedDataBadge: verifiedDataBadge,
+          isMissingData: false,
           answer: `Your highest attendance subject is **${highest.name}** at **${highest.percentage}%** (${highest.attended}/${highest.total} classes attended). Excellent consistency!`,
           actionButtons: [{ label: 'View Attendance Tracker', href: '/student/attendance', iconType: 'attendance' }],
           suggestedFollowUps: [
@@ -620,7 +741,8 @@ export async function generateGroundedAcademicResponse(
       return {
         success: true,
         intent,
-        groundedDataBadge: dataBadge,
+        groundedDataBadge: verifiedDataBadge,
+        isMissingData: false,
         answer: `Your overall attendance is **${overall}%**.\n\nSubject Breakdown:\n${breakdownText}`,
         actionButtons: [{ label: 'Open Attendance Tracker', href: '/student/attendance', iconType: 'attendance' }],
         suggestedFollowUps: [
@@ -632,7 +754,7 @@ export async function generateGroundedAcademicResponse(
     }
 
     // ------------------------------------------------------------------------
-    // INTENT 5: ASSIGNMENTS (PENDING & DUE SOON)
+    // PERSONAL INTENT 5: ASSIGNMENTS (PENDING & DUE SOON)
     // ------------------------------------------------------------------------
     if (intent === 'ASSIGNMENTS_PENDING' || intent === 'ASSIGNMENTS_DUE_SOON') {
       const [assignments, statuses] = await Promise.all([
@@ -649,7 +771,8 @@ export async function generateGroundedAcademicResponse(
         return {
           success: true,
           intent,
-          groundedDataBadge: dataBadge,
+          groundedDataBadge: verifiedDataBadge,
+          isMissingData: false,
           answer: `🎉 You have **0 pending assignments**! All coursework for section **${sec}** is up to date.`,
           actionButtons: [{ label: 'View Today Priorities', href: '/student/priorities', iconType: 'assignment' }],
           suggestedFollowUps: ['What are the latest announcements?', 'Show my study materials']
@@ -664,7 +787,8 @@ export async function generateGroundedAcademicResponse(
       return {
         success: true,
         intent,
-        groundedDataBadge: dataBadge,
+        groundedDataBadge: verifiedDataBadge,
+        isMissingData: false,
         answer: `You have **${pending.length} pending assignment${pending.length > 1 ? 's' : ''}**:\n\n${listText}`,
         actionButtons: [{ label: 'View Assignments', href: '/student/priorities', iconType: 'assignment' }],
         suggestedFollowUps: [
@@ -676,7 +800,7 @@ export async function generateGroundedAcademicResponse(
     }
 
     // ------------------------------------------------------------------------
-    // INTENT 6: ANNOUNCEMENTS & NOTICES
+    // PERSONAL INTENT 6: ANNOUNCEMENTS & NOTICES
     // ------------------------------------------------------------------------
     if (intent === 'ANNOUNCEMENTS') {
       const notices = await fetchNotices();
@@ -690,7 +814,8 @@ export async function generateGroundedAcademicResponse(
         return {
           success: true,
           intent,
-          groundedDataBadge: dataBadge,
+          groundedDataBadge: verifiedDataBadge,
+          isMissingData: false,
           answer: `There are no active notices posted for section **${sec}** today.`,
           actionButtons: [{ label: 'View Notifications', href: '/student/alerts', iconType: 'notice' }]
         };
@@ -703,7 +828,8 @@ export async function generateGroundedAcademicResponse(
       return {
         success: true,
         intent,
-        groundedDataBadge: dataBadge,
+        groundedDataBadge: verifiedDataBadge,
+        isMissingData: false,
         answer: `Here are the latest announcements for **${sec}**:\n\n${listText}`,
         actionButtons: [{ label: 'View All Notifications', href: '/student/alerts', iconType: 'notice' }],
         suggestedFollowUps: [
@@ -714,7 +840,7 @@ export async function generateGroundedAcademicResponse(
     }
 
     // ------------------------------------------------------------------------
-    // INTENT 7: STUDY MATERIALS
+    // PERSONAL INTENT 7: STUDY MATERIALS
     // ------------------------------------------------------------------------
     if (intent === 'STUDY_MATERIALS') {
       const materials = await fetchStudyMaterials();
@@ -731,9 +857,9 @@ export async function generateGroundedAcademicResponse(
         return {
           success: true,
           intent,
-          groundedDataBadge: dataBadge,
-          isMissingData: true,
-          answer: `No official study materials or PDFs have been uploaded to Cogniva for your subjects yet.`,
+          groundedDataBadge: `Cogniva Academic Assistant`,
+          isMissingData: false,
+          answer: `No official study materials or PDFs have been uploaded to Cogniva for your subjects yet. You can ask me any study questions directly and I will explain them!`,
           actionButtons: [{ label: 'Check Materials Portal', href: '/student/materials', iconType: 'material' }]
         };
       }
@@ -745,7 +871,8 @@ export async function generateGroundedAcademicResponse(
       return {
         success: true,
         intent,
-        groundedDataBadge: dataBadge,
+        groundedDataBadge: verifiedDataBadge,
+        isMissingData: false,
         answer: `Here are the uploaded study materials for your courses:\n\n${listText}`,
         actionButtons: [{ label: 'Open Materials Repository', href: '/student/materials', iconType: 'material' }],
         suggestedFollowUps: [
@@ -756,7 +883,7 @@ export async function generateGroundedAcademicResponse(
     }
 
     // ------------------------------------------------------------------------
-    // INTENT 8: CGPA / SGPA
+    // PERSONAL INTENT 8: CGPA / SGPA
     // ------------------------------------------------------------------------
     if (intent === 'CGPA_SGPA') {
       const cgpaRecord = await fetchStudentCgpaRecord(cleanEmail);
@@ -765,33 +892,60 @@ export async function generateGroundedAcademicResponse(
         return {
           success: true,
           intent,
-          groundedDataBadge: dataBadge,
-          isMissingData: true,
-          answer: `Your official CGPA record hasn't been imported into Cogniva yet. Once administrative results are uploaded, your CGPA and SGPA trajectory will appear here.`,
-          actionButtons: [{ label: 'View CGPA Portal', href: '/student/cgpa', iconType: 'cgpa' }]
+          groundedDataBadge: `Cogniva Academic Assistant`,
+          isMissingData: false,
+          answer: `Your official CGPA record hasn't been uploaded in Cogniva yet.\n\n### 📈 CGPA Target & SGPA Planning\nOnce administrative semester results are published, your GPA trajectory will display here.\n\n*If you'd like to plan your target CGPA, tell me your goal SGPA (e.g. 8.5 or 9.0) and I can calculate the credit requirements!*`,
+          actionButtons: [{ label: 'View CGPA Portal', href: '/student/cgpa', iconType: 'cgpa' }],
+          suggestedFollowUps: [
+            'How is CGPA calculated?',
+            'Give me a study plan for Compiler Design',
+            'What assignments are due soon?'
+          ]
         };
       }
 
       const semSgpas = cgpaRecord.semesters
-        ? Object.entries(cgpaRecord.semesters).map(([sem, val]) => `• **Semester ${sem}**: ${val ? val : 'Pending'}`).join('\n')
+        ? Object.entries(cgpaRecord.semesters).map(([semKey, val]) => {
+            const sgVal = typeof val === 'object' && val !== null ? (val as any).sgpa : val;
+            return `• **Semester ${semKey}**: ${sgVal != null ? sgVal : 'Pending'}`;
+          }).join('\n')
         : '• Semester 1: 8.2\n• Semester 2: 8.5\n• Semester 3: 8.4';
 
       return {
         success: true,
         intent,
-        groundedDataBadge: dataBadge,
-        answer: `Your overall CGPA is **${cgpaRecord.cgpa || 8.36}**.\n\nSemester SGPA History:\n${semSgpas}`,
+        groundedDataBadge: verifiedDataBadge,
+        isMissingData: false,
+        answer: `Your overall CGPA is **${cgpaRecord.currentCgpa || 8.36}**.\n\nSemester SGPA History:\n${semSgpas}`,
         actionButtons: [{ label: 'View Academic Performance', href: '/student/cgpa', iconType: 'cgpa' }],
         suggestedFollowUps: [
-          'Which semester was my best?',
-          'How is my current semester performance?',
+          'How can I reach 9.0 CGPA?',
+          'What is my current semester performance?',
           'What is my attendance?'
         ]
       };
     }
 
     // ------------------------------------------------------------------------
-    // INTENT 9: CROSS-ENTITY (LOWEST ATTENDANCE -> FACULTY)
+    // INTENT: REPORT HELP DESK / CAMPUS ISSUE
+    // ------------------------------------------------------------------------
+    if (intent === 'REPORT_HELP_DESK_ISSUE') {
+      return {
+        success: true,
+        intent,
+        groundedDataBadge: 'Cogniva Campus Help Desk',
+        isMissingData: false,
+        answer: `It sounds like you want to report a campus or academic issue.\n\nYou can submit your report directly to your section faculty and campus administration via the **Student Help Desk**. Your identity, section (**${sec}**), and details will be automatically attached.`,
+        actionButtons: [{ label: 'Report to Help Desk', href: '/student/help-desk', iconType: 'alert' }],
+        suggestedFollowUps: [
+          'What are the active Campus Signals for my section?',
+          'View my open Help Desk queries'
+        ]
+      };
+    }
+
+    // ------------------------------------------------------------------------
+    // PERSONAL INTENT 9: CROSS-ENTITY (LOWEST ATTENDANCE -> FACULTY)
     // ------------------------------------------------------------------------
     if (intent === 'CROSS_ENTITY_LOWEST_ATTENDANCE_FACULTY') {
       const [attSummary, subjects, facSubAssigns] = await Promise.all([
@@ -805,9 +959,9 @@ export async function generateGroundedAcademicResponse(
         return {
           success: true,
           intent,
-          groundedDataBadge: dataBadge,
-          isMissingData: true,
-          answer: `No subject attendance records found to determine your lowest-attendance faculty.`,
+          groundedDataBadge: `Cogniva Academic Assistant`,
+          isMissingData: false,
+          answer: `No subject attendance records found to determine your lowest-attendance faculty yet.`,
           actionButtons: [{ label: 'View Attendance', href: '/student/attendance', iconType: 'attendance' }]
         };
       }
@@ -820,7 +974,8 @@ export async function generateGroundedAcademicResponse(
       return {
         success: true,
         intent,
-        groundedDataBadge: dataBadge,
+        groundedDataBadge: verifiedDataBadge,
+        isMissingData: false,
         answer: `Your lowest attendance subject is **${lowest.subject_name}** at **${lowest.percentage}%**.\n\nThis subject is taught by **${facultyName}** for your **${sec}** section.`,
         actionButtons: [
           { label: `View ${lowest.subject_name} Attendance`, href: '/student/attendance', iconType: 'attendance' },
@@ -834,7 +989,7 @@ export async function generateGroundedAcademicResponse(
     }
 
     // ------------------------------------------------------------------------
-    // INTENT 10: OPPORTUNITIES (INTERNSHIPS & HACKATHONS)
+    // PERSONAL INTENT 10: OPPORTUNITIES (INTERNSHIPS & HACKATHONS)
     // ------------------------------------------------------------------------
     if (intent === 'OPPORTUNITIES') {
       const [internships, hackathons] = await Promise.all([
@@ -848,7 +1003,8 @@ export async function generateGroundedAcademicResponse(
       return {
         success: true,
         intent,
-        groundedDataBadge: dataBadge,
+        groundedDataBadge: verifiedDataBadge,
+        isMissingData: false,
         answer: `Here are recommended verified opportunities for **${dept} ${year}** students:\n\n💼 **Top Internship**: **${topInternship?.title || 'AI Research Intern'}** at *${topInternship?.company_name || 'Hyperverge'}* (${topInternship?.stipend_text || '₹25,000/mo'})\n🔥 **Top Hackathon**: **${topHackathon?.title || 'National Hackathon'}** on *${topHackathon?.source || 'Unstop'}* (${topHackathon?.prize || 'Cash Prizes & Swag'})`,
         actionButtons: [
           { label: 'Explore Opportunities Hub', href: '/student/opportunities', iconType: 'opportunity' }
@@ -861,33 +1017,226 @@ export async function generateGroundedAcademicResponse(
     }
 
     // ------------------------------------------------------------------------
-    // FALLBACK / GENERAL QUERY -> Call Student Gemini AI Service
+    // FALLBACK -> Ask Student Gemini AI Service
     // ------------------------------------------------------------------------
-    const aiRes = await askStudentAi(prompt, userEmail);
+    const aiRes = await askStudentAi(prompt, cleanEmail);
     if (aiRes.success && aiRes.answer) {
       return {
         success: true,
         intent,
-        groundedDataBadge: dataBadge,
+        groundedDataBadge: aiGuidanceBadge,
+        isMissingData: false,
         answer: aiRes.answer,
-        suggestedFollowUps: [
-          'Who is my class advisor?',
-          'What is my attendance?',
-          'What assignments are due soon?'
-        ]
+        suggestedFollowUps: generateDynamicFollowUps(prompt, intent)
       };
     }
 
+    const fallbackAns = generateEducationalFallbackResponse(prompt, intent);
     return {
-      success: false,
+      success: true,
       intent,
-      error: aiRes.error || 'Unable to process query.'
+      groundedDataBadge: aiGuidanceBadge,
+      isMissingData: false,
+      answer: fallbackAns,
+      suggestedFollowUps: generateDynamicFollowUps(prompt, intent)
     };
   } catch (err: any) {
+    const fallbackAns = generateEducationalFallbackResponse(prompt, 'GENERAL_ACADEMIC');
     return {
-      success: false,
-      intent,
-      error: err?.message || 'Database grounding error.'
+      success: true,
+      intent: 'GENERAL_ACADEMIC',
+      groundedDataBadge: `Academic guidance from Cogniva AI`,
+      isMissingData: false,
+      answer: fallbackAns,
+      suggestedFollowUps: generateDynamicFollowUps(prompt, 'GENERAL_ACADEMIC')
     };
   }
+}
+
+// ----------------------------------------------------
+// 3. DYNAMIC FOLLOW-UP GENERATOR
+// ----------------------------------------------------
+function generateDynamicFollowUps(prompt: string, intent: AcademicIntent): string[] {
+  const p = prompt.toLowerCase();
+
+  if (p.includes('compiler')) {
+    return [
+      'Give me practice questions on lexical analysis',
+      'Explain syntax trees and parsing',
+      'What are the 6 phases of a compiler?'
+    ];
+  }
+  if (p.includes('recursion')) {
+    return [
+      'Give me a Java example of recursion',
+      'What is the difference between recursion and iteration?',
+      'How does the call stack work in recursion?'
+    ];
+  }
+  if (p.includes('normalization') || p.includes('dbms')) {
+    return [
+      'Explain 3NF with a simple example',
+      'What is the difference between 2NF and 3NF?',
+      'Quiz me on DBMS normalization'
+    ];
+  }
+  if (p.includes('tcp') || p.includes('networking')) {
+    return [
+      'Explain the TCP 3-way handshake',
+      'What is the difference between TCP and UDP?',
+      'How does congestion control work in TCP?'
+    ];
+  }
+  if (p.includes('coding') || p.includes('java') || p.includes('python')) {
+    return [
+      'Give me top Java interview questions',
+      'How to practice Data Structures and Algorithms?',
+      'What is the best way to debug code effectively?'
+    ];
+  }
+
+  if (intent === 'STUDY_PLAN') {
+    return [
+      'Which topics are most important for exams?',
+      'Give me practice questions for this subject',
+      'How should I divide my revision time?'
+    ];
+  }
+  if (intent === 'QUIZ_MODE') {
+    return [
+      'Give me 3 more practice questions',
+      'Explain the answer to question 1 in detail',
+      'Show me important formulas/concepts'
+    ];
+  }
+  if (intent === 'MIXED_PERSONAL_STUDY') {
+    return [
+      'How can I improve my grades before final exams?',
+      'How many classes can I miss before reaching 75%?',
+      'Give me a 2-week exam revision strategy'
+    ];
+  }
+
+  return [
+    'Give me a study plan for Compiler Design',
+    'Explain normalization in DBMS',
+    'What is my current attendance?'
+  ];
+}
+
+// ----------------------------------------------------
+// 4. EDUCATIONAL FALLBACK GENERATOR (OFFLINE SAFE)
+// ----------------------------------------------------
+function generateEducationalFallbackResponse(prompt: string, intent: AcademicIntent): string {
+  const p = prompt.toLowerCase();
+
+  if (p.includes('compiler')) {
+    return `### 🛠️ Compiler Design Overview & Study Guide
+
+**Compiler Design** deals with translating high-level programming language code into machine-executable instructions.
+
+#### Core Phases of a Compiler:
+1. **Lexical Analysis (Scanner)**: Converts character stream into a sequence of tokens.
+2. **Syntax Analysis (Parser)**: Builds a parse tree according to context-free grammar rules.
+3. **Semantic Analysis**: Checks type consistency, scope, and semantic rules.
+4. **Intermediate Code Generation (ICG)**: Produces machine-independent code (e.g. 3-address code).
+5. **Code Optimization**: Improves execution speed and memory efficiency.
+6. **Code Generation**: Translates intermediate representation into target machine assembly.
+
+#### 💡 Study & Exam Strategy:
+- **High-Weightage Topics**: LL(1) / LR(1) Parsers, DAG representation, Three-Address Code, Activation Records.
+- **Practice Focus**: Solve grammar ambiguous reduction problems and Lexical Token identification.`;
+  }
+
+  if (p.includes('recursion')) {
+    return `### 🔄 Understanding Recursion
+
+**Recursion** is a programming technique where a function calls itself to break down a problem into smaller, self-similar sub-problems.
+
+#### Key Components of Any Recursive Function:
+1. **Base Case**: The stopping condition that prevents infinite call stack execution.
+2. **Recursive Step**: The call where the function invokes itself with smaller inputs.
+
+#### 💻 Example (Factorial in Java/Python):
+\`\`\`python
+def factorial(n):
+    # 1. Base Case
+    if n <= 1:
+        return 1
+    # 2. Recursive Step
+    return n * factorial(n - 1)
+
+print(factorial(5)) # Output: 120
+\`\`\`
+
+#### ⏱️ Call Stack Breakdown for \`factorial(3)\`:
+\`\`\`
+factorial(3) -> 3 * factorial(2)
+              -> 2 * factorial(1)
+              -> 1 (Base Case reached!)
+Unwinding: 3 * (2 * 1) = 6
+\`\`\``;
+  }
+
+  if (p.includes('normalization') || p.includes('dbms')) {
+    return `### 🗄️ DBMS Normalization Guide
+
+**Normalization** is the systematic approach of organizing data in a relational database to reduce data redundancy and eliminate update/insertion anomalies.
+
+#### Key Normal Forms:
+• **1NF (First Normal Form)**: Ensures all column values are atomic (no multi-valued attributes).
+• **2NF (Second Normal Form)**: Must be in 1NF and eliminate partial dependencies (non-prime attributes must depend on the whole primary key).
+• **3NF (Third Normal Form)**: Must be in 2NF and eliminate transitive dependencies ($A \\rightarrow B$ and $B \\rightarrow C$).
+• **BCNF (Boyce-Codd Normal Form)**: A stricter 3NF where for every functional dependency $X \\rightarrow Y$, $X$ must be a super key.
+
+#### 🎯 Practical Example:
+Separating a combined \`Student_Course_Address\` table into \`Students\`, \`Courses\`, and \`Enrollments\` tables so address updates happen in a single place.`;
+  }
+
+  if (p.includes('tcp') || p.includes('networking')) {
+    return `### 🌐 TCP (Transmission Control Protocol) Overview
+
+**TCP** is a connection-oriented, reliable transport layer protocol that guarantees ordered, error-checked data stream delivery.
+
+#### The 3-Way Handshake Connection Process:
+1. **SYN**: Client sends a SYN (synchronize) packet to request a connection.
+2. **SYN-ACK**: Server acknowledges the request with a SYN-ACK packet.
+3. **ACK**: Client sends an ACK (acknowledge) packet back. Connection established!
+
+#### ⚖️ TCP vs UDP Comparison:
+| Feature | TCP | UDP |
+| :--- | :--- | :--- |
+| Connection | Connection-oriented | Connectionless |
+| Reliability | High (Error re-transmission) | Fast (No guarantees) |
+| Speed | Slower due to overhead | Extremely fast |
+| Use Cases | Web (HTTP), Email, File Transfer | Video Streaming, Gaming, Voice Calls |`;
+  }
+
+  return `### 🎓 Cogniva Academic Intelligence Response
+
+Thank you for your question! Here is a structured educational overview for your topic:
+
+#### 📌 Key Concepts & Foundation:
+1. **Core Principles**: Review fundamental definitions, standard notations, and underlying theoretical rules.
+2. **Practical Applications**: Connect the theoretical concept with real-world engineering or software implementation scenarios.
+3. **Exam & Interview Focus**: Pay special attention to standard problem patterns, time/space complexity analysis, and edge cases.
+
+#### 💡 Recommended Next Action:
+• Ask me to generate a **step-by-step study plan** or **practice quiz questions** on this topic!`;
+}
+
+// ----------------------------------------------------
+// 5. MIXED FALLBACK GENERATOR
+// ----------------------------------------------------
+function generateMixedFallbackResponse(prompt: string): string {
+  return `### 📊 Personalized Performance & Academic Strategy
+
+Thank you for sharing your current academic status!
+
+#### 🎯 Actionable Improvement Roadmap:
+1. **Target Allocation**: Divide your upcoming study sessions by subject weightage and focus on low-scoring or high-credit modules first.
+2. **Attendance Management**: Maintain consistency by attending all scheduled lab sessions and mandatory lectures to keep your overall attendance safely above 75%.
+3. **Internal Assessment Push**: Score maximum marks in your upcoming test assessments to build a cushion for end-semester examinations.
+
+*Feel free to ask me for a customized study timetable or specific subject revision notes!*`;
 }

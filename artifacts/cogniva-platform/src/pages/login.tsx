@@ -1,15 +1,16 @@
 import React, { useState } from 'react';
 import { useLocation } from 'wouter';
-import { Sparkles, AlertCircle, ArrowRight, Lock, Mail } from 'lucide-react';
+import { Sparkles, AlertCircle, ArrowRight, Lock, Mail, UserCheck, ShieldCheck, X } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
 
 export function LoginPage() {
   const [, setLocation] = useLocation();
-  const { user, role, loading, login } = useAuth();
+  const { user, role, loading, login, enterGuestMode } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showGuestModal, setShowGuestModal] = useState(false);
 
   React.useEffect(() => {
     if (!loading && user && role) {
@@ -22,7 +23,6 @@ export function LoginPage() {
       }
     }
   }, [user, role, loading]);
-
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -42,6 +42,18 @@ export function LoginPage() {
       }
     } else {
       setError(res.error || 'Invalid email or password.');
+    }
+  };
+
+  const handleGuestSelect = (gRole: 'admin' | 'faculty' | 'student') => {
+    enterGuestMode(gRole);
+    setShowGuestModal(false);
+    if (gRole === 'faculty') {
+      setLocation('/faculty');
+    } else if (gRole === 'student') {
+      setLocation('/student');
+    } else {
+      setLocation('/admin');
     }
   };
 
@@ -115,11 +127,89 @@ export function LoginPage() {
           </button>
         </form>
 
-        <div className="mt-8 pt-6 border-t border-slate-800/80 text-center text-xs text-slate-500 flex justify-center items-center gap-2">
-          <span className="w-2 h-2 rounded-full bg-teal-500 animate-pulse" />
-          <span>Connected to Supabase Auth</span>
+        <div className="mt-6 pt-6 border-t border-slate-800/80 flex flex-col items-center gap-4">
+          <button
+            type="button"
+            onClick={() => setShowGuestModal(true)}
+            className="w-full py-2.5 px-4 bg-slate-800/80 hover:bg-slate-800 border border-slate-700 text-slate-200 text-xs font-bold rounded-xl flex items-center justify-center gap-2 transition-all cursor-pointer shadow-sm"
+          >
+            <UserCheck size={16} className="text-teal-400" />
+            <span>Continue as Guest (Demo Mode)</span>
+          </button>
+
+          <div className="text-xs text-slate-500 flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-teal-500 animate-pulse" />
+            <span>Connected to Supabase Auth</span>
+          </div>
         </div>
       </div>
+
+      {/* Guest Role Selection Modal */}
+      {showGuestModal && (
+        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 animate-fade">
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 sm:p-8 max-w-md w-full shadow-2xl relative">
+            <div className="flex items-center justify-between mb-2">
+              <h2 className="text-xl font-bold text-slate-100 flex items-center gap-2">
+                <Sparkles size={20} className="text-teal-400" />
+                Explore Cogniva as Guest
+              </h2>
+              <button
+                onClick={() => setShowGuestModal(false)}
+                className="w-8 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-400 flex items-center justify-center transition-colors cursor-pointer"
+              >
+                <X size={18} />
+              </button>
+            </div>
+            <p className="text-xs text-slate-400 mb-6">
+              Select a workspace below to explore Cogniva in an isolated sandbox environment. No credentials required.
+            </p>
+
+            <div className="space-y-3">
+              <button
+                onClick={() => handleGuestSelect('admin')}
+                className="w-full p-4 bg-slate-800/50 hover:bg-slate-800 border border-slate-700 hover:border-teal-500/50 rounded-xl text-left transition-all flex items-center justify-between group cursor-pointer"
+              >
+                <div>
+                  <div className="font-bold text-slate-100 group-hover:text-teal-400 transition-colors flex items-center gap-2">
+                    <ShieldCheck size={16} className="text-teal-400" />
+                    Guest Admin
+                  </div>
+                  <div className="text-xs text-slate-400 mt-1">Explore institutional intelligence, structure & reports</div>
+                </div>
+                <ArrowRight size={18} className="text-slate-500 group-hover:text-teal-400 group-hover:translate-x-1 transition-all" />
+              </button>
+
+              <button
+                onClick={() => handleGuestSelect('faculty')}
+                className="w-full p-4 bg-slate-800/50 hover:bg-slate-800 border border-slate-700 hover:border-violet-500/50 rounded-xl text-left transition-all flex items-center justify-between group cursor-pointer"
+              >
+                <div>
+                  <div className="font-bold text-slate-100 group-hover:text-violet-400 transition-colors flex items-center gap-2">
+                    <UserCheck size={16} className="text-violet-400" />
+                    Guest Faculty
+                  </div>
+                  <div className="text-xs text-slate-400 mt-1">Explore classroom intelligence, risk radar & attendance</div>
+                </div>
+                <ArrowRight size={18} className="text-slate-500 group-hover:text-violet-400 group-hover:translate-x-1 transition-all" />
+              </button>
+
+              <button
+                onClick={() => handleGuestSelect('student')}
+                className="w-full p-4 bg-slate-800/50 hover:bg-slate-800 border border-slate-700 hover:border-amber-500/50 rounded-xl text-left transition-all flex items-center justify-between group cursor-pointer"
+              >
+                <div>
+                  <div className="font-bold text-slate-100 group-hover:text-amber-400 transition-colors flex items-center gap-2">
+                    <Sparkles size={16} className="text-amber-400" />
+                    Guest Student
+                  </div>
+                  <div className="text-xs text-slate-400 mt-1">Explore student priorities, what-if simulator & career lab</div>
+                </div>
+                <ArrowRight size={18} className="text-slate-500 group-hover:text-amber-400 group-hover:translate-x-1 transition-all" />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 }

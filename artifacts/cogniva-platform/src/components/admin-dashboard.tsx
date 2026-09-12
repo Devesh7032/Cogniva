@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import {
   Building2, CalendarDays, CheckCircle2, ChevronRight, Database, GraduationCap,
   Layers, LogOut, Plus, ShieldCheck, SlidersHorizontal, UserCheck, UserCog,
@@ -22,6 +23,7 @@ import {
 // ADMIN HOME VIEW: ACADEMIC YEARS CARDS + QUICK ACTIONS + REAL COUNTS
 // ============================================================================
 export function AdminHomeView({ onNavigate }: { onNavigate: (path: string, params?: { yearId?: string; deptId?: string; secId?: string }) => void }) {
+  const { collegeId, collegeName } = useAuth();
   const [years, setYears] = useState<AcademicYear[]>([]);
   const [counts, setCounts] = useState<DatabaseCounts>({ students: 0, faculty: 0, sections: 0, departments: 0 });
   const [loading, setLoading] = useState(true);
@@ -31,13 +33,13 @@ export function AdminHomeView({ onNavigate }: { onNavigate: (path: string, param
 
   useEffect(() => {
     loadDashboardData();
-  }, []);
+  }, [collegeId]);
 
   const loadDashboardData = async () => {
     setLoading(true);
     const [yearsData, countsData] = await Promise.all([
       fetchAcademicYears(),
-      fetchDatabaseCounts()
+      fetchDatabaseCounts(collegeId)
     ]);
     setYears(yearsData);
     setCounts(countsData);
@@ -176,6 +178,7 @@ export function AcademicStructureView({ defaultYearId }: { defaultYearId?: strin
   const [sectionStudents, setSectionStudents] = useState<StudentMember[]>([]);
 
   const [selectedYearId, setSelectedYearId] = useState<string>(defaultYearId || '');
+  const { collegeId } = useAuth();
   const [selectedDeptId, setSelectedDeptId] = useState<string>('');
   const [selectedSectionId, setSelectedSectionId] = useState<string | null>(null);
 
@@ -191,14 +194,14 @@ export function AcademicStructureView({ defaultYearId }: { defaultYearId?: strin
 
   useEffect(() => {
     loadStructure();
-  }, []);
+  }, [collegeId]);
 
   const loadStructure = async () => {
     setLoading(true);
     const [yData, dData, sData] = await Promise.all([
       fetchAcademicYears(),
-      fetchDepartments(),
-      fetchSections(),
+      fetchDepartments(collegeId),
+      fetchSections(undefined, undefined, collegeId),
     ]);
     setYears(yData);
     setDepartments(dData);
@@ -244,21 +247,21 @@ export function AcademicStructureView({ defaultYearId }: { defaultYearId?: strin
       setSectionSubjects([]);
       setSectionAssignments([]);
     }
-  }, [selectedYearId, selectedDeptId, activeSection?.id]);
+  }, [selectedYearId, selectedDeptId, activeSection?.id, collegeId]);
 
   const loadSectionStudents = async () => {
     if (!activeYear || !activeDept || !activeSection) return;
-    const studs = await fetchStudentMembers(activeYear.name, activeDept.code, activeSection.name);
+    const studs = await fetchStudentMembers(activeYear.name, activeDept.code, activeSection.name, collegeId);
     setSectionStudents(studs);
   };
 
   const loadSectionData = async () => {
     if (!activeYear || !activeDept || !activeSection) return;
     const [studs, subjs, assigns, facs] = await Promise.all([
-      fetchStudentMembers(activeYear.name, activeDept.code, activeSection.name),
-      fetchSubjects(activeYear.name, activeDept.code, activeSection.name),
-      fetchFacultySubjectAssignments(undefined, activeSection.name),
-      fetchFacultyMembers()
+      fetchStudentMembers(activeYear.name, activeDept.code, activeSection.name, collegeId),
+      fetchSubjects(activeYear.name, activeDept.code, activeSection.name, collegeId),
+      fetchFacultySubjectAssignments(undefined, activeSection.name, collegeId),
+      fetchFacultyMembers(collegeId)
     ]);
     setSectionStudents(studs);
     setSectionSubjects(subjs);
@@ -770,6 +773,7 @@ export function AcademicStructureView({ defaultYearId }: { defaultYearId?: strin
 // FACULTY ACCESS MANAGEMENT VIEW: SELECT FACULTY -> YEAR -> DEPT -> SECTIONS
 // ============================================================================
 export function FacultyAccessView() {
+  const { collegeId } = useAuth();
   const [facultyMembers, setFacultyMembers] = useState<Profile[]>([]);
   const [years, setYears] = useState<AcademicYear[]>([]);
   const [departments, setDepartments] = useState<Department[]>([]);
@@ -788,17 +792,17 @@ export function FacultyAccessView() {
 
   useEffect(() => {
     loadData();
-  }, []);
+  }, [collegeId]);
 
   const loadData = async () => {
     setLoading(true);
     const [facs, yrs, depts, secs, asgs, subAsgs] = await Promise.all([
-      fetchFacultyMembers(),
+      fetchFacultyMembers(collegeId),
       fetchAcademicYears(),
-      fetchDepartments(),
-      fetchSections(),
-      fetchFacultyAssignments(),
-      fetchFacultySubjectAssignments(),
+      fetchDepartments(collegeId),
+      fetchSections(undefined, undefined, collegeId),
+      fetchFacultyAssignments(collegeId),
+      fetchFacultySubjectAssignments(undefined, undefined, collegeId),
     ]);
 
     setFacultyMembers(facs as any[]);
@@ -1254,6 +1258,7 @@ export function FacultyAccessView() {
 // STUDENT MANAGEMENT VIEW
 // ============================================================================
 export function StudentManagementView() {
+  const { collegeId } = useAuth();
   const [students, setStudents] = useState<StudentMember[]>([]);
   const [years, setYears] = useState<AcademicYear[]>([]);
   const [departments, setDepartments] = useState<Department[]>([]);
@@ -1271,7 +1276,7 @@ export function StudentManagementView() {
 
   useEffect(() => {
     loadData();
-  }, []);
+  }, [collegeId]);
 
   const loadData = async () => {
     setLoading(true);
@@ -1279,7 +1284,7 @@ export function StudentManagementView() {
       fetchAcademicYears(),
       fetchDepartments(),
       fetchSections(),
-      fetchStudentMembers()
+      fetchStudentMembers(undefined, undefined, undefined, collegeId)
     ]);
     setYears(yData);
     setDepartments(dData);
@@ -1644,6 +1649,7 @@ function EditStudentModal({
 // FACULTY MANAGEMENT VIEW
 // ============================================================================
 export function FacultyManagementView() {
+  const { collegeId } = useAuth();
   const [faculty, setFaculty] = useState<FacultyMember[]>([]);
   const [years, setYears] = useState<AcademicYear[]>([]);
   const [departments, setDepartments] = useState<Department[]>([]);
@@ -1660,12 +1666,12 @@ export function FacultyManagementView() {
 
   useEffect(() => {
     loadData();
-  }, []);
+  }, [collegeId]);
 
   const loadData = async () => {
     setLoading(true);
     const [facs, yrs, depts] = await Promise.all([
-      fetchFacultyMembers(),
+      fetchFacultyMembers(collegeId),
       fetchAcademicYears(),
       fetchDepartments()
     ]);
@@ -2008,13 +2014,12 @@ function StudentImportModal({
   sectionName?: string;
   onClose: () => void;
 }) {
-  const fileInputRef = React.useRef<HTMLInputElement>(null);
-  const [file, setFile] = React.useState<File | null>(null);
-  const [fileError, setFileError] = React.useState<string | null>(null);
-  const [importing, setImporting] = React.useState(false);
-  const [result, setResult] = React.useState<any | null>(null);
-  const [activeTab, setActiveTab] = React.useState<'excel' | 'text' | 'pdf'>('excel');
-  const [isProcessing, setIsProcessing] = React.useState(false);
+  const { collegeId } = useAuth();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [file, setFile] = useState<File | null>(null);
+  const [fileError, setFileError] = useState<string | null>(null);
+  const [importing, setImporting] = useState(false);
+  const [result, setResult] = useState<ImportResult | null>(null);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFileError(null);
@@ -2037,7 +2042,49 @@ function StudentImportModal({
     setImporting(true);
     setResult(null);
     try {
-      const res = await processExcelData(file, 'students', { year_id: defaultYearId, department_id: defaultDeptId, section_id: defaultSecId });
+      const data = await file.arrayBuffer();
+      const workbook = XLSX.read(data, { type: 'array' });
+
+      if (!workbook.SheetNames || workbook.SheetNames.length === 0) {
+        setFileError('Excel file is empty or corrupted.');
+        setImporting(false);
+        return;
+      }
+
+      const sheetName = workbook.SheetNames[0];
+      const sheet = workbook.Sheets[sheetName];
+      const rawRows: any[] = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+
+      if (!rawRows || rawRows.length < 2) {
+        setFileError('Excel file contains no student data rows.');
+        setImporting(false);
+        return;
+      }
+
+      const headers: string[] = (rawRows[0] || []).map((h: any) => String(h || '').trim());
+      const headerValidation = validateStudentExcelHeaders(headers);
+
+      if (!headerValidation.valid) {
+        setFileError(`Missing required columns: ${headerValidation.missingColumns.join(', ')}`);
+        setImporting(false);
+        return;
+      }
+
+      const parsedDataRows: any[] = XLSX.utils.sheet_to_json(sheet);
+      const m = headerValidation.mappedHeaders;
+
+      const formattedRows: StudentImportRow[] = parsedDataRows.map((r) => ({
+        name: String(r[m.name] || r.Name || r.name || '').trim(),
+        regno: String(r[m.regno] || r.Regno || r.regno || '').trim(),
+        email: String(r[m.email] || r.Email || r.email || '').trim().toLowerCase(),
+        department: String(r[m.department] || r.Department || r.department || 'CSE').trim(),
+        year: String(r[m.year] || r.Year || r.year || 'First Year').trim(),
+        section: String(r[m.section] || r.Section || r.section || 'CSE-A').trim(),
+        dob: String(r[m.dob] || r.DOB || r.dob || '').trim(),
+        semester: String(r.Semester || r.semester || '').trim(),
+      }));
+
+      const res = await importStudentsBatch(formattedRows, defaultYearId, defaultDeptId, defaultSecId, collegeId);
       setResult(res);
     } catch (err: any) { setFileError(err.message || 'Failed to process file'); }
     setImporting(false);
@@ -2126,6 +2173,7 @@ function StudentImportModal({
 
 
 function FacultyImportModal({ onClose }: { onClose: () => void }) {
+  const { collegeId } = useAuth();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [file, setFile] = useState<File | null>(null);
   const [fileError, setFileError] = useState<string | null>(null);
@@ -2226,7 +2274,7 @@ function FacultyImportModal({ onClose }: { onClose: () => void }) {
         };
       });
 
-      const res = await importFacultyBatch(formattedRows);
+      const res = await importFacultyBatch(formattedRows, collegeId);
       setResult(res);
     } catch (err) {
       setFileError(`Failed to process Excel file: ${err instanceof Error ? err.message : String(err)}`);

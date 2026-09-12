@@ -65,21 +65,21 @@ export function StudentAskCognivaView() {
   const loadContext = async () => {
     setLoadingContext(true);
     try {
-      const email = user?.email || 'student001@cogniva.edu';
+      const email = user?.email || 'student@cogniva.edu';
       const ctx = await getCurrentStudentContext(email);
       setStudentCtx(ctx);
 
       const welcomeMsg: ChatMessage = {
         id: 'welcome-01',
         from: 'ai',
-        text: `Hello ${ctx?.name || 'Student'}! I am **Ask Cogniva**, your college-wide academic intelligence assistant.\n\nI am connected directly to your official Cogniva database (**${ctx?.department || 'CSE'} ${ctx?.year || '2nd Year'} - Section ${ctx?.section?.replace(/^.*?-/, '') || 'C'}**).\n\nAsk me anything about your class advisor, subject faculty, attendance, pending assignments, uploaded study materials, exam marks, or CGPA!`,
+        text: `Hello ${ctx?.name || 'Student'}! I am **Ask Cogniva**, your academic AI copilot.\n\nAsk me about your **personal academic records** (attendance, CGPA, assignments, class advisor) OR **any general study question** (concept explanations, study plans, exam prep, coding guidance, practice quizzes)!`,
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        dataBadge: `Grounded in Cogniva Academic Data • ${ctx?.department || 'CSE'}-${ctx?.section?.replace(/^.*?-/, '') || 'C'}`,
+        dataBadge: `Cogniva Academic Assistant • ${ctx?.department || 'CSE'}-${ctx?.sectionName?.replace(/^.*?-/, '') || 'C'}`,
         suggestedFollowUps: [
-          'Who is my class advisor?',
-          'Who is handling Compiler Design?',
           'What is my attendance?',
-          'What assignments are due soon?'
+          'Explain Compiler Design',
+          'Give me a study plan for DBMS',
+          'What is recursion?'
         ]
       };
       setMessages([welcomeMsg]);
@@ -98,7 +98,7 @@ export function StudentAskCognivaView() {
     const promptToSubmit = (customPrompt || inputPrompt).trim();
     if (!promptToSubmit || isProcessing) return;
 
-    const email = user?.email || 'student001@cogniva.edu';
+    const email = user?.email || 'student@cogniva.edu';
     const userMsgId = `user_${Date.now()}`;
     const userMsg: ChatMessage = {
       id: userMsgId,
@@ -118,7 +118,7 @@ export function StudentAskCognivaView() {
       const aiMsg: ChatMessage = {
         id: aiMsgId,
         from: 'ai',
-        text: groundedRes.answer || 'Unable to retrieve grounded response from Cogniva.',
+        text: groundedRes.answer || 'Unable to retrieve academic response.',
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         dataBadge: groundedRes.groundedDataBadge,
         actionButtons: groundedRes.actionButtons,
@@ -131,8 +131,9 @@ export function StudentAskCognivaView() {
       const errorMsg: ChatMessage = {
         id: `err_${Date.now()}`,
         from: 'ai',
-        text: `⚠️ **Cogniva Assistant Error**: ${err?.message || 'Database grounding connection interrupted.'}`,
-        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        text: `I had trouble connecting to the response engine right now. Please try again!`,
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        dataBadge: 'Cogniva Academic Assistant'
       };
       setMessages(prev => [...prev, errorMsg]);
     } finally {
@@ -145,13 +146,13 @@ export function StudentAskCognivaView() {
       const resetMsg: ChatMessage = {
         id: `reset_${Date.now()}`,
         from: 'ai',
-        text: `Chat cleared. Ask me another question about your **${studentCtx.department} ${studentCtx.year} (${studentCtx.section})** academics!`,
+        text: `Conversation cleared. Ask me anything about your studies, course concepts, or **${studentCtx.department} ${studentCtx.year} (${studentCtx.sectionName})** academics!`,
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        dataBadge: `Grounded in Cogniva Academic Data • ${studentCtx.department}-${studentCtx.section.replace(/^.*?-/, '')}`,
+        dataBadge: `Cogniva Academic Assistant • ${studentCtx.department}-${studentCtx.sectionName.replace(/^.*?-/, '')}`,
         suggestedFollowUps: [
-          'Who is my class advisor?',
-          'What subjects do I have?',
-          'What is my attendance?'
+          'What is my attendance?',
+          'Explain Compiler Design',
+          'Give me a study plan for DBMS'
         ]
       };
       setMessages([resetMsg]);
@@ -159,13 +160,13 @@ export function StudentAskCognivaView() {
   };
 
   const quickPrompts = [
-    { label: 'Who is my class advisor?', category: 'Faculty' },
-    { label: 'Who is handling Compiler Design?', category: 'Faculty' },
     { label: 'What is my attendance?', category: 'Attendance' },
-    { label: 'Which subject has lowest attendance?', category: 'Attendance' },
+    { label: 'Explain Compiler Design', category: 'Study Help' },
+    { label: 'Give me a study plan for DBMS', category: 'Study Plan' },
+    { label: 'What is recursion?', category: 'Concept' },
     { label: 'What assignments are pending?', category: 'Assignments' },
     { label: 'What is my current CGPA?', category: 'Academics' },
-    { label: 'What study materials are uploaded?', category: 'Materials' },
+    { label: 'How to improve my coding skills?', category: 'Coding' },
     { label: 'What internships can I apply for?', category: 'Career' }
   ];
 
@@ -173,14 +174,14 @@ export function StudentAskCognivaView() {
     <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
       {/* PAGE HEADER */}
       <StudentPageHeader
-        eyebrow="Student Intelligence • Grounded AI Assistant"
+        eyebrow="Student Intelligence • Academic Copilot"
         title="Ask Cogniva."
-        subtitle="Your college-aware academic assistant. Ask natural-language questions about your class advisor, subject faculty, attendance, assignments, study materials, or CGPA."
+        subtitle="Your intelligent academic assistant. Ask about personal records (attendance, CGPA, assignments, advisor) or any study topic (concept explanations, study plans, exam prep, coding help)."
         actions={
           <div className="flex items-center gap-2 bg-indigo-50/80 border border-indigo-200/80 px-3 py-1.5 rounded-xl">
             <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
             <span className="text-xs font-mono font-semibold text-indigo-900">
-              {studentCtx ? `${studentCtx.department} ${studentCtx.year} (${studentCtx.section})` : 'Connecting...'}
+              {studentCtx ? `${studentCtx.department} ${studentCtx.year} (${studentCtx.sectionName})` : 'Connecting...'}
             </span>
           </div>
         }
@@ -191,11 +192,11 @@ export function StudentAskCognivaView() {
         <div className="flex items-center justify-between">
           <span className="text-xs font-bold text-slate-800 font-mono flex items-center gap-1.5 uppercase">
             <Sparkles size={14} className="text-indigo-600" />
-            Grounded Quick Questions
+            Suggested Academic Questions
           </span>
           <button
             onClick={handleClearChat}
-            className="text-xs text-slate-500 hover:text-slate-800 underline font-mono"
+            className="text-xs text-slate-500 hover:text-slate-800 underline font-mono cursor-pointer"
           >
             Clear Conversation
           </button>
@@ -247,15 +248,7 @@ export function StudentAskCognivaView() {
 
                   <p className="whitespace-pre-line leading-relaxed">{msg.text}</p>
 
-                  {/* Missing Data Warning */}
-                  {msg.isMissingData && (
-                    <div className="mt-3 p-2.5 bg-amber-50 border border-amber-200/80 rounded-xl text-amber-900 text-xs flex items-center gap-2 font-mono">
-                      <Info size={14} className="text-amber-600 shrink-0" />
-                      <span>Missing DB Record: Cogniva never fabricates or guesses missing facts.</span>
-                    </div>
-                  )}
-
-                  {/* Data Grounding Badge */}
+                  {/* Source / Data Badge */}
                   {msg.dataBadge && (
                     <div className="mt-3 pt-2 border-t border-slate-100 flex items-center gap-1.5 text-[10px] font-mono text-indigo-600">
                       <ShieldCheck size={12} className="text-emerald-600" />
@@ -280,7 +273,7 @@ export function StudentAskCognivaView() {
                   </div>
                 )}
 
-                {/* Smart Follow-Up Suggestions */}
+                {/* Dynamic Follow-Up Suggestions */}
                 {msg.suggestedFollowUps && msg.suggestedFollowUps.length > 0 && (
                   <div className="pt-2 space-y-1">
                     <span className="text-[10px] font-mono text-slate-400 uppercase font-bold block">Suggested Follow-ups:</span>
@@ -313,7 +306,7 @@ export function StudentAskCognivaView() {
         {isProcessing && (
           <div className="flex items-center gap-3 p-4 bg-white border border-slate-200/80 rounded-2xl text-xs font-mono text-indigo-700 animate-pulse shadow-sm">
             <RefreshCw size={16} className="animate-spin text-indigo-600" />
-            <span>Querying Cogniva backend data tables and resolving grounded context...</span>
+            <span>Analyzing query and synthesizing academic response...</span>
           </div>
         )}
 
@@ -327,7 +320,7 @@ export function StudentAskCognivaView() {
           value={inputPrompt}
           onChange={e => setInputPrompt(e.target.value)}
           onKeyDown={e => e.key === 'Enter' && handleAsk()}
-          placeholder="Ask about class advisor, faculty, attendance, assignments, CGPA..."
+          placeholder="Ask anything — study plans, concept explanations, coding help, attendance, CGPA..."
           disabled={isProcessing}
           className="flex-1 bg-slate-50 border border-slate-200/80 rounded-xl px-4 py-3 text-xs sm:text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-blue-500"
         />
@@ -344,4 +337,3 @@ export function StudentAskCognivaView() {
     </div>
   );
 }
-

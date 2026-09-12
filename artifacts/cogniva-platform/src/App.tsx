@@ -9,7 +9,7 @@ import {
   LogOut, Menu, MessageSquare, MoreHorizontal, Network, PanelLeftClose, PanelLeftOpen,
   Play, Plus, Radar, RefreshCw, Save, Search, Send, Settings2, ShieldCheck,
   SlidersHorizontal, Sparkles, Target, Trash2, TrendingDown, TrendingUp, Upload,
-  UserCheck, UserCog, UsersRound, X, XCircle, Zap
+  UserCheck, UserCog, UsersRound, X, XCircle, Zap, LifeBuoy, Newspaper
 } from 'lucide-react';
 import { Link, Route, Switch, useLocation, useRoute } from 'wouter';
 import * as XLSX from 'xlsx';
@@ -39,7 +39,13 @@ import { FacultyClassesView } from '@/components/FacultyClassesView';
 import { FacultyAttendanceManagementView } from '@/components/FacultyAttendanceManagementView';
 import { FacultyCgpaView } from '@/components/FacultyCgpaView';
 import { FacultyGradesManagementView } from '@/components/FacultyGradesManagementView';
+import { FacultyClassAnalyticsView } from '@/components/FacultyClassAnalyticsView';
 import { AdminGeminiConfigView } from '@/components/AdminGeminiConfigView';
+import { StudentHelpDeskView } from '@/components/StudentHelpDeskView';
+import { FacultyHelpDeskView } from '@/components/FacultyHelpDeskView';
+import { AdminCampusIssuesView } from '@/components/AdminCampusIssuesView';
+import { AdminAskCognivaView } from '@/components/AdminAskCognivaView';
+import { StudentNewsView } from '@/components/StudentNewsView';
 import {
   AdminHomeView,
   AcademicStructureView,
@@ -161,6 +167,7 @@ const nav: NavItem[] = [
   { href: '/student/subjects', label: 'My Subjects', icon: GraduationCap, roles: ['student'] },
   { href: '/student/attendance', label: 'Attendance Tracker', icon: CheckCircle2, roles: ['student'] },
   { href: '/student/opportunities', label: 'Opportunities', icon: Compass, roles: ['student'] },
+  { href: '/student/news', label: 'News', icon: Newspaper, roles: ['student'] },
   { href: '/student/companies', label: 'Company Career Lab', icon: Building2, roles: ['student'] },
   { href: '/student/strategy', label: 'Unified Strategy Center', icon: Radar, roles: ['student'] },
   { href: '/student/simulator', label: 'What-if Simulator', icon: Radar, roles: ['student'] },
@@ -172,6 +179,7 @@ const nav: NavItem[] = [
   { href: '/student/grades', label: 'My Grades & Evaluation', icon: Award, roles: ['student'] },
   { href: '/student/materials', label: 'Study Materials', icon: BookOpen, roles: ['student'] },
   { href: '/student/alerts', label: 'Notifications / Alerts', icon: Bell, roles: ['student'] },
+  { href: '/student/help-desk', label: 'Campus Help Desk', icon: LifeBuoy, roles: ['student'] },
   { href: '/student/ask', label: 'Ask Cogniva', icon: MessageSquare, roles: ['student'] },
   { href: '/faculty', label: 'Home / Overview', icon: LayoutDashboard, roles: ['faculty'] },
   { href: '/faculty/timetable', label: 'Faculty Timetable', icon: CalendarDays, roles: ['faculty'] },
@@ -186,6 +194,7 @@ const nav: NavItem[] = [
   { href: '/faculty/notices', label: 'Notices & Announcements', icon: Bell, roles: ['faculty'] },
   { href: '/faculty/materials', label: 'Study Material Upload', icon: Upload, roles: ['faculty'] },
   { href: '/faculty/students', label: 'Student Progress Drilldown', icon: UsersRound, roles: ['faculty'] },
+  { href: '/faculty/help-desk', label: 'Student Queries', icon: LifeBuoy, roles: ['faculty'] },
   { href: '/faculty/simulator', label: 'What-if Simulation', icon: Radar, roles: ['faculty'] },
   { href: '/faculty/ask', label: 'Ask Cogniva', icon: MessageSquare, roles: ['faculty'] },
   { href: '/admin', label: 'Dashboard', icon: LayoutDashboard, roles: ['admin'] },
@@ -193,7 +202,8 @@ const nav: NavItem[] = [
   { href: '/admin/students', label: 'Students', icon: GraduationCap, roles: ['admin'] },
   { href: '/admin/faculty-mgmt', label: 'Faculty', icon: UsersRound, roles: ['admin'] },
   { href: '/admin/faculty-access', label: 'Faculty Access', icon: UserCog, roles: ['admin'] },
-  { href: '/admin/gemini-config', label: 'Gemini AI Config', icon: Sparkles, roles: ['admin'] },
+  { href: '/admin/campus-issues', label: 'Campus Issues', icon: LifeBuoy, roles: ['admin'] },
+  { href: '/admin/ask', label: 'Ask Cogniva', icon: MessageSquare, roles: ['admin'] },
 ];
 
 const subjects = [
@@ -372,7 +382,7 @@ function ChatWorkspace({ role }: { role: Role }) {
 
 function Shell({ children }: { children: React.ReactNode }) {
   const [location, setLocation] = useLocation();
-  const { user, role: authRole, logout } = useAuth();
+  const { user, role: authRole, logout, isGuestMode, guestRole, exitGuestMode } = useAuth();
   const role: Role = authRole || (location.startsWith('/faculty') ? 'faculty' : location.startsWith('/admin') ? 'admin' : 'student');
   const [collapsed, setCollapsed] = useState(false);
   const [mobileMenu, setMobileMenu] = useState(false);
@@ -440,6 +450,20 @@ function Shell({ children }: { children: React.ReactNode }) {
       </aside>
       {mobileMenu && <button className="mobile-scrim" aria-label="Close menu" onClick={() => setMobileMenu(false)} />}
       <main className="main-area">
+        {isGuestMode && (
+          <div className="bg-amber-500 text-amber-950 px-4 py-2 flex items-center justify-between text-xs font-bold shadow-md z-[100] border-b border-amber-600/30 shrink-0">
+            <div className="flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-white animate-pulse" />
+              <span>Guest Demo Mode ({guestRole?.toUpperCase()}) — Data is temporary and resets on refresh.</span>
+            </div>
+            <button
+              onClick={() => { exitGuestMode(); setLocation('/'); }}
+              className="px-2.5 py-1 bg-amber-950 hover:bg-black text-amber-100 font-bold rounded-lg text-[11px] transition-colors cursor-pointer"
+            >
+              Exit Guest Mode
+            </button>
+          </div>
+        )}
         <header className="topbar">
           <button className="icon-button mobile-menu-button" aria-label="Open navigation" onClick={() => setMobileMenu(true)}>
             <Menu size={19} />
@@ -1653,6 +1677,8 @@ function StudentSection({ section }: { section: string }) {
   if (section === 'examinations') return <ExaminationsPage role="student" />;
   if (section === 'materials') return <MaterialsPage role="student" saved={saved} setSaved={setSaved} />;
   if (section === 'alerts') return <StudentAlertsView />;
+  if (section === 'help-desk' || section === 'helpdesk') return <StudentHelpDeskView />;
+  if (section === 'news' || section === 'intelligence') return <StudentNewsView />;
 
   if (section === 'goals') return <GoalsPage />;
   return <PageFrame><EmptyState title="Student section ready" description="Choose a section from the workspace navigation to continue." /></PageFrame>;
@@ -2970,8 +2996,7 @@ function AnalyticsPage({ role }: { role: Role }) {
     return <PageFrame><StudentAnalyticsView /></PageFrame>;
   }
 
-  const [range, setRange] = useState('Last 30 days');
-  return <PageFrame><div className="welcome-row"><div><div className="eyebrow">Faculty class analytics</div><h1>Turn class data into a better intervention.</h1><p className="lede">Compare sections, performance trends, grade distribution, and engagement.</p></div><div className="header-actions"><select className="select-compact" value={range} onChange={(event) => setRange(event.target.value)}><option>Last 30 days</option><option>Last 90 days</option><option>Semester to date</option></select><button className="button button-secondary"><Download size={15} />Export view</button></div></div><div className="metric-grid"><Metric label="Class average" value="78.6%" detail="+3.2 pts this term" trend="up" tone="teal" /><Metric label="Submission rate" value="91.4%" detail="+4.8% month on month" trend="up" tone="amber" /><Metric label="Pass rate" value="88.2%" detail="+2.4% from last exam" tone="violet" /><Metric label="Students needing review" value="18" detail="9.8% of cohort" trend="down" tone="coral" /></div><div className="analytics-grid"><section className="panel"><SectionHeading eyebrow="Movement over time" title="Performance by assessment" /><div className="big-chart"><div className="big-chart-value">78.6<span>%</span></div><div className="big-chart-sub">{range} Â· connected academic signals</div><svg viewBox="0 0 720 240"><path d="M0 195 C85 184 100 156 160 170 S245 135 300 145 S390 110 440 130 S525 75 580 91 S660 50 720 42" fill="none" stroke="#277681" strokeWidth="4" /><path d="M0 195 C85 184 100 156 160 170 S245 135 300 145 S390 110 440 130 S525 75 580 91 S660 50 720 42 L720 240 L0 240Z" fill="#277681" opacity=".09" /></svg><div className="chart-labels"><span>Week 1</span><span>Week 2</span><span>Week 3</span><span>Week 4</span><span>Now</span></div></div></section><section className="panel"><SectionHeading eyebrow="Grade distribution" title="Where the class stands" /><div className="distribution-list">{[['A / Aâˆ’', '32%', 'teal'], ['B+ / B', '41%', 'amber'], ['C range', '19%', 'violet'], ['Needs review', '8%', 'coral']].map(([label, value, tone]) => <div className="distribution-row" key={label}><div><span>{label}</span><strong>{value}</strong></div><ProgressBar value={Number(value.replace('%', '')) * 2.2} color={tone as Tone} /></div>)}</div></section></div></PageFrame>;
+  return <PageFrame><FacultyClassAnalyticsView /></PageFrame>;
 }
 
 function TimetablePage() {
@@ -3918,6 +3943,7 @@ function FacultySection({ section }: { section: string }) {
   if (section === 'grades') return <PageFrame><FacultyGradesManagementView /></PageFrame>;
   if (section === 'student-results' || section === 'results') return <StudentResultsView />;
   if (section === 'cgpa') return <PageFrame><FacultyCgpaView /></PageFrame>;
+  if (section === 'help-desk' || section === 'queries') return <FacultyHelpDeskView />;
   return <PageFrame><EmptyState title="Faculty section ready" description="Choose a section from the workspace navigation to continue." /></PageFrame>;
 }
 
@@ -4329,7 +4355,8 @@ function AdminSection({ section }: { section: string }) {
   if (section === 'faculty-access') return <FacultyAccessView />;
   if (section === 'students') return <StudentManagementView />;
   if (section === 'faculty-mgmt') return <FacultyManagementView />;
-  if (section === 'gemini-config') return <AdminGeminiConfigView />;
+  if (section === 'gemini-config' || section === 'ask') return <AdminAskCognivaView />;
+  if (section === 'campus-issues' || section === 'help-desk') return <AdminCampusIssuesView />;
   return <PageFrame><EmptyState title="Admin Section Ready" description="Select a valid section from the Admin navigation." /></PageFrame>;
 }
 
@@ -5404,7 +5431,7 @@ function ProtectedRoute({
   allowedRole: Role;
   children: React.ReactNode;
 }) {
-  const { user, role, loading } = useAuth();
+  const { user, role, loading, isGuestMode, guestRole } = useAuth();
   const [, setLocation] = useLocation();
 
   if (loading) {
@@ -5416,6 +5443,15 @@ function ProtectedRoute({
         </div>
       </div>
     );
+  }
+
+  if (isGuestMode) {
+    if (guestRole !== allowedRole) {
+      const targetRoute = guestRole === 'admin' ? '/admin' : guestRole === 'faculty' ? '/faculty' : '/student';
+      setLocation(targetRoute);
+      return null;
+    }
+    return <Shell>{children}</Shell>;
   }
 
   if (!user) {
@@ -5525,6 +5561,8 @@ function AppRouter() {
       <Route path="/student/explain" component={student('explain')} />
       <Route path="/student/simulator" component={student('simulator')} />
       <Route path="/student/ask" component={student('ask')} />
+      <Route path="/student/help-desk" component={student('help-desk')} />
+      <Route path="/student/news" component={student('news')} />
 
       <Route path="/faculty" component={faculty('home')} />
       <Route path="/faculty/timetable" component={faculty('timetable')} />
@@ -5546,6 +5584,8 @@ function AppRouter() {
       <Route path="/faculty/interventions" component={faculty('interventions')} />
       <Route path="/faculty/simulator" component={faculty('simulator')} />
       <Route path="/faculty/ask" component={faculty('ask')} />
+      <Route path="/faculty/help-desk" component={faculty('help-desk')} />
+      <Route path="/admin/campus-issues" component={admin('campus-issues')} />
 
       <Route path="/settings" component={ProtectedSettingsRoute} />
       <Route component={NotFound} />

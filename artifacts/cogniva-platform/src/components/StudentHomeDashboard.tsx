@@ -151,23 +151,24 @@ export function StudentHomeDashboard() {
     return 'Good evening';
   }, []);
 
-  const studentName = studentMember?.name || studentCtx?.studentName || user?.email?.split('@')[0] || 'Student';
-  const regNo = studentMember?.regno || studentCtx?.regno || 'REG2024001';
+  const studentName = studentMember?.name || studentCtx?.name || user?.email?.split('@')[0] || 'Student';
+  const regNo = studentMember?.regno || studentCtx?.registerNumber || 'REGIST_PENDING';
   const deptName = studentMember?.department || studentCtx?.department || 'CSE';
-  const secName = studentMember?.section || studentCtx?.section || 'CSE-C';
+  const secName = studentMember?.section || studentCtx?.sectionName || 'CSE-C';
   const yearName = studentMember?.year || studentCtx?.year || '2nd Year';
   const semNum = studentMember?.semester || studentCtx?.semester || 4;
   const addressText = studentMember?.dob ? `Registered DOB: ${studentMember.dob}` : 'College Authorized Student Record';
 
-  const cgpaValue = cgpaRecord?.currentCgpa ? cgpaRecord.currentCgpa.toFixed(2) : '8.42';
+  const cgpaValue = cgpaRecord?.currentCgpa ? cgpaRecord.currentCgpa.toFixed(2) : 'Not available';
   const cgpaDeltaText = cgpaRecord?.cgpaDelta ? `${cgpaRecord.cgpaDelta > 0 ? '↑' : '↓'} ${Math.abs(cgpaRecord.cgpaDelta).toFixed(2)} vs prior sem` : 'Cumulative Grade Point Average';
 
   const overallGradeValue = useMemo(() => {
-    if (grades.length === 0) return 'A';
-    return grades[0]?.grade || 'A';
+    if (grades.length === 0) return 'Not available';
+    return grades[0]?.grade || 'Not available';
   }, [grades]);
 
-  const attendancePercentage = attendanceSummary?.overall_percentage ?? 82;
+  const attendanceValue = attendanceSummary?.overall_percentage ?? null;
+  const attendanceDisplay = attendanceValue != null ? `${attendanceValue}%` : 'Not available';
 
   const attentionItems = useMemo(() => {
     const items: Array<{
@@ -403,10 +404,10 @@ export function StudentHomeDashboard() {
             <span className="text-[10px] font-mono font-bold uppercase tracking-wider">Current Attendance</span>
             <Activity size={18} className="text-emerald-500" />
           </div>
-          <div className="text-3xl font-bold font-serif text-slate-900 tracking-tight">{attendancePercentage}%</div>
+          <div className="text-3xl font-bold font-serif text-slate-900 tracking-tight">{attendanceDisplay}</div>
           <p className="text-xs text-slate-500 mt-1.5 font-medium flex items-center gap-1">
-            <span className={`w-2 h-2 rounded-full ${attendancePercentage >= 75 ? 'bg-emerald-500' : 'bg-rose-500'}`} />
-            {attendancePercentage >= 75 ? 'Healthy attendance record' : 'Below 75% comfort line'}
+            <span className={`w-2 h-2 rounded-full ${attendanceValue != null && attendanceValue >= 75 ? 'bg-emerald-500' : 'bg-amber-500'}`} />
+            {attendanceValue != null ? (attendanceValue >= 75 ? 'Healthy attendance record' : 'Below 75% comfort line') : 'No attendance data recorded'}
           </p>
         </div>
 
@@ -435,7 +436,7 @@ export function StudentHomeDashboard() {
           </div>
           <div className="p-3 bg-slate-50/80 rounded-xl border border-slate-100">
             <span className="text-[10px] font-mono text-slate-400 block uppercase">2. Attendance</span>
-            <strong className="text-xs text-emerald-700 block mt-0.5 font-bold">{attendancePercentage}% Overall</strong>
+            <strong className="text-xs text-emerald-700 block mt-0.5 font-bold">{attendanceDisplay} Overall</strong>
           </div>
           <div className="p-3 bg-slate-50/80 rounded-xl border border-slate-100">
             <span className="text-[10px] font-mono text-slate-400 block uppercase">3. Workload</span>

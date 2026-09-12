@@ -1,7 +1,19 @@
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY || import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+const getEnvVar = (key: string): string => {
+  if (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env[key]) {
+    return import.meta.env[key];
+  }
+  if (typeof process !== 'undefined' && process.env && process.env[key]) {
+    return process.env[key];
+  }
+  return '';
+};
+
+const DEFAULT_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd0b2FjZmhtaWxxcnRqaml5emNpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg5Mjc2NzEsImV4cCI6MjEwNDUwMzY3MX0.Nq-sZqDP282NP3Pg4MHh1Nxvyv3HnYWMDjHiXpxlvAw';
+
+const supabaseUrl = getEnvVar('VITE_SUPABASE_URL') || 'https://gtoacfhmilqrtjjiyzci.supabase.co';
+const supabaseKey = getEnvVar('VITE_SUPABASE_ANON_KEY') || getEnvVar('VITE_SUPABASE_PUBLISHABLE_KEY') || DEFAULT_ANON_KEY;
 
 if (!supabaseUrl || !supabaseKey) {
   console.warn(
@@ -10,8 +22,8 @@ if (!supabaseUrl || !supabaseKey) {
 }
 
 export const supabase = createClient(
-  supabaseUrl || '',
-  supabaseKey || ''
+  supabaseUrl,
+  supabaseKey
 );
 
 export async function testSupabaseConnection(): Promise<{

@@ -1,6 +1,83 @@
 import { supabase } from './supabase';
 import * as XLSX from 'xlsx';
 
+export const COLLEGE_A_ID = 'a0000000-0000-0000-0000-000000000001';
+export const COLLEGE_B_ID = 'b0000000-0000-0000-0000-000000000002';
+export const GUEST_COLLEGE_ID = 'guest-demo-tenant';
+export const GUEST_COLLEGE_NAME = 'Guest Demo Workspace';
+
+export interface GuestDataStore {
+  students: StudentMember[];
+  faculty: FacultyMember[];
+  departments: Department[];
+  sections: Section[];
+  subjects: Subject[];
+  attendance: any[];
+  grades: any[];
+  assignments: any[];
+  materials: any[];
+  notices: any[];
+  queries: any[];
+}
+
+const guestStore: GuestDataStore = {
+  students: [],
+  faculty: [],
+  departments: [],
+  sections: [],
+  subjects: [],
+  attendance: [],
+  grades: [],
+  assignments: [],
+  materials: [],
+  notices: [],
+  queries: []
+};
+
+export function resetGuestDataStore() {
+  guestStore.students = [];
+  guestStore.faculty = [];
+  guestStore.departments = [];
+  guestStore.sections = [];
+  guestStore.subjects = [];
+  guestStore.attendance = [];
+  guestStore.grades = [];
+  guestStore.assignments = [];
+  guestStore.materials = [];
+  guestStore.notices = [];
+  guestStore.queries = [];
+}
+
+export function getGuestDataStore(): GuestDataStore {
+  return guestStore;
+}
+
+const STORAGE_KEY_ACTIVE_COLLEGE = 'cogniva_active_college_id';
+let activeSessionCollegeId: string | null = (typeof window !== 'undefined' ? localStorage.getItem(STORAGE_KEY_ACTIVE_COLLEGE) : null);
+
+export function setActiveSessionCollegeId(id: string | null) {
+  activeSessionCollegeId = id;
+  if (typeof window !== 'undefined') {
+    if (id) {
+      localStorage.setItem(STORAGE_KEY_ACTIVE_COLLEGE, id);
+    } else {
+      localStorage.removeItem(STORAGE_KEY_ACTIVE_COLLEGE);
+    }
+  }
+}
+
+export function getCurrentCollegeId(): string {
+  if (activeSessionCollegeId) return activeSessionCollegeId;
+  if (typeof window !== 'undefined') {
+    const stored = localStorage.getItem(STORAGE_KEY_ACTIVE_COLLEGE);
+    if (stored) {
+      activeSessionCollegeId = stored;
+      return stored;
+    }
+  }
+  return COLLEGE_A_ID;
+}
+
 export interface AcademicYear {
   id: string;
   name: string;
@@ -215,23 +292,31 @@ export async function fetchAcademicYears(): Promise<AcademicYear[]> {
   }
 }
 
-export async function fetchDepartments(): Promise<Department[]> {
+export async function fetchDepartments(collegeId?: string): Promise<Department[]> {
+  const targetCollegeId = collegeId || getCurrentCollegeId();
   try {
-    const { data, error } = await supabase
-      .from('departments')
-      .select('*')
-      .order('code', { ascending: true });
+    let query = supabase.from('departments').select('*').order('code', { ascending: true });
+    if (targetCollegeId) {
+      query = query.eq('college_id', targetCollegeId);
+    }
+    const { data, error } = await query;
+
+    if (targetCollegeId !== COLLEGE_A_ID) {
+      return (data as Department[]) || [];
+    }
 
     if (error || !data || data.length === 0) {
       return [...FALLBACK_DEPTS, ...localCustomDepts];
     }
     return [...(data as Department[]), ...localCustomDepts];
   } catch {
+    if (targetCollegeId !== COLLEGE_A_ID) return [];
     return [...FALLBACK_DEPTS, ...localCustomDepts];
   }
 }
 
-export async function fetchSections(academicYearId?: string, departmentId?: string): Promise<Section[]> {
+export async function fetchSections(academicYearId?: string, departmentId?: string, collegeId?: string): Promise<Section[]> {
+  const targetCollegeId = collegeId || getCurrentCollegeId();
   try {
     let query = supabase.from('sections').select('*');
 
@@ -241,14 +326,26 @@ export async function fetchSections(academicYearId?: string, departmentId?: stri
     if (departmentId) {
       query = query.eq('department_id', departmentId);
     }
+    if (targetCollegeId) {
+      query = query.eq('college_id', targetCollegeId);
+    }
 
     const { data, error } = await query;
 
-    let allSecs = [...FALLBACK_SECTIONS, ...localCustomSections];
-    if (!error && data && data.length > 0) {
-      allSecs = [...(data as Section[]), ...localCustomSections];
+    if (targetCollegeId !== COLLEGE_A_ID) {
+      return (data as Section[]) || [];
     }
 
+    if (!error && data && data.length > 0) {
+      const dbSecIds = new Set(data.map((d: any) => d.id));
+      const extraLocal = localCustomSections.filter((l) => !dbSecIds.has(l.id));
+      let allSecs = [...(data as Section[]), ...extraLocal];
+      if (academicYearId) allSecs = allSecs.filter(s => s.academic_year_id === academicYearId);
+      if (departmentId) allSecs = allSecs.filter(s => s.department_id === departmentId);
+      return allSecs;
+    }
+
+    let allSecs = [...FALLBACK_SECTIONS, ...localCustomSections];
     if (academicYearId) {
       allSecs = allSecs.filter(s => s.academic_year_id === academicYearId);
     }
@@ -258,6 +355,7 @@ export async function fetchSections(academicYearId?: string, departmentId?: stri
 
     return allSecs;
   } catch {
+    if (targetCollegeId !== COLLEGE_A_ID) return [];
     let allSecs = [...FALLBACK_SECTIONS, ...localCustomSections];
     if (academicYearId) allSecs = allSecs.filter(s => s.academic_year_id === academicYearId);
     if (departmentId) allSecs = allSecs.filter(s => s.department_id === departmentId);
@@ -265,15 +363,40 @@ export async function fetchSections(academicYearId?: string, departmentId?: stri
   }
 }
 
-export async function fetchDatabaseCounts(): Promise<DatabaseCounts> {
+export async function fetchDatabaseCounts(collegeId?: string): Promise<DatabaseCounts> {
+  const targetCollegeId = collegeId || getCurrentCollegeId();
+  if (targetCollegeId === GUEST_COLLEGE_ID) {
+    return {
+      students: guestStore.students.length,
+      faculty: guestStore.faculty.length,
+      sections: guestStore.sections.length,
+      departments: guestStore.departments.length,
+    };
+  }
   try {
+    if (targetCollegeId !== COLLEGE_A_ID) {
+      const [studentsRes, facultyRes, sectionsRes, deptsRes] = await Promise.all([
+        supabase.from('students').select('id', { count: 'exact', head: true }).eq('college_id', targetCollegeId),
+        supabase.from('faculty').select('id', { count: 'exact', head: true }).eq('college_id', targetCollegeId),
+        supabase.from('sections').select('id', { count: 'exact', head: true }).eq('college_id', targetCollegeId),
+        supabase.from('departments').select('id', { count: 'exact', head: true }).eq('college_id', targetCollegeId),
+      ]);
+
+      return {
+        students: studentsRes.count || 0,
+        faculty: facultyRes.count || 0,
+        sections: sectionsRes.count || 0,
+        departments: deptsRes.count || 0,
+      };
+    }
+
     const [studentsRes, studentsTableRes, facultyRes, facultyTableRes, sectionsRes, deptsRes] = await Promise.all([
-      supabase.from('profiles').select('id', { count: 'exact', head: true }).eq('role', 'student'),
-      supabase.from('students').select('id', { count: 'exact', head: true }),
-      supabase.from('profiles').select('id', { count: 'exact', head: true }).eq('role', 'faculty'),
-      supabase.from('faculty').select('id', { count: 'exact', head: true }),
-      supabase.from('sections').select('id', { count: 'exact', head: true }),
-      supabase.from('departments').select('id', { count: 'exact', head: true }),
+      supabase.from('profiles').select('id', { count: 'exact', head: true }).eq('role', 'student').eq('college_id', targetCollegeId),
+      supabase.from('students').select('id', { count: 'exact', head: true }).eq('college_id', targetCollegeId),
+      supabase.from('profiles').select('id', { count: 'exact', head: true }).eq('role', 'faculty').eq('college_id', targetCollegeId),
+      supabase.from('faculty').select('id', { count: 'exact', head: true }).eq('college_id', targetCollegeId),
+      supabase.from('sections').select('id', { count: 'exact', head: true }).eq('college_id', targetCollegeId),
+      supabase.from('departments').select('id', { count: 'exact', head: true }).eq('college_id', targetCollegeId),
     ]);
 
     const studCount = Math.max(studentsRes.count || 0, studentsTableRes.count || 0, localCustomStudents.length);
@@ -282,10 +405,13 @@ export async function fetchDatabaseCounts(): Promise<DatabaseCounts> {
     return {
       students: studCount,
       faculty: facCount,
-      sections: (sectionsRes.count || 0) + localCustomSections.length,
-      departments: (deptsRes.count || 0) + localCustomDepts.length,
+      sections: Math.max(sectionsRes.count || 0, 10),
+      departments: Math.max(deptsRes.count || 0, 4),
     };
   } catch {
+    if (targetCollegeId !== COLLEGE_A_ID) {
+      return { students: 0, faculty: 0, sections: 0, departments: 0 };
+    }
     return { students: localCustomStudents.length, faculty: localCustomFaculty.length, sections: localCustomSections.length, departments: localCustomDepts.length };
   }
 }
@@ -365,7 +491,8 @@ export async function createSection(academicYearId: string, departmentId: string
   }
 }
 
-export async function fetchFacultyAssignments(): Promise<FacultyAssignment[]> {
+export async function fetchFacultyAssignments(collegeId?: string): Promise<FacultyAssignment[]> {
+  const targetCollegeId = collegeId || getCurrentCollegeId();
   try {
     const { data, error } = await supabase
       .from('faculty_assignments')
@@ -390,10 +517,14 @@ export async function fetchFacultyAssignments(): Promise<FacultyAssignment[]> {
       }));
     }
 
+    if (targetCollegeId !== COLLEGE_A_ID) {
+      return dbAssigns;
+    }
+
     // Merge local assignments
-    const allSections = await fetchSections();
+    const allSections = await fetchSections(undefined, undefined, targetCollegeId);
     const allProfiles = await fetchProfilesByRole('faculty');
-    const allFaculty = await fetchFacultyMembers();
+    const allFaculty = await fetchFacultyMembers(targetCollegeId);
 
     const localAssigns: FacultyAssignment[] = localFacultyAssignments.map((la) => {
       const sec = allSections.find((s) => s.id === la.section_id);
@@ -468,7 +599,8 @@ export async function saveFacultyAccessAssignments(facultyId: string, sectionIds
   }
 }
 
-export async function fetchFacultyAssignedSections(facultyEmailOrId: string): Promise<Section[]> {
+export async function fetchFacultyAssignedSections(facultyEmailOrId: string, collegeId?: string): Promise<Section[]> {
+  const targetCollegeId = collegeId || getCurrentCollegeId();
   try {
     const clean = facultyEmailOrId.trim().toLowerCase();
     if (!clean) return [];
@@ -480,7 +612,7 @@ export async function fetchFacultyAssignedSections(facultyEmailOrId: string): Pr
     if (prof) {
       facultyId = prof.id;
     } else {
-      const facs = await fetchFacultyMembers();
+      const facs = await fetchFacultyMembers(targetCollegeId);
       const fac = facs.find((f) => f.email.toLowerCase() === clean || f.id === clean || f.employee_id.toLowerCase() === clean);
       if (fac) facultyId = fac.id;
     }
@@ -511,12 +643,15 @@ export async function fetchFacultyAssignedSections(facultyEmailOrId: string): Pr
       } catch {}
     }
 
-    const localSecs = localFacultyAssignments
-      .filter((a) => a.faculty_id === facultyId || a.faculty_id === clean || (clean.includes('menon') && a.section_id === 's3'))
-      .map((a) => a.section_id);
+    const localSecs: string[] = [];
+    if (targetCollegeId === COLLEGE_A_ID) {
+      localFacultyAssignments
+        .filter((a) => a.faculty_id === facultyId || a.faculty_id === clean || (clean.includes('menon') && a.section_id === 's3'))
+        .forEach((a) => localSecs.push(a.section_id));
 
-    if (localSecs.length === 0 && (clean.includes('anjali') || clean.includes('menon'))) {
-      localSecs.push('s3');
+      if (localSecs.length === 0 && (clean.includes('anjali') || clean.includes('menon'))) {
+        localSecs.push('s3');
+      }
     }
 
     const combinedSecIds = Array.from(new Set([...secIds, ...localSecs]));
@@ -525,7 +660,7 @@ export async function fetchFacultyAssignedSections(facultyEmailOrId: string): Pr
       return [];
     }
 
-    const allSections = await fetchSections();
+    const allSections = await fetchSections(undefined, undefined, targetCollegeId);
     return allSections.filter((s) => combinedSecIds.includes(s.id));
   } catch {
     return [];
@@ -695,12 +830,35 @@ export function validateFacultyExcelHeaders(headers: string[]): { valid: boolean
   };
 }
 
-export async function fetchStudentMembers(yearStr?: string, deptCode?: string, sectionName?: string): Promise<StudentMember[]> {
+export async function fetchStudentMembers(yearStr?: string, deptCode?: string, sectionName?: string, collegeId?: string): Promise<StudentMember[]> {
+  const targetCollegeId = collegeId || getCurrentCollegeId();
+  if (targetCollegeId === GUEST_COLLEGE_ID) {
+    let list = [...guestStore.students];
+    if (yearStr) list = list.filter(s => !s.year || s.year.toLowerCase().includes(yearStr.toLowerCase()));
+    if (deptCode) list = list.filter(s => !s.department || s.department.toLowerCase().includes(deptCode.toLowerCase()));
+    if (sectionName) list = list.filter(s => !s.section || s.section.toLowerCase() === sectionName.toLowerCase() || s.section.toLowerCase().endsWith(sectionName.toLowerCase()));
+    return list;
+  }
   try {
-    const { data, error } = await supabase
-      .from('students')
-      .select('*')
-      .order('name', { ascending: true });
+    let query = supabase.from('students').select('*').order('name', { ascending: true });
+    if (targetCollegeId) {
+      query = query.eq('college_id', targetCollegeId);
+    }
+    const { data, error } = await query;
+
+    if (targetCollegeId !== COLLEGE_A_ID) {
+      let bStudents = (data as StudentMember[]) || [];
+      if (yearStr) {
+        bStudents = bStudents.filter(s => !s.year || s.year.toLowerCase().includes(yearStr.toLowerCase()) || yearStr.toLowerCase().includes(s.year.toLowerCase()));
+      }
+      if (deptCode) {
+        bStudents = bStudents.filter(s => !s.department || s.department.toLowerCase().includes(deptCode.toLowerCase()) || deptCode.toLowerCase().includes(s.department.toLowerCase()));
+      }
+      if (sectionName) {
+        bStudents = bStudents.filter(s => !s.section || s.section.toLowerCase() === sectionName.toLowerCase() || s.section.toLowerCase().endsWith(sectionName.toLowerCase()));
+      }
+      return bStudents;
+    }
 
     let allStudents: StudentMember[] = [];
     if (!error && data && data.length > 0) {
@@ -723,6 +881,7 @@ export async function fetchStudentMembers(yearStr?: string, deptCode?: string, s
 
     return allStudents;
   } catch {
+    if (targetCollegeId !== COLLEGE_A_ID) return [];
     return localCustomStudents;
   }
 }
@@ -743,12 +902,59 @@ export interface StudentContext {
 }
 
 export async function getCurrentStudentContext(userEmailOrRegno?: string | null): Promise<StudentContext> {
-  const defaultContext: StudentContext = {
+  let targetInput = (userEmailOrRegno || '').trim().toLowerCase();
+
+  if (!targetInput) {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user?.email) {
+        targetInput = user.email.toLowerCase().trim();
+      }
+    } catch {}
+  }
+
+  try {
+    const studs = await fetchStudentMembers();
+    if (targetInput) {
+      const me = studs.find((s) => {
+        const sEmail = (s.email || '').toLowerCase();
+        const sReg = (s.regno || '').toLowerCase();
+        const sId = (s.id || '').toLowerCase();
+        return sEmail === targetInput || sReg === targetInput || sId === targetInput ||
+               (targetInput.includes('@') && sReg && targetInput.startsWith(sReg.toLowerCase())) ||
+               (targetInput.includes('@') && sEmail && targetInput === sEmail);
+      });
+
+      if (me) {
+        return {
+          authUserId: me.id,
+          studentId: me.id,
+          registerNumber: me.regno,
+          name: me.name,
+          email: me.email,
+          sectionId: me.section || 'CSE-C',
+          sectionName: me.section || 'CSE-C',
+          departmentId: me.department || 'CSE',
+          department: me.department || 'CSE',
+          year: me.year || 'Second Year',
+          semester: me.semester || '4',
+          academicYear: me.year || 'Second Year'
+        };
+      }
+    }
+  } catch (err) {
+    console.warn('getCurrentStudentContext fetch exception:', err);
+  }
+
+  const nameFromEmail = targetInput ? targetInput.split('@')[0].replace(/[._-]/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) : 'Student User';
+  const regFromInput = targetInput ? (targetInput.includes('@') ? targetInput.split('@')[0].toUpperCase() : targetInput.toUpperCase()) : 'STUDENT';
+
+  return {
     authUserId: undefined,
-    studentId: 'stud_csec_001',
-    registerNumber: '2024CSE001',
-    name: 'Aditya Varma',
-    email: userEmailOrRegno && userEmailOrRegno.includes('@') ? userEmailOrRegno.toLowerCase().trim() : 'student001@cogniva.edu',
+    studentId: `stud_${regFromInput.toLowerCase()}`,
+    registerNumber: regFromInput,
+    name: nameFromEmail,
+    email: targetInput || 'student@cogniva.edu',
     sectionId: 'CSE-C',
     sectionName: 'CSE-C',
     departmentId: 'CSE',
@@ -757,39 +963,6 @@ export async function getCurrentStudentContext(userEmailOrRegno?: string | null)
     semester: '4',
     academicYear: 'Second Year'
   };
-
-  if (!userEmailOrRegno) return defaultContext;
-
-  try {
-    const studs = await fetchStudentMembers();
-    const target = userEmailOrRegno.trim().toLowerCase();
-    const me = studs.find((s) => {
-      const sEmail = (s.email || '').toLowerCase();
-      const sReg = (s.regno || '').toLowerCase();
-      return sEmail === target || sReg === target || (target.includes('@') && sReg && target.includes(sReg));
-    });
-
-    if (me) {
-      return {
-        authUserId: me.id,
-        studentId: me.id,
-        registerNumber: me.regno,
-        name: me.name,
-        email: me.email,
-        sectionId: me.section || 'CSE-C',
-        sectionName: me.section || 'CSE-C',
-        departmentId: me.department || 'CSE',
-        department: me.department || 'CSE',
-        year: me.year || 'Second Year',
-        semester: me.semester || '4',
-        academicYear: me.year || 'Second Year'
-      };
-    }
-  } catch (err) {
-    console.warn('getCurrentStudentContext fetch exception:', err);
-  }
-
-  return defaultContext;
 }
 
 export async function updateStudentMember(id: string, updates: Partial<StudentMember>): Promise<{ success: boolean; error?: string }> {
@@ -843,13 +1016,68 @@ export async function importStudentsBatch(
   rows: StudentImportRow[],
   defaultYearId?: string,
   defaultDeptId?: string,
-  defaultSecId?: string
+  defaultSecId?: string,
+  collegeId?: string
 ): Promise<ImportResult> {
   let importedCount = 0;
   let updatedCount = 0;
   let skippedCount = 0;
   let invalidCount = 0;
   const errors: string[] = [];
+
+  const targetCollegeId = collegeId || getCurrentCollegeId();
+
+  if (targetCollegeId === GUEST_COLLEGE_ID) {
+    let importedCount = 0;
+    for (let index = 0; index < rows.length; index++) {
+      const row = rows[index];
+      let name = String(row.name || '').trim();
+      let regno = String(row.regno || '').trim();
+      let email = String(row.email || '').trim().toLowerCase();
+      let deptStr = String(row.department || '').trim() || 'CSE';
+      let yearStr = String(row.year || '').trim() || 'Second Year';
+      let secStr = String(row.section || '').trim() || 'CSE-A';
+      let semStr = String(row.semester || '').trim();
+      let dob = String(row.dob || '').trim();
+
+      if (!name && !regno && !email) continue;
+      if (!name) name = `Student ${regno || index + 1}`;
+      if (!regno) regno = `GUEST-${1000 + index}`;
+      if (!email || !isValidEmail(email)) email = `${regno.toLowerCase()}@cogniva.demo`;
+
+      const newMember: StudentMember = {
+        id: `guest_stud_${Date.now()}_${index}`,
+        regno,
+        name,
+        email,
+        department: deptStr,
+        year: yearStr,
+        section: secStr,
+        semester: semStr,
+        dob: dob || '01/01/2004',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
+
+      const existingIdx = guestStore.students.findIndex(s => s.regno.toLowerCase() === regno.toLowerCase() || s.email.toLowerCase() === email);
+      if (existingIdx !== -1) {
+        guestStore.students[existingIdx] = newMember;
+      } else {
+        guestStore.students.push(newMember);
+      }
+      importedCount++;
+    }
+
+    return {
+      success: true,
+      importedCount,
+      updatedCount: 0,
+      skippedCount: 0,
+      invalidCount: 0,
+      totalProcessed: rows.length,
+      errors: []
+    };
+  }
 
   let overrideYear = '';
   let overrideDept = '';
@@ -861,12 +1089,12 @@ export async function importStudentsBatch(
     if (y) overrideYear = y.name;
   }
   if (defaultDeptId) {
-    const depts = await fetchDepartments();
+    const depts = await fetchDepartments(targetCollegeId);
     const d = depts.find((item) => item.id === defaultDeptId || item.name === defaultDeptId || item.code === defaultDeptId);
     if (d) overrideDept = d.code;
   }
   if (defaultSecId) {
-    const secs = await fetchSections();
+    const secs = await fetchSections(undefined, undefined, targetCollegeId);
     const s = secs.find((item) => item.id === defaultSecId || item.name === defaultSecId);
     if (s) overrideSec = s.name;
   }
@@ -906,6 +1134,7 @@ export async function importStudentsBatch(
       const { data: existingStud } = await supabase
         .from('students')
         .select('*')
+        .eq('college_id', targetCollegeId)
         .or(`regno.eq.${regno},email.eq.${email}`)
         .maybeSingle();
 
@@ -913,7 +1142,7 @@ export async function importStudentsBatch(
         (s) => s.regno.toLowerCase() === regno.toLowerCase() || s.email.toLowerCase() === email
       );
 
-      const isExisting = Boolean(existingStud || existingLocalIdx !== -1);
+      const isExisting = Boolean(existingStud || (targetCollegeId === COLLEGE_A_ID && existingLocalIdx !== -1));
 
       // 1. Upsert into Supabase students table (regno constraint)
       const { data: studData, error: studErr } = await supabase
@@ -929,6 +1158,7 @@ export async function importStudentsBatch(
               section: secStr,
               semester: semStr,
               dob,
+              college_id: targetCollegeId,
               updated_at: new Date().toISOString(),
             },
           ],
@@ -936,7 +1166,7 @@ export async function importStudentsBatch(
         )
         .select();
 
-      // Maintain localCustomStudents in-memory store
+      // Maintain localCustomStudents in-memory store for College A only
       const newMember: StudentMember = {
         id:
           studData && studData[0]
@@ -956,10 +1186,12 @@ export async function importStudentsBatch(
         updated_at: new Date().toISOString(),
       };
 
-      if (existingLocalIdx !== -1) {
-        localCustomStudents[existingLocalIdx] = newMember;
-      } else {
-        localCustomStudents.push(newMember);
+      if (targetCollegeId === COLLEGE_A_ID) {
+        if (existingLocalIdx !== -1) {
+          localCustomStudents[existingLocalIdx] = newMember;
+        } else {
+          localCustomStudents.push(newMember);
+        }
       }
 
       // 2. Automatically create/associate Supabase Auth User with normalized DDMMYYYY DOB as initial password via secure server API
@@ -974,7 +1206,8 @@ export async function importStudentsBatch(
             role: 'student',
             name,
             regno,
-            section: secStr
+            section: secStr,
+            college_id: targetCollegeId
           })
         }).catch(() => undefined);
       } catch {
@@ -995,12 +1228,21 @@ export async function importStudentsBatch(
   return { importedCount, updatedCount, skippedCount, invalidCount, errors };
 }
 
-export async function fetchFacultyMembers(): Promise<FacultyMember[]> {
+export async function fetchFacultyMembers(collegeId?: string): Promise<FacultyMember[]> {
+  const targetCollegeId = collegeId || getCurrentCollegeId();
+  if (targetCollegeId === GUEST_COLLEGE_ID) {
+    return [...guestStore.faculty];
+  }
   try {
-    const { data, error } = await supabase
-      .from('faculty')
-      .select('*')
-      .order('name', { ascending: true });
+    let query = supabase.from('faculty').select('*').order('name', { ascending: true });
+    if (targetCollegeId) {
+      query = query.eq('college_id', targetCollegeId);
+    }
+    const { data, error } = await query;
+
+    if (targetCollegeId !== COLLEGE_A_ID) {
+      return (data as FacultyMember[]) || [];
+    }
 
     if (!error && data && data.length > 0) {
       const dbEmpIds = new Set(data.map((d: any) => d.employee_id));
@@ -1008,14 +1250,15 @@ export async function fetchFacultyMembers(): Promise<FacultyMember[]> {
       return [...(data as FacultyMember[]), ...extraLocal];
     }
   } catch {
-    // ignore
+    if (targetCollegeId !== COLLEGE_A_ID) return [];
   }
 
+  if (targetCollegeId !== COLLEGE_A_ID) return [];
+
   try {
-    const { data: profData } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('role', 'faculty');
+    let profQuery = supabase.from('profiles').select('*').eq('role', 'faculty');
+    if (targetCollegeId) profQuery = profQuery.eq('college_id', targetCollegeId);
+    const { data: profData } = await profQuery;
 
     if (profData && profData.length > 0) {
       const converted: FacultyMember[] = profData.map((p: any) => ({
@@ -1036,16 +1279,20 @@ export async function fetchFacultyMembers(): Promise<FacultyMember[]> {
   return localCustomFaculty;
 }
 
-export async function updateFacultyMember(id: string, updates: Partial<FacultyMember>): Promise<{ success: boolean; error?: string }> {
+export async function updateFacultyMember(id: string, updates: Partial<FacultyMember>, collegeId?: string): Promise<{ success: boolean; error?: string }> {
+  const targetCollegeId = collegeId || getCurrentCollegeId();
   try {
     const { error } = await supabase
       .from('faculty')
       .update({ ...updates, updated_at: new Date().toISOString() })
-      .eq('id', id);
+      .eq('id', id)
+      .eq('college_id', targetCollegeId);
 
-    const idx = localCustomFaculty.findIndex((f) => f.id === id);
-    if (idx !== -1) {
-      localCustomFaculty[idx] = { ...localCustomFaculty[idx], ...updates };
+    if (targetCollegeId === COLLEGE_A_ID) {
+      const idx = localCustomFaculty.findIndex((f) => f.id === id);
+      if (idx !== -1) {
+        localCustomFaculty[idx] = { ...localCustomFaculty[idx], ...updates };
+      }
     }
 
     if (error && error.code !== 'PGRST205') {
@@ -1053,21 +1300,26 @@ export async function updateFacultyMember(id: string, updates: Partial<FacultyMe
     }
     return { success: true };
   } catch (err) {
-    const idx = localCustomFaculty.findIndex((f) => f.id === id);
-    if (idx !== -1) {
-      localCustomFaculty[idx] = { ...localCustomFaculty[idx], ...updates };
+    if (targetCollegeId === COLLEGE_A_ID) {
+      const idx = localCustomFaculty.findIndex((f) => f.id === id);
+      if (idx !== -1) {
+        localCustomFaculty[idx] = { ...localCustomFaculty[idx], ...updates };
+      }
     }
     return { success: true };
   }
 }
 
-export async function deleteFacultyMember(id: string): Promise<{ success: boolean; error?: string }> {
+export async function deleteFacultyMember(id: string, collegeId?: string): Promise<{ success: boolean; error?: string }> {
+  const targetCollegeId = collegeId || getCurrentCollegeId();
   try {
-    const { error } = await supabase.from('faculty').delete().eq('id', id);
+    const { error } = await supabase.from('faculty').delete().eq('id', id).eq('college_id', targetCollegeId);
 
-    const idx = localCustomFaculty.findIndex((f) => f.id === id);
-    if (idx !== -1) {
-      localCustomFaculty.splice(idx, 1);
+    if (targetCollegeId === COLLEGE_A_ID) {
+      const idx = localCustomFaculty.findIndex((f) => f.id === id);
+      if (idx !== -1) {
+        localCustomFaculty.splice(idx, 1);
+      }
     }
 
     if (error && error.code !== 'PGRST205') {
@@ -1075,20 +1327,68 @@ export async function deleteFacultyMember(id: string): Promise<{ success: boolea
     }
     return { success: true };
   } catch (err) {
-    const idx = localCustomFaculty.findIndex((f) => f.id === id);
-    if (idx !== -1) {
-      localCustomFaculty.splice(idx, 1);
+    if (targetCollegeId === COLLEGE_A_ID) {
+      const idx = localCustomFaculty.findIndex((f) => f.id === id);
+      if (idx !== -1) {
+        localCustomFaculty.splice(idx, 1);
+      }
     }
     return { success: true };
   }
 }
 
-export async function importFacultyBatch(rows: FacultyImportRow[]): Promise<ImportResult> {
+export async function importFacultyBatch(rows: FacultyImportRow[], collegeId?: string): Promise<ImportResult> {
   let importedCount = 0;
   let updatedCount = 0;
   let skippedCount = 0;
   let invalidCount = 0;
   const errors: string[] = [];
+
+  const targetCollegeId = collegeId || getCurrentCollegeId();
+
+  if (targetCollegeId === GUEST_COLLEGE_ID) {
+    for (let index = 0; index < rows.length; index++) {
+      const row = rows[index];
+      let name = String(row.name || '').trim();
+      let empId = String(row.employee_id || '').trim();
+      let email = String(row.email || '').trim().toLowerCase();
+      let deptStr = String(row.department || '').trim() || 'CSE';
+      let dob = String(row.dob || '').trim();
+
+      if (!name && !empId && !email) continue;
+      if (!name) name = `Faculty Member ${index + 1}`;
+      if (!empId) empId = `G-FAC-${100 + index}`;
+      if (!email || !isValidEmail(email)) email = `${empId.toLowerCase()}@cogniva.demo`;
+
+      const newMember: FacultyMember = {
+        id: `guest_fac_${Date.now()}_${index}`,
+        employee_id: empId,
+        name,
+        email,
+        department: deptStr,
+        designation: 'Faculty Member',
+        dob: dob || '1985-01-01'
+      };
+
+      const existingIdx = guestStore.faculty.findIndex(f => f.employee_id.toLowerCase() === empId.toLowerCase() || f.email.toLowerCase() === email);
+      if (existingIdx !== -1) {
+        guestStore.faculty[existingIdx] = newMember;
+      } else {
+        guestStore.faculty.push(newMember);
+      }
+      importedCount++;
+    }
+
+    return {
+      success: true,
+      importedCount,
+      updatedCount: 0,
+      skippedCount: 0,
+      invalidCount: 0,
+      totalProcessed: rows.length,
+      errors: []
+    };
+  }
 
   for (let index = 0; index < rows.length; index++) {
     const row = rows[index];
@@ -1124,6 +1424,7 @@ export async function importFacultyBatch(rows: FacultyImportRow[]): Promise<Impo
       const { data: existingFac } = await supabase
         .from('faculty')
         .select('*')
+        .eq('college_id', targetCollegeId)
         .or(`employee_id.eq.${empId},email.eq.${email}`)
         .maybeSingle();
 
@@ -1131,7 +1432,7 @@ export async function importFacultyBatch(rows: FacultyImportRow[]): Promise<Impo
         (f) => f.employee_id.toLowerCase() === empId.toLowerCase() || f.email.toLowerCase() === email
       );
 
-      const isExisting = Boolean(existingFac || existingLocalIdx !== -1);
+      const isExisting = Boolean(existingFac || (targetCollegeId === COLLEGE_A_ID && existingLocalIdx !== -1));
 
       // Upsert into Supabase faculty table (employee_id constraint)
       const { data: facData, error: facErr } = await supabase
@@ -1148,6 +1449,7 @@ export async function importFacultyBatch(rows: FacultyImportRow[]): Promise<Impo
               section: secStr,
               subject: subjStr,
               phone: phoneStr,
+              college_id: targetCollegeId,
               updated_at: new Date().toISOString(),
             },
           ],
@@ -1155,7 +1457,7 @@ export async function importFacultyBatch(rows: FacultyImportRow[]): Promise<Impo
         )
         .select();
 
-      // Maintain localCustomFaculty memory store
+      // Maintain localCustomFaculty memory store for College A only
       const newMember: FacultyMember = {
         id:
           facData && facData[0]
@@ -1176,10 +1478,12 @@ export async function importFacultyBatch(rows: FacultyImportRow[]): Promise<Impo
         updated_at: new Date().toISOString(),
       };
 
-      if (existingLocalIdx !== -1) {
-        localCustomFaculty[existingLocalIdx] = newMember;
-      } else {
-        localCustomFaculty.push(newMember);
+      if (targetCollegeId === COLLEGE_A_ID) {
+        if (existingLocalIdx !== -1) {
+          localCustomFaculty[existingLocalIdx] = newMember;
+        } else {
+          localCustomFaculty.push(newMember);
+        }
       }
 
       // Automatically create Supabase Auth User with normalized DDMMYYYY DOB as initial password via secure server API
@@ -1194,7 +1498,8 @@ export async function importFacultyBatch(rows: FacultyImportRow[]): Promise<Impo
             role: 'faculty',
             name,
             employee_id: empId,
-            department: deptStr
+            department: deptStr,
+            college_id: targetCollegeId
           })
         }).catch(() => undefined);
       } catch {
@@ -1428,6 +1733,19 @@ function saveLocalStores() {
 // Load initial localStorage caches
 export function reloadLocalStores() {
   if (typeof window !== 'undefined') {
+    const curCollege = getCurrentCollegeId();
+    if (curCollege !== COLLEGE_A_ID) {
+      localAttendanceRecords.length = 0;
+      localExaminations.length = 0;
+      localStudyMaterials.length = 0;
+      localSubjects.length = 0;
+      localFacultySubjectAssignments.length = 0;
+      localStudentGrades.length = 0;
+      localAssignments.length = 0;
+      localAssignmentSubmissions.length = 0;
+      localStudentAssignmentStatuses.length = 0;
+      return;
+    }
     try {
       reloadStoredLocalNotices();
       const savedAtt = localStorage.getItem('cogniva_attendance');
@@ -1789,17 +2107,26 @@ export async function createExamination(
   }
 }
 
-export async function fetchExaminations(sectionName?: string): Promise<Examination[]> {
+export async function fetchExaminations(sectionName?: string, collegeId?: string): Promise<Examination[]> {
+  const targetCollegeId = collegeId || getCurrentCollegeId();
   try {
     let query = supabase.from('examinations').select('*').order('created_at', { ascending: false });
     if (sectionName) {
       query = query.eq('section', sectionName);
     }
+    if (targetCollegeId) {
+      query = query.eq('college_id', targetCollegeId);
+    }
     const { data, error } = await query;
+    if (targetCollegeId !== COLLEGE_A_ID) {
+      return (data as Examination[]) || [];
+    }
     if (!error && data) {
       return data as Examination[];
     }
   } catch {}
+
+  if (targetCollegeId !== COLLEGE_A_ID) return [];
 
   if (sectionName) {
     return localExaminations.filter(
@@ -1846,25 +2173,34 @@ export async function createStudyMaterial(
   }
 }
 
-export async function fetchStudyMaterials(sectionName?: string): Promise<StudyMaterial[]> {
+export async function fetchStudyMaterials(sectionName?: string, collegeId?: string): Promise<StudyMaterial[]> {
+  const targetCollegeId = collegeId || getCurrentCollegeId();
   reloadLocalStores();
 
   let allMaterials: StudyMaterial[] = [];
 
   try {
-    const { data, error } = await supabase.from('study_materials').select('*').order('created_at', { ascending: false });
-    if (!error && data && data.length > 0) {
+    let query = supabase.from('study_materials').select('*').order('created_at', { ascending: false });
+    if (targetCollegeId) {
+      query = query.eq('college_id', targetCollegeId);
+    }
+    const { data, error } = await query;
+    if (targetCollegeId !== COLLEGE_A_ID) {
+      allMaterials = (data as StudyMaterial[]) || [];
+    } else if (!error && data && data.length > 0) {
       allMaterials = data as StudyMaterial[];
     }
   } catch (err) {
     console.warn('Supabase fetchStudyMaterials query notice:', err);
   }
 
-  const existingIds = new Set(allMaterials.map((m) => m.id));
-  for (const lm of localStudyMaterials) {
-    if (!existingIds.has(lm.id)) {
-      allMaterials.push(lm);
-      existingIds.add(lm.id);
+  if (targetCollegeId === COLLEGE_A_ID) {
+    const existingIds = new Set(allMaterials.map((m) => m.id));
+    for (const lm of localStudyMaterials) {
+      if (!existingIds.has(lm.id)) {
+        allMaterials.push(lm);
+        existingIds.add(lm.id);
+      }
     }
   }
 
@@ -1999,23 +2335,35 @@ export async function uploadFileToSupabaseStorage(
 }
 
 // SUBJECTS API
-export async function fetchSubjects(yearOrFilter?: string | { section?: string; department?: string; year?: string }, deptCode?: string, sectionName?: string): Promise<Subject[]> {
+export async function fetchSubjects(yearOrFilter?: string | { section?: string; department?: string; year?: string }, deptCode?: string, sectionName?: string, collegeId?: string): Promise<Subject[]> {
   let yearStr = typeof yearOrFilter === 'string' ? yearOrFilter : yearOrFilter?.year;
   if (typeof yearOrFilter === 'object' && yearOrFilter !== null) {
     if (yearOrFilter.department) deptCode = yearOrFilter.department;
     if (yearOrFilter.section) sectionName = yearOrFilter.section;
   }
 
+  const targetCollegeId = collegeId || getCurrentCollegeId();
+
   try {
     let query = supabase.from('subjects').select('*').order('subject_name', { ascending: true });
     if (sectionName) {
       query = query.eq('section', sectionName);
     }
+    if (targetCollegeId) {
+      query = query.eq('college_id', targetCollegeId);
+    }
     const { data, error } = await query;
+
+    if (targetCollegeId !== COLLEGE_A_ID) {
+      return (data as Subject[]) || [];
+    }
+
     if (!error && data) {
       return data as Subject[];
     }
   } catch {}
+
+  if (targetCollegeId !== COLLEGE_A_ID) return [];
 
   let filtered = localSubjects.filter(s => {
     const n = (s.subject_name || '').toLowerCase();
@@ -2079,7 +2427,8 @@ export async function deleteSubject(id: string): Promise<{ success: boolean; err
 }
 
 // FACULTY SUBJECT ASSIGNMENTS API
-export async function fetchFacultySubjectAssignments(facultyEmailOrId?: string, sectionName?: string): Promise<FacultySubjectAssignment[]> {
+export async function fetchFacultySubjectAssignments(facultyEmailOrId?: string, sectionName?: string, collegeId?: string): Promise<FacultySubjectAssignment[]> {
+  const targetCollegeId = collegeId || getCurrentCollegeId();
   try {
     let query = supabase.from('faculty_subject_assignments').select('*');
     if (facultyEmailOrId) {
@@ -2088,7 +2437,19 @@ export async function fetchFacultySubjectAssignments(facultyEmailOrId?: string, 
     if (sectionName) {
       query = query.eq('section', sectionName);
     }
+    if (targetCollegeId) {
+      query = query.eq('college_id', targetCollegeId);
+    }
     const { data, error } = await query;
+
+    if (targetCollegeId !== COLLEGE_A_ID) {
+      if (error || !data) return [];
+      return (data as any[]).map(a => ({
+        ...a,
+        section_name: a.section_name || a.section
+      })) as FacultySubjectAssignment[];
+    }
+
     if (!error && data) {
       return (data as any[]).map(a => ({
         ...a,
@@ -2096,6 +2457,8 @@ export async function fetchFacultySubjectAssignments(facultyEmailOrId?: string, 
       })) as FacultySubjectAssignment[];
     }
   } catch {}
+
+  if (targetCollegeId !== COLLEGE_A_ID) return [];
 
   let filtered = localFacultySubjectAssignments.filter(a => {
     const n = (a.subject_name || '').toLowerCase();
@@ -2581,25 +2944,34 @@ export function calculateExamPriority(examDateStr: string): {
 }
 
 
-export async function fetchAssignments(filter?: { section?: string; faculty_email?: string; subject_code?: string }): Promise<Assignment[]> {
+export async function fetchAssignments(filter?: { section?: string; faculty_email?: string; subject_code?: string; collegeId?: string }): Promise<Assignment[]> {
+  const targetCollegeId = filter?.collegeId || getCurrentCollegeId();
   reloadLocalStores();
 
   let allAssignments: Assignment[] = [];
 
   try {
-    const { data, error } = await supabase.from('assignments').select('*').order('due_date', { ascending: true });
-    if (!error && data && data.length > 0) {
+    let query = supabase.from('assignments').select('*').order('due_date', { ascending: true });
+    if (targetCollegeId) {
+      query = query.eq('college_id', targetCollegeId);
+    }
+    const { data, error } = await query;
+    if (targetCollegeId !== COLLEGE_A_ID) {
+      allAssignments = (data as Assignment[]) || [];
+    } else if (!error && data && data.length > 0) {
       allAssignments = data as Assignment[];
     }
   } catch (err) {
     console.warn('Supabase fetchAssignments query notice:', err);
   }
 
-  const existingIds = new Set(allAssignments.map(a => a.id));
-  for (const la of localAssignments) {
-    if (!existingIds.has(la.id)) {
-      allAssignments.push(la);
-      existingIds.add(la.id);
+  if (targetCollegeId === COLLEGE_A_ID) {
+    const existingIds = new Set(allAssignments.map(a => a.id));
+    for (const la of localAssignments) {
+      if (!existingIds.has(la.id)) {
+        allAssignments.push(la);
+        existingIds.add(la.id);
+      }
     }
   }
 
@@ -3461,15 +3833,22 @@ function saveCgpaStores() {
   } catch {}
 }
 
-export async function fetchFacultyCgpaRecords(facultyEmail?: string): Promise<StudentCgpaRecord[]> {
+export async function fetchFacultyCgpaRecords(facultyEmail?: string, collegeId?: string): Promise<StudentCgpaRecord[]> {
+  const targetCollegeId = collegeId || getCurrentCollegeId();
   try {
     let query = supabase.from('student_cgpa_records').select('*');
     if (facultyEmail) query = query.eq('faculty_email', facultyEmail.toLowerCase());
+    if (targetCollegeId) query = query.eq('college_id', targetCollegeId);
     const { data, error } = await query;
+    if (targetCollegeId !== COLLEGE_A_ID) {
+      return (data as StudentCgpaRecord[]) || [];
+    }
     if (!error && data && data.length > 0) {
       return data as StudentCgpaRecord[];
     }
   } catch {}
+
+  if (targetCollegeId !== COLLEGE_A_ID) return [];
 
   if (facultyEmail) {
     return localCgpaRecords.filter(r => !r.facultyEmail || r.facultyEmail.toLowerCase() === facultyEmail.toLowerCase());
@@ -3478,22 +3857,48 @@ export async function fetchFacultyCgpaRecords(facultyEmail?: string): Promise<St
 }
 
 export async function fetchStudentCgpaRecord(regnoOrEmail: string): Promise<StudentCgpaRecord | null> {
+  if (!regnoOrEmail) return null;
   const clean = regnoOrEmail.toLowerCase().trim();
+
+  let matchedStudent: StudentMember | undefined;
   try {
-    const { data, error } = await supabase
-      .from('student_cgpa_records')
-      .select('*')
-      .or(`regno.ilike.${clean},student_email.ilike.${clean}`)
-      .limit(1);
-    if (!error && data && data.length > 0) {
-      return data[0] as StudentCgpaRecord;
+    const roster = await fetchStudentMembers();
+    matchedStudent = roster.find(
+      s => s.email?.toLowerCase() === clean || s.regno?.toLowerCase() === clean || s.id?.toLowerCase() === clean
+    );
+  } catch {}
+
+  const candidateKeys = new Set<string>();
+  candidateKeys.add(clean);
+  if (matchedStudent) {
+    if (matchedStudent.regno) candidateKeys.add(matchedStudent.regno.toLowerCase().trim());
+    if (matchedStudent.email) candidateKeys.add(matchedStudent.email.toLowerCase().trim());
+    if (matchedStudent.name) candidateKeys.add(matchedStudent.name.toLowerCase().trim());
+  }
+
+  try {
+    for (const key of Array.from(candidateKeys)) {
+      const { data, error } = await supabase
+        .from('student_cgpa_records')
+        .select('*')
+        .or(`regno.ilike.${key},student_email.ilike.${key},student_name.ilike.${key}`)
+        .limit(1);
+      if (!error && data && data.length > 0) {
+        return data[0] as StudentCgpaRecord;
+      }
     }
   } catch {}
 
-  const found = localCgpaRecords.find(
-    r => r.regno.toLowerCase() === clean || (r.studentEmail && r.studentEmail.toLowerCase() === clean)
-  );
-  return found || localCgpaRecords[0] || null;
+  for (const key of Array.from(candidateKeys)) {
+    const found = localCgpaRecords.find(
+      r => r.regno.toLowerCase() === key ||
+           (r.studentEmail && r.studentEmail.toLowerCase() === key) ||
+           (r.studentName && r.studentName.toLowerCase() === key)
+    );
+    if (found) return found;
+  }
+
+  return null;
 }
 
 export async function saveCgpaRecordsBatch(
@@ -3772,17 +4177,25 @@ function saveAttendanceSummaryStores() {
 
 export async function fetchFacultyAttendanceSummaryRecords(
   facultyEmail?: string,
-  sectionName?: string
+  sectionName?: string,
+  collegeId?: string
 ): Promise<StudentAttendanceSummaryRecord[]> {
+  const targetCollegeId = collegeId || getCurrentCollegeId();
   try {
     let query = supabase.from('student_attendance_summary').select('*');
     if (sectionName) query = query.eq('section', sectionName);
     if (facultyEmail) query = query.eq('faculty_email', facultyEmail.toLowerCase());
+    if (targetCollegeId) query = query.eq('college_id', targetCollegeId);
     const { data, error } = await query;
+    if (targetCollegeId !== COLLEGE_A_ID) {
+      return (data as StudentAttendanceSummaryRecord[]) || [];
+    }
     if (!error && data && data.length > 0) {
       return data as StudentAttendanceSummaryRecord[];
     }
   } catch {}
+
+  if (targetCollegeId !== COLLEGE_A_ID) return [];
 
   reloadLocalAttendanceStores();
   let filtered = [...localAttendanceSummaryRecords];
@@ -3841,14 +4254,6 @@ export async function fetchStudentAttendanceSummaryRecord(
       return rReg === key || rEmail === key || rName === key;
     });
     if (found) return found;
-  }
-
-  if (matchedStudent) {
-    const roster = await fetchStudentMembers().catch(() => []);
-    const studentIdx = roster.findIndex(s => s.regno.toLowerCase() === matchedStudent?.regno.toLowerCase());
-    if (studentIdx !== -1 && studentIdx < allRecords.length) {
-      return allRecords[studentIdx];
-    }
   }
 
   return null;
@@ -4269,17 +4674,25 @@ export function pointToGrade(pt: number): string {
 
 export async function fetchFacultyGradeSummaryRecords(
   facultyEmail?: string,
-  sectionName?: string
+  sectionName?: string,
+  collegeId?: string
 ): Promise<StudentGradeSummaryRecord[]> {
+  const targetCollegeId = collegeId || getCurrentCollegeId();
   try {
     let query = supabase.from('student_grade_summary').select('*');
     if (sectionName) query = query.eq('section', sectionName);
     if (facultyEmail) query = query.eq('faculty_email', facultyEmail.toLowerCase());
+    if (targetCollegeId) query = query.eq('college_id', targetCollegeId);
     const { data, error } = await query;
+    if (targetCollegeId !== COLLEGE_A_ID) {
+      return (data as StudentGradeSummaryRecord[]) || [];
+    }
     if (!error && data && data.length > 0) {
       return data as StudentGradeSummaryRecord[];
     }
   } catch {}
+
+  if (targetCollegeId !== COLLEGE_A_ID) return [];
 
   let filtered = [...localGradeSummaryRecords];
   if (sectionName) {
@@ -4294,22 +4707,48 @@ export async function fetchFacultyGradeSummaryRecords(
 export async function fetchStudentGradeSummaryRecord(
   regnoOrEmail: string
 ): Promise<StudentGradeSummaryRecord | null> {
+  if (!regnoOrEmail) return null;
   const clean = regnoOrEmail.toLowerCase().trim();
+
+  let matchedStudent: StudentMember | undefined;
   try {
-    const { data, error } = await supabase
-      .from('student_grade_summary')
-      .select('*')
-      .or(`regno.ilike.${clean},student_email.ilike.${clean}`)
-      .limit(1);
-    if (!error && data && data.length > 0) {
-      return data[0] as StudentGradeSummaryRecord;
+    const roster = await fetchStudentMembers();
+    matchedStudent = roster.find(
+      s => s.email?.toLowerCase() === clean || s.regno?.toLowerCase() === clean || s.id?.toLowerCase() === clean
+    );
+  } catch {}
+
+  const candidateKeys = new Set<string>();
+  candidateKeys.add(clean);
+  if (matchedStudent) {
+    if (matchedStudent.regno) candidateKeys.add(matchedStudent.regno.toLowerCase().trim());
+    if (matchedStudent.email) candidateKeys.add(matchedStudent.email.toLowerCase().trim());
+    if (matchedStudent.name) candidateKeys.add(matchedStudent.name.toLowerCase().trim());
+  }
+
+  try {
+    for (const key of Array.from(candidateKeys)) {
+      const { data, error } = await supabase
+        .from('student_grade_summary')
+        .select('*')
+        .or(`regno.ilike.${key},student_email.ilike.${key},student_name.ilike.${key}`)
+        .limit(1);
+      if (!error && data && data.length > 0) {
+        return data[0] as StudentGradeSummaryRecord;
+      }
     }
   } catch {}
 
-  const found = localGradeSummaryRecords.find(
-    r => r.regno.toLowerCase() === clean || (r.studentEmail && r.studentEmail.toLowerCase() === clean)
-  );
-  return found || localGradeSummaryRecords[0] || null;
+  for (const key of Array.from(candidateKeys)) {
+    const found = localGradeSummaryRecords.find(
+      r => r.regno.toLowerCase() === key ||
+           (r.studentEmail && r.studentEmail.toLowerCase() === key) ||
+           (r.studentName && r.studentName.toLowerCase() === key)
+    );
+    if (found) return found;
+  }
+
+  return null;
 }
 
 export async function saveGradeSummaryBatch(
@@ -5505,7 +5944,9 @@ export async function fetchFacultyTimetable(params?: {
   facultyEmployeeId?: string;
   sectionName?: string;
   dayOfWeek?: string;
+  collegeId?: string;
 }): Promise<FacultyTimetableEntry[]> {
+  const targetCollegeId = params?.collegeId || getCurrentCollegeId();
   try {
     let query = supabase.from('faculty_timetable').select('*');
 
@@ -5525,7 +5966,15 @@ export async function fetchFacultyTimetable(params?: {
       query = query.ilike('day_of_week', params.dayOfWeek.trim());
     }
 
+    if (targetCollegeId) {
+      query = query.eq('college_id', targetCollegeId);
+    }
+
     const { data, error } = await query.order('start_time', { ascending: true });
+
+    if (targetCollegeId !== COLLEGE_A_ID) {
+      return (data as FacultyTimetableEntry[]) || [];
+    }
 
     let allEntries = [...localCustomTimetable];
     if (!error && data && data.length > 0) {
@@ -5557,6 +6006,7 @@ export async function fetchFacultyTimetable(params?: {
 
     return allEntries;
   } catch {
+    if (targetCollegeId !== COLLEGE_A_ID) return [];
     let filtered = [...localCustomTimetable];
     if (params?.facultyEmployeeId) {
       filtered = filtered.filter((t) => t.faculty_employee_id.toLowerCase() === params.facultyEmployeeId!.toLowerCase());
@@ -5899,40 +6349,38 @@ export async function getTodayClassSchedule(
   const daysOfWeek = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
   const dayName = daysOfWeek[now.getDay()];
 
-  // 1. DATE-SPECIFIC HOLIDAY & WORKING DAY OVERRIDE CHECK
-  const holidayRecord = INSTITUTION_HOLIDAY_OVERRIDES.find(h => h.dateStr === dateStr);
-
-  if (holidayRecord && holidayRecord.is_holiday && !holidayRecord.is_working_day_override) {
-    return {
-      isHoliday: true,
-      holidayReason: holidayRecord.holiday_name,
-      dayName,
-      dateStr,
-      classes: []
-    };
-  }
-
-  const isWeekend = dayName === 'Saturday' || dayName === 'Sunday';
-  const isWorkingWeekendOverride = holidayRecord?.is_working_day_override;
-
-  if (isWeekend && !isWorkingWeekendOverride) {
-    return {
-      isHoliday: true,
-      holidayReason: `${dayName} — Weekend / No Classes Scheduled`,
-      dayName,
-      dateStr,
-      classes: []
-    };
-  }
-
-  // 2. FETCH SECTION TIMETABLE FOR TODAY'S DAY
+  // 1. FETCH SECTION TIMETABLE FOR SPECIFIED DAY
   const sec = (sectionName || 'CSE-C').toUpperCase().trim();
   const allEntries = await fetchStudentTimetable(sec);
   const todayEntries = allEntries
     .filter(t => t.day_of_week.toLowerCase() === dayName.toLowerCase())
     .sort((a, b) => a.start_time.localeCompare(b.start_time));
 
+  // 2. CHECK HOLIDAY OVERRIDES & WEEKENDS IF NO DB ENTRIES EXIST
+  const holidayRecord = INSTITUTION_HOLIDAY_OVERRIDES.find(h => h.dateStr === dateStr);
+
   if (todayEntries.length === 0) {
+    if (holidayRecord && holidayRecord.is_holiday && !holidayRecord.is_working_day_override) {
+      return {
+        isHoliday: true,
+        holidayReason: holidayRecord.holiday_name,
+        dayName,
+        dateStr,
+        classes: []
+      };
+    }
+
+    const isWeekend = dayName === 'Saturday' || dayName === 'Sunday';
+    if (isWeekend && !holidayRecord?.is_working_day_override) {
+      return {
+        isHoliday: true,
+        holidayReason: `${dayName} — Weekend / No Classes Scheduled`,
+        dayName,
+        dateStr,
+        classes: []
+      };
+    }
+
     return {
       isHoliday: false,
       holidayReason: `No classes scheduled for ${dayName}`,
@@ -5997,6 +6445,96 @@ export async function getTodayClassSchedule(
     dateStr,
     classes,
     nextClass
+  };
+}
+
+export async function getTomorrowClassSchedule(
+  sectionName?: string,
+  simulatedDate?: Date
+): Promise<TodayScheduleResult> {
+  const tomorrow = simulatedDate ? new Date(simulatedDate.getTime() + 86400000) : new Date(Date.now() + 86400000);
+  return getTodayClassSchedule(sectionName, tomorrow);
+}
+
+export interface AttendanceImpactResult {
+  subjectName: string;
+  currentPercentage: number;
+  requiredThreshold: number;
+  attendedClasses: number;
+  totalClasses: number;
+  projectedIfAttended: number;
+  projectedIfMissed: number;
+  bufferCurrent: number;
+  bufferIfMissed: number;
+  statusIfMissed: 'SAFE_BUFFER' | 'SMALL_BUFFER' | 'AT_RISK' | 'CANNOT_CALCULATE';
+  statusLabel: string;
+  recommendation: string;
+  maxMissableClassesBeforeThreshold: number;
+}
+
+export function calculateAttendanceImpact(
+  subjectName: string,
+  attendedClasses: number,
+  totalClasses: number,
+  currentPercentage?: number,
+  requiredThreshold: number = 75
+): AttendanceImpactResult {
+  const currentPct = currentPercentage ?? (totalClasses > 0 ? Math.round((attendedClasses / totalClasses) * 100) : 0);
+
+  if (totalClasses <= 0) {
+    return {
+      subjectName,
+      currentPercentage: currentPct,
+      requiredThreshold,
+      attendedClasses: 0,
+      totalClasses: 0,
+      projectedIfAttended: currentPct,
+      projectedIfMissed: currentPct,
+      bufferCurrent: Math.round((currentPct - requiredThreshold) * 10) / 10,
+      bufferIfMissed: Math.round((currentPct - requiredThreshold) * 10) / 10,
+      statusIfMissed: 'CANNOT_CALCULATE',
+      statusLabel: 'Attendance Session Counts Missing',
+      recommendation: `Your current attendance is ${currentPct}%. Exact projected session counts are not available in Cogniva yet.`,
+      maxMissableClassesBeforeThreshold: 0
+    };
+  }
+
+  const projAttended = Math.round(((attendedClasses + 1) / (totalClasses + 1)) * 100 * 10) / 10;
+  const projMissed = Math.round((attendedClasses / (totalClasses + 1)) * 100 * 10) / 10;
+  const bufCurrent = Math.round((currentPct - requiredThreshold) * 10) / 10;
+  const bufMissed = Math.round((projMissed - requiredThreshold) * 10) / 10;
+
+  let statusIfMissed: 'SAFE_BUFFER' | 'SMALL_BUFFER' | 'AT_RISK' | 'CANNOT_CALCULATE' = 'SAFE_BUFFER';
+  let statusLabel = '✓ Healthy Buffer';
+  let recommendation = `Your attendance buffer remains healthy at +${bufMissed} pp after missing. Attending is still recommended for coursework continuity.`;
+
+  if (projMissed < requiredThreshold) {
+    statusIfMissed = 'AT_RISK';
+    statusLabel = '🔴 High Risk';
+    recommendation = `Missing this class will bring your attendance down to ${projMissed}%, which is below the mandatory ${requiredThreshold}% threshold. Attending this session is strongly recommended!`;
+  } else if (bufMissed < 3.0) {
+    statusIfMissed = 'SMALL_BUFFER';
+    statusLabel = '⚠ Small Buffer';
+    recommendation = `Missing this class keeps your attendance at ${projMissed}%, but reduces your safety margin to +${bufMissed} pp above ${requiredThreshold}%. Attend if possible.`;
+  }
+
+  const maxK = Math.floor((attendedClasses * 100 / requiredThreshold) - totalClasses);
+  const maxMissable = Math.max(0, maxK);
+
+  return {
+    subjectName,
+    currentPercentage: currentPct,
+    requiredThreshold,
+    attendedClasses,
+    totalClasses,
+    projectedIfAttended: projAttended,
+    projectedIfMissed: projMissed,
+    bufferCurrent: bufCurrent,
+    bufferIfMissed: bufMissed,
+    statusIfMissed,
+    statusLabel,
+    recommendation,
+    maxMissableClassesBeforeThreshold: maxMissable
   };
 }
 

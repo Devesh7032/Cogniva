@@ -156,4 +156,5 @@ overrides:
 allowBuilds:
   '@google/genai': set this to true or false
   esbuild: true
+  pnpm: set this to true or false
   protobufjs: set this to true or false

@@ -1,4 +1,6 @@
 import path from 'path';
+import fs from 'fs';
+import crypto from 'crypto';
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 import { defineConfig, Plugin } from 'vite';
@@ -72,7 +74,7 @@ function supabaseAuthPlugin(): Plugin {
         req.on('end', async () => {
           try {
             const data = JSON.parse(body);
-            const { email, dob, role, name, regno, section } = data;
+            const { email, dob, role, name, regno, section, college_id } = data;
 
             if (!email) {
               res.statusCode = 400;
@@ -81,6 +83,7 @@ function supabaseAuthPlugin(): Plugin {
 
             const cleanEmail = String(email).trim().toLowerCase();
             const normPass = normalizeDobToPassword(dob);
+            const userCollegeId = college_id || (cleanEmail.includes('admin1') || cleanEmail.includes('cdc1') || cleanEmail.includes('hod1') ? 'b0000000-0000-0000-0000-000000000002' : 'a0000000-0000-0000-0000-000000000001');
 
             const { data: { users } } = await adminClient.auth.admin.listUsers();
             let authUser = users?.find(u => u.email?.toLowerCase() === cleanEmail);
@@ -90,7 +93,7 @@ function supabaseAuthPlugin(): Plugin {
                 email: cleanEmail,
                 password: normPass,
                 email_confirm: true,
-                user_metadata: { role: role || 'student', full_name: name || '', regno: regno || '', section: section || '' }
+                user_metadata: { role: role || 'student', full_name: name || '', regno: regno || '', section: section || '', college_id: userCollegeId }
               });
               if (error) {
                 res.statusCode = 400;
@@ -101,13 +104,13 @@ function supabaseAuthPlugin(): Plugin {
               await adminClient.auth.admin.updateUserById(authUser.id, {
                 password: normPass,
                 email_confirm: true,
-                user_metadata: { role: role || 'student', full_name: name || '', regno: regno || '', section: section || '' }
+                user_metadata: { role: role || 'student', full_name: name || '', regno: regno || '', section: section || '', college_id: userCollegeId }
               });
             }
 
             if (authUser) {
               await adminClient.from('profiles').upsert([
-                { id: authUser.id, user_id: authUser.id, email: cleanEmail, full_name: name || cleanEmail, role: role || 'student' }
+                { id: authUser.id, user_id: authUser.id, email: cleanEmail, full_name: name || cleanEmail, role: role || 'student', college_id: userCollegeId }
               ], { onConflict: 'email' });
             }
 
@@ -286,6 +289,515 @@ function supabaseAuthPlugin(): Plugin {
       });
 
       // ============================================================================
+      // HELP DESK PERSISTENCE & ROUTING MIDDLEWARE (/api/help-desk/*)
+      // ============================================================================
+      const helpDeskStoreFile = path.resolve(__dirname, 'help_desk_db.json');
+
+      function readHelpDeskStore() {
+        try {
+          if (fs.existsSync(helpDeskStoreFile)) {
+            const data = fs.readFileSync(helpDeskStoreFile, 'utf8');
+            return JSON.parse(data);
+          }
+        } catch (e) {
+          console.error('[HelpDeskStore] File read error:', e);
+        }
+        return { queries: [], messages: [], notifications: [] };
+      }
+
+      function writeHelpDeskStore(db: any) {
+        try {
+          fs.writeFileSync(helpDeskStoreFile, JSON.stringify(db, null, 2), 'utf8');
+        } catch (e) {
+          console.error('[HelpDeskStore] File write error:', e);
+        }
+      }
+
+      // Create Query
+      server.middlewares.use('/api/help-desk/create', async (req, res) => {
+        if (req.method !== 'POST') {
+          res.statusCode = 405;
+          return res.end(JSON.stringify({ error: 'Method not allowed' }));
+        }
+        let body = '';
+        req.on('data', chunk => { body += chunk; });
+        req.on('end', async () => {
+          try {
+            const payload = JSON.parse(body || '{}');
+            const store = readHelpDeskStore();
+
+            const { data: studs } = await adminClient.from('students').select('*').eq('email', payload.userEmail);
+            const student = studs && studs[0] ? studs[0] : null;
+
+            const studentName = student?.name || payload.userEmail.split('@')[0];
+            const registerNumber = student?.regno || '2024CSE001';
+            const department = student?.department || 'CSE';
+            const year = student?.year || 'Second Year';
+            const semester = student?.semester || '4';
+            const section = student?.section || 'CSE-C';
+
+            const catLabels: Record<string, string> = {
+              wifi: 'Wi-Fi / Internet',
+              classroom: 'Classroom',
+              lab: 'Lab / Computer',
+              materials: 'Study Materials',
+              assignment: 'Assignment',
+              timetable: 'Timetable',
+              attendance: 'Attendance',
+              exam: 'Examination',
+              faculty: 'Faculty / Class',
+              infrastructure: 'Infrastructure',
+              library: 'Library',
+              technical: 'Technical Issue',
+              other: 'Other'
+            };
+
+            const categoryLabel = catLabels[payload.category] || 'Campus Issue';
+            const queryId = crypto.randomUUID();
+            const studentId = student?.auth_user_id || student?.id || crypto.randomUUID();
+            const num = Math.floor(100000 + Math.random() * 900000);
+            const displayId = `QRY-2026-${num}`;
+            const nowIso = new Date().toISOString();
+
+            const { data: facs } = await adminClient.from('faculty').select('*');
+            const sectionFac = (facs || []).find((f: any) => f.section?.toUpperCase().includes(section.toUpperCase()));
+
+            const newQuery = {
+              id: queryId,
+              display_id: displayId,
+              student_id: studentId,
+              student_name: studentName,
+              register_number: registerNumber,
+              department,
+              year,
+              semester,
+              section,
+              category: payload.category,
+              category_label: categoryLabel,
+              sub_category: payload.subCategory || '',
+              title: payload.title,
+              description: payload.description,
+              location: payload.location || `${section} Classroom`,
+              subject_id: payload.subjectId || null,
+              subject_name: payload.subjectName || null,
+              priority: payload.priority || 'NORMAL',
+              status: 'OPEN',
+              is_class_wide: false,
+              affected_section: section,
+              assigned_to: sectionFac?.email || '',
+              assigned_to_name: sectionFac?.name || 'Department Admin / Unassigned',
+              assigned_faculty_id: sectionFac?.id || sectionFac?.email || null,
+              assigned_faculty_name: sectionFac?.name || 'Department Admin / Unassigned',
+              assigned_admin_id: 'admin_all',
+              attachment_url: payload.attachmentUrl || null,
+              created_at: nowIso,
+              updated_at: nowIso
+            };
+
+            try {
+              await adminClient.from('student_queries').insert([newQuery]);
+            } catch (e) {}
+
+            store.queries.unshift(newQuery);
+
+            const initialMsg = {
+              id: crypto.randomUUID(),
+              query_id: queryId,
+              sender_id: studentId,
+              sender_name: studentName,
+              sender_role: 'student',
+              message: `Query created: "${newQuery.title}"`,
+              created_at: nowIso
+            };
+
+            try {
+              await adminClient.from('student_query_messages').insert([initialMsg]);
+            } catch (e) {}
+
+            store.messages.unshift(initialMsg);
+
+            const notifs: any[] = [];
+            if (sectionFac) {
+              notifs.push({
+                id: crypto.randomUUID(),
+                recipient_id: sectionFac.email,
+                recipient_role: 'faculty',
+                query_id: queryId,
+                type: 'NEW_QUERY',
+                title: `NEW STUDENT QUERY · ${categoryLabel}`,
+                message: `"${newQuery.title}" reported by ${studentName} (${section})`,
+                student_name: studentName,
+                register_number: registerNumber,
+                department,
+                section,
+                category: categoryLabel,
+                priority: newQuery.priority,
+                read: false,
+                created_at: nowIso
+              });
+            } else {
+              notifs.push({
+                id: crypto.randomUUID(),
+                recipient_id: 'faculty_all',
+                recipient_role: 'faculty',
+                query_id: queryId,
+                type: 'NEW_QUERY',
+                title: `NEW STUDENT QUERY · ${categoryLabel}`,
+                message: `"${newQuery.title}" reported by ${studentName} (${section})`,
+                student_name: studentName,
+                register_number: registerNumber,
+                department,
+                section,
+                category: categoryLabel,
+                priority: newQuery.priority,
+                read: false,
+                created_at: nowIso
+              });
+            }
+
+            notifs.push({
+              id: crypto.randomUUID(),
+              recipient_id: 'admin_all',
+              recipient_role: 'admin',
+              query_id: queryId,
+              type: 'NEW_QUERY',
+              title: `NEW CAMPUS ISSUE · ${categoryLabel}`,
+              message: `[${newQuery.priority}] "${newQuery.title}" in ${newQuery.location} (${section})`,
+              student_name: studentName,
+              register_number: registerNumber,
+              department,
+              section,
+              category: categoryLabel,
+              priority: newQuery.priority,
+              read: false,
+              created_at: nowIso
+            });
+
+            try {
+              await adminClient.from('notifications').insert(notifs);
+            } catch (e) {}
+
+            store.notifications.unshift(...notifs);
+            writeHelpDeskStore(store);
+
+            res.setHeader('Content-Type', 'application/json');
+            return res.end(JSON.stringify({ success: true, data: newQuery }));
+          } catch (err) {
+            res.statusCode = 500;
+            return res.end(JSON.stringify({ success: false, error: String(err) }));
+          }
+        });
+      });
+
+      // List Queries
+      server.middlewares.use('/api/help-desk/list', async (req, res) => {
+        let body = '';
+        req.on('data', chunk => { body += chunk; });
+        req.on('end', async () => {
+          try {
+            const payload = body ? JSON.parse(body) : {};
+            const store = readHelpDeskStore();
+
+            let dbQueries: any[] = [];
+            try {
+              const { data } = await adminClient.from('student_queries').select('*').order('created_at', { ascending: false });
+              if (data) dbQueries = data;
+            } catch (e) {}
+
+            const qMap = new Map<string, any>();
+            dbQueries.forEach(q => qMap.set(q.id, q));
+            store.queries.forEach(q => {
+              if (!qMap.has(q.id)) {
+                qMap.set(q.id, q);
+              } else {
+                const dbQ = qMap.get(q.id);
+                if (new Date(q.updated_at).getTime() > new Date(dbQ.updated_at).getTime()) {
+                  qMap.set(q.id, q);
+                }
+              }
+            });
+
+            let result = Array.from(qMap.values());
+            const userEmail = (payload.userEmail || '').toLowerCase();
+            const role = payload.role;
+
+            if (role === 'student' && userEmail) {
+              const prefix = userEmail.split('@')[0];
+              result = result.filter(q =>
+                q.student_name.toLowerCase().includes(prefix) ||
+                (q.student_email && q.student_email.toLowerCase() === userEmail) ||
+                (q.is_class_wide && payload.section && q.section.toUpperCase() === payload.section.toUpperCase())
+              );
+            } else if (role === 'faculty' && userEmail) {
+              const facSec = payload.section || 'CSE-C';
+              result = result.filter(q =>
+                q.section.toUpperCase() === facSec.toUpperCase() ||
+                (q.affected_section && q.affected_section.toUpperCase() === facSec.toUpperCase()) ||
+                q.assigned_to === userEmail ||
+                q.assigned_faculty_id === userEmail ||
+                q.is_class_wide
+              );
+            }
+            // Admin role sees ALL queries
+
+            if (payload.status && payload.status !== 'ALL') {
+              result = result.filter(q => q.status === payload.status);
+            }
+
+            if (payload.category && payload.category !== 'ALL') {
+              result = result.filter(q => q.category === payload.category);
+            }
+
+            result.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+
+            res.setHeader('Content-Type', 'application/json');
+            return res.end(JSON.stringify({ success: true, data: result }));
+          } catch (err) {
+            res.statusCode = 500;
+            return res.end(JSON.stringify({ success: false, error: String(err) }));
+          }
+        });
+      });
+
+      // Get Query Messages
+      server.middlewares.use('/api/help-desk/messages', async (req, res) => {
+        let body = '';
+        req.on('data', chunk => { body += chunk; });
+        req.on('end', async () => {
+          try {
+            const payload = body ? JSON.parse(body) : {};
+            const queryId = payload.queryId;
+            const store = readHelpDeskStore();
+
+            let dbMsgs: any[] = [];
+            try {
+              const { data } = await adminClient.from('student_query_messages').select('*').eq('query_id', queryId);
+              if (data) dbMsgs = data;
+            } catch (e) {}
+
+            const msgMap = new Map<string, any>();
+            dbMsgs.forEach(m => msgMap.set(m.id, m));
+            store.messages.filter(m => m.query_id === queryId).forEach(m => msgMap.set(m.id, m));
+
+            const msgs = Array.from(msgMap.values()).sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+
+            res.setHeader('Content-Type', 'application/json');
+            return res.end(JSON.stringify({ success: true, data: msgs }));
+          } catch (err) {
+            res.statusCode = 500;
+            return res.end(JSON.stringify({ success: false, error: String(err) }));
+          }
+        });
+      });
+
+      // Add Message
+      server.middlewares.use('/api/help-desk/add-message', async (req, res) => {
+        if (req.method !== 'POST') {
+          res.statusCode = 405;
+          return res.end(JSON.stringify({ error: 'Method not allowed' }));
+        }
+        let body = '';
+        req.on('data', chunk => { body += chunk; });
+        req.on('end', async () => {
+          try {
+            const payload = JSON.parse(body || '{}');
+            const store = readHelpDeskStore();
+            const nowIso = new Date().toISOString();
+
+            const newMsg = {
+              id: crypto.randomUUID(),
+              query_id: payload.queryId,
+              sender_id: payload.senderId,
+              sender_name: payload.senderName,
+              sender_role: payload.senderRole,
+              message: payload.message,
+              created_at: nowIso
+            };
+
+            try {
+              await adminClient.from('student_query_messages').insert([newMsg]);
+            } catch (e) {}
+
+            store.messages.push(newMsg);
+
+            const targetQ = store.queries.find(q => q.id === payload.queryId);
+            if (targetQ) {
+              targetQ.updated_at = nowIso;
+              try {
+                await adminClient.from('student_queries').update({ updated_at: nowIso }).eq('id', payload.queryId);
+              } catch (e) {}
+            }
+
+            writeHelpDeskStore(store);
+
+            res.setHeader('Content-Type', 'application/json');
+            return res.end(JSON.stringify({ success: true, data: newMsg }));
+          } catch (err) {
+            res.statusCode = 500;
+            return res.end(JSON.stringify({ success: false, error: String(err) }));
+          }
+        });
+      });
+
+      // Update Query Status
+      server.middlewares.use('/api/help-desk/update-status', async (req, res) => {
+        if (req.method !== 'POST') {
+          res.statusCode = 405;
+          return res.end(JSON.stringify({ error: 'Method not allowed' }));
+        }
+        let body = '';
+        req.on('data', chunk => { body += chunk; });
+        req.on('end', async () => {
+          try {
+            const payload = JSON.parse(body || '{}');
+            const store = readHelpDeskStore();
+            const nowIso = new Date().toISOString();
+
+            let query = store.queries.find(q => q.id === payload.queryId);
+
+            if (!query) {
+              const { data } = await adminClient.from('student_queries').select('*').eq('id', payload.queryId).single();
+              if (data) {
+                query = data;
+                store.queries.push(query);
+              }
+            }
+
+            if (!query) {
+              res.statusCode = 404;
+              return res.end(JSON.stringify({ success: false, error: 'Query not found' }));
+            }
+
+            query.status = payload.status;
+            query.updated_at = nowIso;
+
+            if (payload.status === 'RESOLVED' || payload.status === 'CLOSED') {
+              query.resolved_by = payload.updatedByName;
+              query.resolved_at = nowIso;
+            }
+
+            if (payload.isClassWide !== undefined) {
+              query.is_class_wide = payload.isClassWide;
+            }
+
+            if (payload.updatedByRole) {
+              query.assigned_to_name = payload.updatedByName;
+            }
+
+            try {
+              await adminClient.from('student_queries').update({
+                status: query.status,
+                updated_at: nowIso,
+                resolved_by: query.resolved_by,
+                resolved_at: query.resolved_at,
+                is_class_wide: query.is_class_wide,
+                assigned_to_name: query.assigned_to_name
+              }).eq('id', payload.queryId);
+            } catch (e) {}
+
+            const msgText = payload.resolutionComment
+              ? `Status updated to ${payload.status} by ${payload.updatedByName}: "${payload.resolutionComment}"`
+              : `Status updated to ${payload.status} by ${payload.updatedByName}`;
+
+            const statusMsg = {
+              id: crypto.randomUUID(),
+              query_id: payload.queryId,
+              sender_id: payload.updatedByName,
+              sender_name: payload.updatedByName,
+              sender_role: payload.updatedByRole,
+              message: msgText,
+              created_at: nowIso
+            };
+
+            try {
+              await adminClient.from('student_query_messages').insert([statusMsg]);
+            } catch (e) {}
+
+            store.messages.push(statusMsg);
+
+            const notif = {
+              id: crypto.randomUUID(),
+              recipient_id: query.student_name,
+              recipient_role: 'student',
+              query_id: query.id,
+              type: payload.status === 'RESOLVED' ? 'QUERY_RESOLVED' : payload.status === 'ACKNOWLEDGED' ? 'QUERY_ACKNOWLEDGED' : 'QUERY_STATUS_CHANGE',
+              title: payload.status === 'RESOLVED' ? 'QUERY RESOLVED' : `QUERY ${payload.status}`,
+              message: `Your query "${query.title}" (${query.display_id}) status is now ${payload.status}.`,
+              student_name: query.student_name,
+              register_number: query.register_number,
+              department: query.department,
+              section: query.section,
+              category: query.category_label,
+              priority: query.priority,
+              read: false,
+              created_at: nowIso
+            };
+
+            try {
+              await adminClient.from('notifications').insert([notif]);
+            } catch (e) {}
+
+            store.notifications.unshift(notif);
+            writeHelpDeskStore(store);
+
+            res.setHeader('Content-Type', 'application/json');
+            return res.end(JSON.stringify({ success: true, data: query }));
+          } catch (err) {
+            res.statusCode = 500;
+            return res.end(JSON.stringify({ success: false, error: String(err) }));
+          }
+        });
+      });
+
+      // Get Notifications
+      server.middlewares.use('/api/help-desk/notifications', async (req, res) => {
+        let body = '';
+        req.on('data', chunk => { body += chunk; });
+        req.on('end', async () => {
+          try {
+            const payload = body ? JSON.parse(body) : {};
+            const store = readHelpDeskStore();
+
+            let dbNotifs: any[] = [];
+            try {
+              const { data } = await adminClient.from('notifications').select('*').order('created_at', { ascending: false });
+              if (data) dbNotifs = data;
+            } catch (e) {}
+
+            const notifMap = new Map<string, any>();
+            dbNotifs.forEach(n => notifMap.set(n.id, n));
+            store.notifications.forEach(n => {
+              if (!notifMap.has(n.id)) notifMap.set(n.id, n);
+            });
+
+            let result = Array.from(notifMap.values());
+            const userEmail = (payload.userEmail || '').toLowerCase();
+            const role = payload.role;
+
+            if (role === 'student' && userEmail) {
+              const prefix = userEmail.split('@')[0];
+              result = result.filter(n =>
+                n.recipient_role === 'student' &&
+                (n.recipient_id.toLowerCase().includes(prefix) || (n.student_name && n.student_name.toLowerCase().includes(prefix)))
+              );
+            } else if (role === 'faculty') {
+              result = result.filter(n => n.recipient_role === 'faculty');
+            } else if (role === 'admin') {
+              result = result.filter(n => n.recipient_role === 'admin');
+            }
+
+            result.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+
+            res.setHeader('Content-Type', 'application/json');
+            return res.end(JSON.stringify({ success: true, data: result }));
+          } catch (err) {
+            res.statusCode = 500;
+            return res.end(JSON.stringify({ success: false, error: String(err) }));
+          }
+        });
+      });
+
+      // ============================================================================
       // 1. ADMIN GEMINI API ENDPOINT (/api/ai/admin)
       // ============================================================================
       server.middlewares.use('/api/ai/admin', async (req, res) => {
@@ -299,10 +811,10 @@ function supabaseAuthPlugin(): Plugin {
         req.on('end', async () => {
           try {
             const payload = JSON.parse(body || '{}');
-            const { prompt, userRole, userEmail } = payload;
+            const { prompt, userRole, userEmail, collegeId } = payload;
 
             const cleanEmail = (userEmail || '').toLowerCase().trim();
-            const isAdmin = userRole === 'admin' || cleanEmail.includes('admin') || cleanEmail.includes('cdc') || cleanEmail.includes('hod') || cleanEmail === 'cdc@gmail.com' || cleanEmail === 'hod@gmail.com';
+            const isAdmin = userRole === 'admin' || cleanEmail.includes('admin') || cleanEmail.includes('cdc') || cleanEmail.includes('hod') || cleanEmail === 'cdc@gmail.com' || cleanEmail === 'hod@gmail.com' || cleanEmail === 'cdc1@gmail.com' || cleanEmail === 'hod1@gmail.com';
 
             if (!isAdmin) {
               res.statusCode = 403;
@@ -310,41 +822,51 @@ function supabaseAuthPlugin(): Plugin {
               return res.end(JSON.stringify({ error: 'Forbidden: Access restricted to Admin Gemini AI.' }));
             }
 
-            // Fetch actual database statistics from Supabase
-            const { data: students } = await adminClient.from('students').select('*');
-            const { data: faculty } = await adminClient.from('faculty').select('*');
-            const { data: grades } = await adminClient.from('student_grades').select('*');
-            const { data: attendance } = await adminClient.from('attendance_records').select('*');
+            const targetCollegeId = collegeId || (cleanEmail.includes('1@gmail.com') ? 'b0000000-0000-0000-0000-000000000002' : 'a0000000-0000-0000-0000-000000000001');
+            const isCollegeB = targetCollegeId === 'b0000000-0000-0000-0000-000000000002';
 
-            const totalStudents = students?.length || 50;
-            const totalFaculty = faculty?.length || 10;
+            // Fetch actual database statistics from Supabase scoped to targetCollegeId
+            const { data: students } = await adminClient.from('students').select('*').eq('college_id', targetCollegeId);
+            const { data: faculty } = await adminClient.from('faculty').select('*').eq('college_id', targetCollegeId);
+            const { data: grades } = await adminClient.from('student_grades').select('*').eq('college_id', targetCollegeId);
+            const { data: attendance } = await adminClient.from('attendance_records').select('*').eq('college_id', targetCollegeId);
+
+            const totalStudents = students?.length || 0;
+            const totalFaculty = faculty?.length || 0;
             const totalGrades = grades?.length || 0;
             
-            let totalAttPercentage = 81.4;
-            if (attendance && attendance.length > 0) {
+            let totalAttPercentage = '0%';
+            if (!isCollegeB && attendance && attendance.length > 0) {
               const present = attendance.filter(a => a.status === 'Present').length;
-              totalAttPercentage = Math.round((present / attendance.length) * 100);
+              totalAttPercentage = `${Math.round((present / attendance.length) * 100)}%`;
+            } else if (!isCollegeB) {
+              totalAttPercentage = '81.4%';
             }
 
-            let avgIA1 = 34.2;
-            let avgIA2 = 36.7;
-            if (grades && grades.length > 0) {
+            let avgIA1 = 0;
+            let avgIA2 = 0;
+            if (!isCollegeB && grades && grades.length > 0) {
               const ia1Total = grades.reduce((acc, g) => acc + Number(g.internal || 0), 0);
               avgIA1 = Math.round((ia1Total / grades.length) * 10) / 10;
               const ia2Total = grades.reduce((acc, g) => acc + Number(g.exam || 0), 0);
               avgIA2 = Math.round((ia2Total / grades.length) * 10) / 10;
+            } else if (!isCollegeB) {
+              avgIA1 = 34.2;
+              avgIA2 = 36.7;
             }
 
             const adminContext = {
+              collegeId: targetCollegeId,
+              collegeName: isCollegeB ? 'Test College 1' : 'Cogniva Engineering College',
               overview: {
                 totalStudents,
                 totalFaculty,
-                averageAttendance: `${totalAttPercentage}%`,
+                averageAttendance: totalAttPercentage,
                 averageIA1: avgIA1,
                 averageIA2: avgIA2,
                 recordedGrades: totalGrades
               },
-              sections: [
+              sections: isCollegeB ? [] : [
                 { section: 'CSE-A', studentCount: 60, status: 'Healthy' },
                 { section: 'CSE-B', studentCount: 60, status: 'Healthy' },
                 { section: 'CSE-C', studentCount: 60, status: 'Under Monitoring' }
@@ -355,7 +877,7 @@ function supabaseAuthPlugin(): Plugin {
             const aiRes = await adminAI.models.generateContent({
               model: 'gemini-3.6-flash',
               config: {
-                systemInstruction: 'You are Cogniva Admin AI. You assist authorized administrators with academic analytics and institutional insights. Use only the factual data supplied by the Cogniva backend. Never invent student, faculty, attendance, marks, grades, or statistical values. Clearly distinguish supplied facts from recommendations.'
+                systemInstruction: 'You are Cogniva Admin AI. You assist authorized administrators with academic analytics and institutional insights. Use only the factual data supplied by the Cogniva backend. Never invent student, faculty, attendance, marks, grades, or statistical values. Clearly distinguish supplied facts from recommendations. If the context contains 0 students or 0 faculty for the college, state clearly that this college tenant currently has no enrolled students or active faculty records.'
               },
               contents: `FACTUAL ACADEMIC CONTEXT:\n${JSON.stringify(adminContext, null, 2)}\n\nADMIN PROMPT:\n${prompt || 'Provide an executive summary of academic health.'}`
             });
@@ -516,7 +1038,16 @@ function supabaseAuthPlugin(): Plugin {
             const aiRes = await studentAI.models.generateContent({
               model: 'gemini-3.6-flash',
               config: {
-                systemInstruction: "You are Cogniva Academic Intelligence AI. Answer student questions using ONLY supplied database facts. Never invent faculty names, class advisors, attendance numbers, marks, assignments, study materials, or CGPA. If information is missing in context, state clearly that it is not added to Cogniva yet."
+                systemInstruction: `You are Cogniva Academic Intelligence AI, an expert academic copilot and study assistant for engineering and college students.
+
+YOUR DUAL MANDATE:
+1. For GENERAL ACADEMIC & STUDY QUESTIONS (e.g., "What is recursion?", "Explain Compiler Design", "How does TCP work?", "Give me a study plan", "What is normalization?"):
+   - Provide comprehensive, clear, structured, and educational answers with definitions, core concepts, step-by-step breakdowns, code/math examples, and revision strategies.
+   - Do NOT restrict yourself to database records for general knowledge or academic concepts.
+
+2. For STUDENT-SPECIFIC PERSONAL QUERIES (e.g., "What is my CGPA?", "What is my attendance?", "Who is my class advisor?"):
+   - Use ONLY the verified database facts provided in the supplied context.
+   - Never invent or fabricate personal student data such as CGPA numbers, attendance percentages, marks, or specific exam dates. If a personal record is not present in context, state naturally that the record is not available yet and offer helpful advice.`
               },
               contents: `DATABASE GROUNDED CONTEXT:\n${JSON.stringify(studentContext, null, 2)}\n\nSTUDENT QUESTION:\n${prompt || 'Summarize my current academic status.'}`
             });

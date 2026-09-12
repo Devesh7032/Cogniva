@@ -64,4 +64,7 @@ help_desk_db.json
 # Generated build artifacts
 artifacts/cogniva-platform/public/assets
 artifacts/cogniva-platform/public/index.html
+/public/
+/dist/
+
 

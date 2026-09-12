@@ -1,7 +1,7 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "buildCommand": "pnpm --filter @workspace/cogniva-platform run build",
-  "outputDirectory": "artifacts/cogniva-platform/public",
+  "outputDirectory": "artifacts/cogniva-platform/dist",
   "framework": "vite",
   "rewrites": [
     {

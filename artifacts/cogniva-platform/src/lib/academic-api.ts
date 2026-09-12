@@ -170,6 +170,7 @@ export interface FacultyMember {
   name: string;
   email: string;
   dob?: string;
+  designation?: string;
   department?: string;
   year?: string;
   section?: string;
@@ -198,6 +199,8 @@ export interface ImportResult {
   updatedCount: number;
   skippedCount: number;
   invalidCount: number;
+  totalProcessed?: number;
+  success?: boolean;
   errors: string[];
 }
 
@@ -1568,9 +1571,10 @@ export interface StudyMaterial {
   file_url: string;
   file_path?: string;
   storage_bucket?: string;
+  faculty_email?: string;
+  faculty_name?: string;
   file_type?: string;
   file_size?: number;
-  faculty_email: string;
   upload_date: string;
   due_date: string;
   created_at?: string;
@@ -1605,6 +1609,7 @@ export interface Subject {
   academic_year: string;
   section: string;
   semester?: string;
+  credits?: number;
   created_at?: string;
   updated_at?: string;
 }
@@ -1612,6 +1617,7 @@ export interface Subject {
 export interface FacultySubjectAssignment {
   id: string;
   faculty_id?: string;
+  faculty_employee_id?: string;
   faculty_email: string;
   faculty_name?: string;
   subject_id?: string;
@@ -1660,6 +1666,7 @@ export interface Assignment {
   id: string;
   subject_code: string;
   subject_name: string;
+  subject?: string;
   academic_year: string;
   department: string;
   section: string;
@@ -3216,6 +3223,10 @@ export interface Notice {
   created_at?: string;
   updated_at?: string;
   read_by?: string[];
+  target_role?: string;
+  target_section?: string;
+  sender_name?: string;
+  content?: string;
 }
 
 const LOCAL_NOTICES_STORAGE_KEY = 'cogniva_local_notices_v1';
@@ -4108,7 +4119,8 @@ export function parseDynamicCgpaExcel(
 export interface DynamicSubjectAttendance {
   subjectName: string;
   attendancePercentage: number;
-  status: 'Good' | 'Watch' | 'At Risk';
+  percentage?: number;
+  status?: 'Good' | 'Watch' | 'At Risk';
 }
 
 export interface StudentAttendanceSummaryRecord {
@@ -4121,7 +4133,9 @@ export interface StudentAttendanceSummaryRecord {
   section: string;
   facultyEmail?: string;
   subjectAttendances: DynamicSubjectAttendance[];
+  subject_attendances?: DynamicSubjectAttendance[];
   overallAttendancePercentage: number | null;
+  overall_percentage?: number | null;
   overallStatus: 'Good' | 'Watch' | 'At Risk';
   highestSubject?: { subjectName: string; percentage: number };
   lowestSubject?: { subjectName: string; percentage: number };
@@ -5207,12 +5221,12 @@ import { generateGoalRoadmapAi } from './ai-service';
 
 export interface GoalMilestone {
   id: string;
-  goal_id: string;
-  phase_id: string;
+  goal_id?: string;
+  phase_id?: string;
   title: string;
-  description: string;
-  why_it_matters: string;
-  priority: 'HIGH' | 'MEDIUM' | 'LOW';
+  description?: string;
+  why_it_matters?: string;
+  priority?: 'HIGH' | 'MEDIUM' | 'LOW';
   estimated_hours: number;
   order_index: number;
   status: 'PENDING' | 'COMPLETED';
@@ -5223,10 +5237,12 @@ export interface GoalMilestone {
 
 export interface GoalPhase {
   id: string;
-  goal_id: string;
+  goal_id?: string;
+  phase_number?: number;
+  status?: string;
   title: string;
   description?: string;
-  order_index: number;
+  order_index?: number;
   milestones: GoalMilestone[];
 }
 
@@ -5235,15 +5251,17 @@ export interface Goal {
   student_id?: string;
   student_email?: string;
   title: string;
+  target_career_role?: string;
   description?: string;
   why_it_matters?: string;
   target_date?: string;
-  progress_percentage: number;
-  status: 'ON_TRACK' | 'NEEDS_ATTENTION' | 'AT_RISK' | 'NOT_STARTED';
-  color: 'teal' | 'amber' | 'coral' | 'violet';
-  phases: GoalPhase[];
+  progress_percentage?: number;
+  overall_progress_percentage?: number;
+  status?: 'ON_TRACK' | 'NEEDS_ATTENTION' | 'AT_RISK' | 'NOT_STARTED';
+  color?: 'teal' | 'amber' | 'coral' | 'violet';
   created_at?: string;
   updated_at?: string;
+  phases: GoalPhase[];
 }
 
 const LOCAL_GOALS_KEY = 'cogniva_student_goals_v1';
@@ -5859,6 +5877,7 @@ export interface FacultyTimetableEntry {
   day_of_week: 'Monday' | 'Tuesday' | 'Wednesday' | 'Thursday' | 'Friday' | 'Saturday' | 'Sunday';
   start_time: string;
   end_time: string;
+  period_number?: number;
   room_number: string;
   academic_year?: string;
   semester?: string;

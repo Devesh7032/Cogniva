@@ -23,7 +23,8 @@ import {
   Activity,
   FileSpreadsheet,
   Layers,
-  GraduationCap
+  GraduationCap,
+  BrainCircuit
 } from 'lucide-react';
 import { useAuth } from '../lib/auth-context';
 import {
@@ -102,7 +103,7 @@ export function FacultyStudentRiskRadarView() {
 
           // Fetch attendance summary
           const attSum = await fetchStudentAttendanceSummaryRecord(regno);
-          const attPct = attSum?.overall_percentage ?? (st.name.includes('Aditya') ? 68 : st.name.includes('Bhavna') ? 74 : 84 + (idx % 12));
+          const attPct = attSum?.overallAttendancePercentage ?? (st.name.includes('Aditya') ? 68 : st.name.includes('Bhavna') ? 74 : 84 + (idx % 12));
 
           // Fetch exam results
           const examRes = await fetchExamResults({ regno });
@@ -850,14 +851,14 @@ export function FacultyStudentRiskRadarView() {
                   <div className="space-y-3 text-xs">
                     <div className="p-3 bg-white border border-indigo-100 rounded-lg">
                       <span className="font-bold text-slate-900 block">IA-2 Target Score:</span>
-                      <span className="text-indigo-700 font-mono font-bold text-sm">{comebackPlan.targetIa2Score} / 30</span>
-                      <span className="text-slate-500 block text-[11px] mt-0.5">{comebackPlan.realisticGoalText}</span>
+                      <span className="text-indigo-700 font-mono font-bold text-sm">{comebackPlan.targetIa2Score ?? 22} / 30</span>
+                      <span className="text-slate-500 block text-[11px] mt-0.5">{comebackPlan.realisticGoalText || comebackPlan.targetMath}</span>
                     </div>
 
                     <div>
                       <span className="font-bold text-slate-800 block mb-1">Focus Topics for IA-2:</span>
                       <ul className="space-y-1 pl-4 list-disc text-slate-700">
-                        {comebackPlan.keyFocusTopics.map((topic, tIdx) => (
+                        {(comebackPlan.keyFocusTopics || comebackPlan.actionableSteps).map((topic: string, tIdx: number) => (
                           <li key={tIdx}>{topic}</li>
                         ))}
                       </ul>

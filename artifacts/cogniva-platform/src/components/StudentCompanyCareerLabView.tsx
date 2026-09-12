@@ -601,7 +601,7 @@ export function StudentCompanyCareerLabView() {
               {/* Opportunities List */}
               <div className="space-y-4">
                 {VERIFIED_COMPANY_ROLES.filter(r => r.company_id === activeCompany.id).map(role => {
-                  const evalResult = evaluateStudentEligibility(role, studentCtx);
+                  const evalResult = evaluateRoleEligibility(role, studentCtx);
                   const isSelectedRole = activeRole?.id === role.id;
 
                   return (

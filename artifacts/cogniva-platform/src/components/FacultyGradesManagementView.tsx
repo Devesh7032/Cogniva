@@ -108,23 +108,29 @@ export function FacultyGradesManagementView() {
 
     return students.map(st => {
       const rec = recMap.get(st.regno.toLowerCase());
-      const overallGrade = rec ? rec.overallGrade : 'A';
+      const overallGrade = rec?.overallGrade || 'A';
+
+      const fullRecord: StudentGradeSummaryRecord = rec || {
+        id: `grd-${st.id}`,
+        regno: st.regno,
+        studentName: st.name,
+        studentEmail: st.email,
+        department: st.department,
+        section: st.section || selectedSection,
+        overallGrade: overallGrade,
+        subjectGrades: [
+          { subjectName: 'Data Analytics', grade: 'A' },
+          { subjectName: 'Cloud Computing', grade: 'A+' },
+          { subjectName: 'Embedded Programming', grade: 'B+' },
+          { subjectName: 'Generative AI', grade: 'A' },
+          { subjectName: 'Compiler Design', grade: 'B' }
+        ],
+        updatedAt: new Date().toISOString()
+      };
 
       return {
         student: st,
-        record: rec || {
-          regno: st.regno,
-          studentName: st.name,
-          section: st.section || selectedSection,
-          overallGrade: overallGrade,
-          subjectGrades: [
-            { subjectName: 'Data Analytics', grade: 'A' },
-            { subjectName: 'Cloud Computing', grade: 'A+' },
-            { subjectName: 'Embedded Programming', grade: 'B+' },
-            { subjectName: 'Generative AI', grade: 'A' },
-            { subjectName: 'Compiler Design', grade: 'B' }
-          ]
-        },
+        record: fullRecord,
         overallGrade
       };
     });
@@ -155,14 +161,14 @@ export function FacultyGradesManagementView() {
 
       const matchesGrade =
         gradeFilter === 'ALL' ||
-        item.overallGrade.toUpperCase() === gradeFilter.toUpperCase();
+        (item.overallGrade || 'A').toUpperCase() === gradeFilter.toUpperCase();
 
       return matchesSearch && matchesGrade;
     });
 
     list.sort((a, b) => {
-      if (sortOption === 'HIGHEST') return gradeRank(b.overallGrade) - gradeRank(a.overallGrade);
-      if (sortOption === 'LOWEST') return gradeRank(a.overallGrade) - gradeRank(b.overallGrade);
+      if (sortOption === 'HIGHEST') return gradeRank(b.overallGrade || 'A') - gradeRank(a.overallGrade || 'A');
+      if (sortOption === 'LOWEST') return gradeRank(a.overallGrade || 'A') - gradeRank(b.overallGrade || 'A');
       if (sortOption === 'NAME') return a.student.name.localeCompare(b.student.name);
       if (sortOption === 'REGNO') return a.student.regno.localeCompare(b.student.regno);
       return 0;
@@ -178,13 +184,13 @@ export function FacultyGradesManagementView() {
 
     // Needing Attention count (C or F grade)
     const needingAttentionCount = processedRecords.filter(
-      r => r.overallGrade.toUpperCase() === 'C' || r.overallGrade.toUpperCase() === 'F'
+      r => (r.overallGrade || 'A').toUpperCase() === 'C' || (r.overallGrade || 'A').toUpperCase() === 'F'
     ).length;
 
     // Top grade
     const counts: Record<string, number> = {};
     processedRecords.forEach(r => {
-      const g = r.overallGrade.toUpperCase();
+      const g = (r.overallGrade || 'A').toUpperCase();
       counts[g] = (counts[g] || 0) + 1;
     });
     let topGrade = 'A';
@@ -615,7 +621,7 @@ export function FacultyGradesManagementView() {
                 <div className="text-right">
                   <span className="text-xs font-bold text-slate-600 block mb-1">Standing</span>
                   <span className="px-3 py-1 rounded-full bg-blue-100 text-blue-800 font-bold text-xs inline-block">
-                    {['O', 'A+'].includes(selectedRecord.overallGrade) ? 'Excellence Tier' : ['A', 'B+'].includes(selectedRecord.overallGrade) ? 'Good Standing' : 'Needs Support'}
+                    {['O', 'A+'].includes(selectedRecord.overallGrade || 'A') ? 'Excellence Tier' : ['A', 'B+'].includes(selectedRecord.overallGrade || 'A') ? 'Good Standing' : 'Needs Support'}
                   </span>
                 </div>
               </div>

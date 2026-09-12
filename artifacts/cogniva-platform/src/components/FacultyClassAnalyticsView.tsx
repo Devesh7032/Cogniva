@@ -128,7 +128,7 @@ export function FacultyClassAnalyticsView() {
         const cgpaRec = cgpaRecordsData.find(c => c.regno.toLowerCase() === st.regno.toLowerCase());
         const gradeSum = gradeSummariesData.find(g => g.regno.toLowerCase() === st.regno.toLowerCase());
 
-        let cgpaVal = cgpaRec?.cgpa || (8.9 - (idx * 0.22));
+        let cgpaVal = cgpaRec?.currentCgpa || (8.9 - (idx * 0.22));
         if (cgpaVal < 5.2) cgpaVal = 5.2 + (idx % 3) * 0.4;
         cgpaVal = Math.round(cgpaVal * 100) / 100;
 

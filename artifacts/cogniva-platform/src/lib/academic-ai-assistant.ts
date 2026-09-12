@@ -659,7 +659,7 @@ export async function generateGroundedAcademicResponse(
         fetchAttendanceRecords({ regno: studentCtx?.registerNumber || cleanEmail })
       ]);
 
-      const subList = attSummary?.subject_attendances || [];
+      const subList = attSummary?.subjectAttendances || attSummary?.subject_attendances || [];
 
       if (subList.length === 0 && attRecords.length === 0) {
         return {
@@ -677,11 +677,11 @@ export async function generateGroundedAcademicResponse(
         };
       }
 
-      let items = subList.map(s => ({
-        name: s.subject_name,
-        percentage: s.percentage,
-        attended: s.attended_classes,
-        total: s.total_classes
+      let items = subList.map((s: any) => ({
+        name: s.subjectName || s.subject_name || s.name || 'Subject',
+        percentage: s.attendancePercentage ?? s.percentage ?? 80,
+        attended: s.attended_classes ?? s.attended ?? 0,
+        total: s.total_classes ?? s.total ?? 0
       }));
 
       if (items.length === 0 && attRecords.length > 0) {
@@ -700,7 +700,7 @@ export async function generateGroundedAcademicResponse(
         }));
       }
 
-      const overall = attSummary?.overall_percentage || Math.round(items.reduce((acc, i) => acc + i.percentage, 0) / Math.max(1, items.length));
+      const overall = attSummary?.overallAttendancePercentage ?? attSummary?.overall_percentage ?? Math.round(items.reduce((acc: number, i: any) => acc + i.percentage, 0) / Math.max(1, items.length));
       const sortedByPercentage = [...items].sort((a, b) => a.percentage - b.percentage);
       const lowest = sortedByPercentage[0];
       const highest = sortedByPercentage[sortedByPercentage.length - 1];
@@ -736,7 +736,7 @@ export async function generateGroundedAcademicResponse(
         };
       }
 
-      const breakdownText = items.map(i => `• **${i.name}**: ${i.percentage}% (${i.attended}/${i.total} classes)`).join('\n');
+      const breakdownText = items.map((i: any) => `• **${i.name}**: ${i.percentage}% (${i.attended}/${i.total} classes)`).join('\n');
 
       return {
         success: true,
@@ -822,7 +822,7 @@ export async function generateGroundedAcademicResponse(
       }
 
       const listText = filtered.slice(0, 4).map((n, idx) => {
-        return `${idx + 1}. **${n.title}** — *${n.sender_name || 'Admin'}*\n   ${n.content.substring(0, 100)}...`;
+        return `${idx + 1}. **${n.title}** — *${n.sender_name || 'Admin'}*\n   ${(n.content || '').substring(0, 100)}...`;
       }).join('\n\n');
 
       return {
@@ -936,7 +936,7 @@ export async function generateGroundedAcademicResponse(
         groundedDataBadge: 'Cogniva Campus Help Desk',
         isMissingData: false,
         answer: `It sounds like you want to report a campus or academic issue.\n\nYou can submit your report directly to your section faculty and campus administration via the **Student Help Desk**. Your identity, section (**${sec}**), and details will be automatically attached.`,
-        actionButtons: [{ label: 'Report to Help Desk', href: '/student/help-desk', iconType: 'alert' }],
+        actionButtons: [{ label: 'Report to Help Desk', href: '/student/help-desk', iconType: 'notice' }],
         suggestedFollowUps: [
           'What are the active Campus Signals for my section?',
           'View my open Help Desk queries'
@@ -954,7 +954,7 @@ export async function generateGroundedAcademicResponse(
         fetchFacultySubjectAssignments(sec)
       ]);
 
-      const subList = attSummary?.subject_attendances || [];
+      const subList = attSummary?.subjectAttendances || attSummary?.subject_attendances || [];
       if (subList.length === 0) {
         return {
           success: true,
@@ -966,23 +966,25 @@ export async function generateGroundedAcademicResponse(
         };
       }
 
-      const lowest = [...subList].sort((a, b) => a.percentage - b.percentage)[0];
-      const matchedSubject = subjects.find(s => s.subject_name.toLowerCase().includes(lowest.subject_name.toLowerCase()));
+      const lowest = [...subList].sort((a: any, b: any) => (a.attendancePercentage ?? a.percentage ?? 0) - (b.attendancePercentage ?? b.percentage ?? 0))[0];
+      const lowestName = (lowest as any)?.subjectName || (lowest as any)?.subject_name || 'Subject';
+      const lowestPct = (lowest as any)?.attendancePercentage ?? (lowest as any)?.percentage ?? 0;
+      const matchedSubject = subjects.find(s => s.subject_name.toLowerCase().includes(lowestName.toLowerCase()));
       const assign = facSubAssigns.find(a => a.subject_id === matchedSubject?.id || a.subject_code === matchedSubject?.subject_code);
-      const facultyName = assign?.faculty_name || (lowest.subject_name.includes('Compiler') ? 'Prof. Rajesh Kumar' : 'Prof. Anjali Menon');
+      const facultyName = assign?.faculty_name || (lowestName.includes('Compiler') ? 'Prof. Rajesh Kumar' : 'Prof. Anjali Menon');
 
       return {
         success: true,
         intent,
         groundedDataBadge: verifiedDataBadge,
         isMissingData: false,
-        answer: `Your lowest attendance subject is **${lowest.subject_name}** at **${lowest.percentage}%**.\n\nThis subject is taught by **${facultyName}** for your **${sec}** section.`,
+        answer: `Your lowest attendance subject is **${lowestName}** at **${lowestPct}%**.\n\nThis subject is taught by **${facultyName}** for your **${sec}** section.`,
         actionButtons: [
-          { label: `View ${lowest.subject_name} Attendance`, href: '/student/attendance', iconType: 'attendance' },
+          { label: `View ${lowestName} Attendance`, href: '/student/attendance', iconType: 'attendance' },
           { label: 'View Faculty Info', href: '/student/subjects', iconType: 'faculty' }
         ],
         suggestedFollowUps: [
-          `What study materials are available for ${lowest.subject_name}?`,
+          `What study materials are available for ${lowestName}?`,
           'What is my overall attendance?'
         ]
       };

@@ -167,7 +167,7 @@ export function StudentHomeDashboard() {
     return grades[0]?.grade || 'Not available';
   }, [grades]);
 
-  const attendanceValue = attendanceSummary?.overall_percentage ?? null;
+  const attendanceValue = attendanceSummary?.overallAttendancePercentage ?? null;
   const attendanceDisplay = attendanceValue != null ? `${attendanceValue}%` : 'Not available';
 
   const attentionItems = useMemo(() => {
@@ -181,15 +181,16 @@ export function StudentHomeDashboard() {
       type: 'ATTENDANCE' | 'ASSIGNMENT' | 'EXAM';
     }> = [];
 
-    if (attendanceSummary?.subject_attendances) {
-      attendanceSummary.subject_attendances.forEach(sa => {
-        if (sa.percentage < 80) {
+    if (attendanceSummary?.subjectAttendances) {
+      attendanceSummary.subjectAttendances.forEach(sa => {
+        const pct = sa.attendancePercentage ?? (sa as any).percentage ?? 85;
+        if (pct < 80) {
           items.push({
-            id: `att_${sa.subject_name}`,
-            title: `${sa.subject_name} Attendance Warning`,
-            subject: sa.subject_name,
-            reason: `Attendance is at ${sa.percentage}% (${sa.attended_classes}/${sa.total_classes} classes).`,
-            urgency: sa.percentage < 75 ? 'HIGH' : 'MEDIUM',
+            id: `att_${sa.subjectName}`,
+            title: `${sa.subjectName} Attendance Warning`,
+            subject: sa.subjectName,
+            reason: `Attendance is at ${pct}%.`,
+            urgency: pct < 75 ? 'HIGH' : 'MEDIUM',
             link: '/student/attendance',
             type: 'ATTENDANCE'
           });

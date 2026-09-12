@@ -137,22 +137,34 @@ export function FacultyCgpaView() {
       else if (cgpa >= 6.0) tier = 'SECOND_CLASS';
       else tier = 'IMPROVEMENT';
 
+      const fullRecord: StudentCgpaRecord = rec || {
+        id: `tmp_${st.regno}`,
+        regno: st.regno,
+        studentName: st.name,
+        studentEmail: st.email,
+        department: st.department || 'CSE',
+        section: st.section || 'CSE-C',
+        semester: 'Semester 4',
+        semesters: [
+          { semester: 'Semester 1', sgpa: 8.1, cgpa: 8.1, status: 'Completed' },
+          { semester: 'Semester 2', sgpa: 8.4, cgpa: 8.25, status: 'Completed' },
+          { semester: 'Semester 3', sgpa: 8.3, cgpa: 8.27, status: 'Completed' }
+        ],
+        currentCgpa: 8.27,
+        latestSgpa: 8.3,
+        previousSgpa: 8.4,
+        bestSgpa: 8.4,
+        lowestSgpa: 8.1,
+        averageSgpa: 8.26,
+        trend: 'stable',
+        sgpaDelta: 0.1,
+        cgpaDelta: 0.02,
+        updatedAt: new Date().toISOString()
+      };
+
       return {
         student: st,
-        record: rec || {
-          id: `tmp_${st.regno}`,
-          regno: st.regno,
-          studentName: st.name,
-          department: st.department || 'CSE',
-          section: st.section || 'CSE-C',
-          semesters: [
-            { semester: 'Semester 1', sgpa: 8.1, cgpa: 8.1, status: 'Completed' },
-            { semester: 'Semester 2', sgpa: 8.4, cgpa: 8.25, status: 'Completed' },
-            { semester: 'Semester 3', sgpa: 8.3, cgpa: 8.27, status: 'Completed' },
-            { semester: 'Semester 4', sgpa: null, cgpa: null, status: 'Current' }
-          ],
-          currentCgpa: 8.27
-        },
+        record: fullRecord,
         cgpa,
         tier
       };
@@ -246,13 +258,13 @@ export function FacultyCgpaView() {
     if (!excelFile) return;
     try {
       const buffer = await excelFile.arrayBuffer();
-      const parsed = parseDynamicCgpaExcel(buffer);
-      if (!parsed.success) {
-        setToastMessage(`Error: ${parsed.error}`);
+      const parsed = parseDynamicCgpaExcel(buffer, assignedStudents || []);
+      if (!parsed || parsed.matchedRows.length === 0) {
+        setToastMessage('Error: No valid student rows found in Excel.');
         setTimeout(() => setToastMessage(null), 3000);
         return;
       }
-      setParsedData(parsed.data || null);
+      setParsedData(parsed);
       setImportStep(2);
     } catch (err: any) {
       setToastMessage(`Parse failed: ${err.message}`);
@@ -263,25 +275,18 @@ export function FacultyCgpaView() {
   const handleConfirmImport = async () => {
     if (!parsedData || !user?.email) return;
     setImporting(true);
-    
-    const importSection = selectedSection !== 'ALL' ? selectedSection : (assignedSections[0]?.name || 'CSE-C');
 
-    const res = await saveCgpaRecordsBatch(
-      parsedData.records,
-      user.email,
-      importSection,
-      parsedData.dynamicSemesters
-    );
+    const res = await saveCgpaRecordsBatch(parsedData.matchedRows);
 
     if (res.success) {
-      setToastMessage(`Successfully imported ${parsedData.records.length} records!`);
+      setToastMessage(`Successfully imported ${res.count} records!`);
       setShowImportModal(false);
       setImportStep(1);
       setExcelFile(null);
       setParsedData(null);
       loadCgpaData();
     } else {
-      setToastMessage(`Import failed: ${res.error}`);
+      setToastMessage('Import failed');
     }
     setImporting(false);
     setTimeout(() => setToastMessage(null), 3000);
@@ -608,14 +613,14 @@ export function FacultyCgpaView() {
                     <div>
                       <span className="text-xs font-bold uppercase tracking-wider text-blue-700 block mb-1">Cumulative CGPA</span>
                       <span className="text-3xl font-black text-slate-900">
-                        {Number(selectedRecord.cgpa || 8.2).toFixed(2)}
+                        {Number(selectedRecord.currentCgpa || 8.2).toFixed(2)}
                       </span>
                       <span className="text-xs text-slate-500 block mt-1 font-medium">10-Point Grade Scale</span>
                     </div>
                     <div className="text-right">
                       <span className="text-xs font-bold text-slate-600 block mb-1">Academic Status</span>
                       <span className="px-3 py-1 rounded-full bg-blue-100 text-blue-800 font-bold text-xs inline-block">
-                        {Number(selectedRecord.cgpa) >= 8.5 ? 'First Class w/ Distinction' : 'First Class Standing'}
+                        {Number(selectedRecord.currentCgpa || 8.2) >= 8.5 ? 'First Class w/ Distinction' : 'First Class Standing'}
                       </span>
                     </div>
                   </div>
@@ -628,7 +633,7 @@ export function FacultyCgpaView() {
                     <div className="grid grid-cols-2 gap-3">
                       {selectedRecord.semesters && selectedRecord.semesters.length > 0 ? (
                         selectedRecord.semesters.map(s => {
-                          const isPending = s.sgpa === null || s.sgpa === undefined || s.sgpa === '';
+                          const isPending = s.sgpa === null || s.sgpa === undefined;
                           return (
                             <div key={s.semester} className="p-3.5 rounded-xl bg-slate-50 border border-slate-100">
                               <span className="text-xs font-bold text-slate-700 block mb-1">{s.semester}</span>
@@ -841,7 +846,7 @@ export function FacultyCgpaView() {
                   <div className="p-3 rounded-xl bg-slate-50 border border-slate-200">
                     <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block mb-1">Detected Semester Columns</span>
                     <div className="flex flex-wrap gap-1.5">
-                      {parsedData?.semHeaders.map(h => (
+                      {parsedData?.semHeaders.map((h: string) => (
                         <span key={h} className="px-2 py-0.5 rounded bg-blue-50 border border-blue-200 text-blue-700 text-[11px] font-medium">
                           {h}
                         </span>
@@ -893,10 +898,10 @@ export function FacultyCgpaView() {
                     <div key={item.id} className="py-3 flex items-center justify-between text-xs">
                       <div>
                         <strong className="text-slate-900 block font-bold">{item.fileName}</strong>
-                        <span className="text-slate-400 text-[11px]">{new Date(item.importedAt).toLocaleString()} • {item.importedBy}</span>
+                        <span className="text-slate-400 text-[11px]">{new Date(item.importedAt).toLocaleString()} • {item.facultyEmail}</span>
                       </div>
                       <span className="px-2.5 py-1 rounded-lg bg-blue-50 text-blue-700 font-bold font-mono">
-                        {item.studentCount} Records
+                        {item.records.length} Records
                       </span>
                     </div>
                   ))}

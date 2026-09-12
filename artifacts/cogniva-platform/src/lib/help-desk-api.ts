@@ -67,6 +67,9 @@ export interface StudentQuery {
   affected_section?: string;
   assigned_to?: string;
   assigned_to_name?: string;
+  assigned_faculty_id?: string;
+  assigned_faculty_name?: string;
+  assigned_admin_id?: string;
   resolved_by?: string;
   resolved_at?: string;
   attachment_url?: string;
@@ -529,7 +532,7 @@ export async function updateQueryStatus(params: {
   updatedByRole: 'faculty' | 'admin';
   resolutionComment?: string;
   isClassWide?: boolean;
-}): Promise<{ success: boolean; data?: StudentQuery }> {
+}): Promise<{ success: boolean; data?: StudentQuery; error?: string }> {
   loadLocalStore();
 
   if (typeof window !== 'undefined') {

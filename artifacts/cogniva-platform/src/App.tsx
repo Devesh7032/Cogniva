@@ -2122,7 +2122,7 @@ Provide a reassuring AI Insight reassuring the student, calculating the exact we
           <SectionHeading
             eyebrow="Scenario Builder"
             title="Choose Your Real-Life Scenario"
-            description="Select a decision model and adjust parameters to simulate outcomes."
+            detail="Select a decision model and adjust parameters to simulate outcomes."
           />
 
           {/* 1. SCENARIO DROPDOWN */}
@@ -2497,9 +2497,11 @@ function GoalsPage() {
 
     if (allPendingMilestones.length === 0) return null;
 
-    const priorityRank = { HIGH: 1, MEDIUM: 2, LOW: 3 };
+    const priorityRank: Record<string, number> = { HIGH: 1, MEDIUM: 2, LOW: 3 };
     allPendingMilestones.sort((a, b) => {
-      const pDiff = (priorityRank[a.milestone.priority] || 2) - (priorityRank[b.milestone.priority] || 2);
+      const aP = a.milestone.priority ? priorityRank[a.milestone.priority] || 2 : 2;
+      const bP = b.milestone.priority ? priorityRank[b.milestone.priority] || 2 : 2;
+      const pDiff = aP - bP;
       if (pDiff !== 0) return pDiff;
       return (a.milestone.order_index || 0) - (b.milestone.order_index || 0);
     });
@@ -2693,7 +2695,7 @@ function GoalsPage() {
                         {(goal.phases || []).flatMap(p => p.milestones || []).filter(m => m.status === 'COMPLETED').length} / {(goal.phases || []).flatMap(p => p.milestones || []).length} tasks
                       </span>
                     </div>
-                    <ProgressBar value={goal.progress_percentage} color={goal.color || 'violet'} />
+                    <ProgressBar value={goal.progress_percentage || goal.overall_progress_percentage || 0} color={goal.color || 'violet'} />
                   </div>
 
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '16px' }}>

@@ -333,7 +333,7 @@ export async function processFacultyAcademicQuery(
         { header: 'Student Name', key: 'name' },
         { header: 'Section', key: 'section' },
         { header: 'Attendance', key: 'attendance' },
-        { header: 'Grade / Status', key: 'status' || 'grade' }
+        { header: 'Grade / Status', key: 'status' }
       ],
       rows
     };

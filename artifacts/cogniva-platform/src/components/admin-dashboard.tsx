@@ -2020,6 +2020,8 @@ function StudentImportModal({
   const [fileError, setFileError] = useState<string | null>(null);
   const [importing, setImporting] = useState(false);
   const [result, setResult] = useState<ImportResult | null>(null);
+  const [activeTab, setActiveTab] = useState<'excel' | 'text' | 'pdf'>('excel');
+  const [isProcessing, setIsProcessing] = useState(false);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFileError(null);

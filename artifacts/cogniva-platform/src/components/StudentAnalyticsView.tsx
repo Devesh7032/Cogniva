@@ -169,7 +169,7 @@ Write a concise 2-sentence executive performance advisory summary highlighting t
   }, [attendanceRecords, rangeCutoffDate]);
 
   const filteredSubmissions = useMemo(() => {
-    return submissions.filter(s => new Date(s.submitted_at) >= rangeCutoffDate);
+    return submissions.filter(s => s.submitted_at && new Date(s.submitted_at) >= rangeCutoffDate);
   }, [submissions, rangeCutoffDate]);
 
   // DETERMINISTIC CALCULATIONS FROM REAL STUDENT DATA
@@ -292,6 +292,7 @@ Write a concise 2-sentence executive performance advisory summary highlighting t
       const weekAttPct = weekAtts.length > 0 ? (weekAtts.filter(a => a.status === 'Present').length / weekAtts.length) * 100 : 80 + (4 - i) * 2;
 
       const weekSubs = submissions.filter(s => {
+        if (!s.submitted_at) return false;
         const d = new Date(s.submitted_at);
         return d >= weekStart && d <= weekEnd;
       });
@@ -411,16 +412,12 @@ ${aiInsight || 'Analytical data grounded in real Supabase database records.'}`;
       {aiInsight && (
         <StudentAiCallout
           title="Gemini AI Performance Analysis"
-          badgeText="Grounded Analytics"
-        >
-          <p className="text-xs text-indigo-950/90 leading-relaxed font-medium">
-            {loadingAi ? 'Analyzing database metrics with Gemini AI...' : aiInsight}
-          </p>
-        </StudentAiCallout>
+          content={loadingAi ? 'Analyzing database metrics with Gemini AI...' : aiInsight}
+        />
       )}
 
       {loading ? (
-        <StudentSkeletonLoader rows={4} />
+        <StudentSkeletonLoader count={4} />
       ) : (
         <>
           {/* TOP 4 METRIC CARDS */}

@@ -118,26 +118,33 @@ export function FacultyAttendanceManagementView() {
 
     return students.map(st => {
       const rec = recordMap.get(st.regno.toLowerCase());
-      const overallPct = rec ? Math.round(rec.overallAttendancePercentage) : 85;
+      const overallPct = (rec && rec.overallAttendancePercentage != null) ? Math.round(rec.overallAttendancePercentage) : 85;
       
       let status: 'HEALTHY' | 'WATCH' | 'RISK' = 'HEALTHY';
       if (overallPct < 75) status = 'RISK';
       else if (overallPct < 85) status = 'WATCH';
 
+      const fullRecord: StudentAttendanceSummaryRecord = rec || {
+        id: `att-${st.id}`,
+        regno: st.regno,
+        studentName: st.name,
+        studentEmail: st.email,
+        department: st.department,
+        section: st.section || 'A',
+        subjectAttendances: [
+          { subjectName: 'Data Analytics', attendancePercentage: Math.max(60, overallPct - 3), percentage: Math.max(60, overallPct - 3), status: 'Good' },
+          { subjectName: 'Cloud Computing', attendancePercentage: Math.min(98, overallPct + 4), percentage: Math.min(98, overallPct + 4), status: 'Good' },
+          { subjectName: 'Embedded Programming', attendancePercentage: Math.max(65, overallPct - 2), percentage: Math.max(65, overallPct - 2), status: 'Good' },
+          { subjectName: 'Generative AI', attendancePercentage: Math.min(95, overallPct + 2), percentage: Math.min(95, overallPct + 2), status: 'Good' }
+        ],
+        overallAttendancePercentage: overallPct,
+        overallStatus: 'Good',
+        updatedAt: new Date().toISOString()
+      };
+
       return {
         student: st,
-        record: rec || {
-          regno: st.regno,
-          studentName: st.name,
-          section: st.section || selectedSection,
-          overallAttendancePercentage: overallPct,
-          subjectAttendances: [
-            { subjectName: 'Data Analytics', percentage: Math.max(60, overallPct - 3) },
-            { subjectName: 'Cloud Computing', percentage: Math.min(98, overallPct + 4) },
-            { subjectName: 'Embedded Programming', percentage: Math.max(65, overallPct - 2) },
-            { subjectName: 'Generative AI', percentage: Math.min(95, overallPct + 2) }
-          ]
-        },
+        record: fullRecord,
         overallPct,
         status
       };
@@ -282,7 +289,7 @@ export function FacultyAttendanceManagementView() {
     const list = [...selectedStudentRecord.subjectAttendances];
     if (list.length === 0) return { subjects: [], highest: null, lowest: null };
 
-    list.sort((a, b) => b.percentage - a.percentage);
+    list.sort((a, b) => (b.attendancePercentage ?? (b as any).percentage ?? 0) - (a.attendancePercentage ?? (a as any).percentage ?? 0));
     return {
       subjects: list,
       highest: list[0],
@@ -619,42 +626,42 @@ export function FacultyAttendanceManagementView() {
 
             {/* Drawer Content */}
             <div className="p-6 overflow-y-auto flex-1 space-y-6">
-              {/* Overall Attendance Summary Banner */}
+              {/* Overall Attendance Progress Card */}
               <div className="p-5 rounded-2xl bg-gradient-to-br from-blue-50 to-indigo-50/50 border border-blue-100">
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-xs font-bold uppercase tracking-wider text-blue-700">Academic Summary</span>
                   <span
                     className={`px-3 py-1 rounded-full text-xs font-bold ${
-                      selectedStudentRecord.overallAttendancePercentage >= 85
+                      (selectedStudentRecord.overallAttendancePercentage ?? 0) >= 85
                         ? 'bg-emerald-100 text-emerald-800'
-                        : selectedStudentRecord.overallAttendancePercentage >= 75
+                        : (selectedStudentRecord.overallAttendancePercentage ?? 0) >= 75
                         ? 'bg-amber-100 text-amber-800'
                         : 'bg-rose-100 text-rose-800'
                     }`}
                   >
-                    {selectedStudentRecord.overallAttendancePercentage >= 85
+                    {(selectedStudentRecord.overallAttendancePercentage ?? 0) >= 85
                       ? 'Healthy Standing'
-                      : selectedStudentRecord.overallAttendancePercentage >= 75
+                      : (selectedStudentRecord.overallAttendancePercentage ?? 0) >= 75
                       ? 'Needs Attention (Watch)'
                       : 'At Risk (<75%)'}
                   </span>
                 </div>
                 <div className="flex items-baseline gap-2">
                   <span className="text-3xl md:text-4xl font-black text-slate-900">
-                    {Math.round(selectedStudentRecord.overallAttendancePercentage)}%
+                    {Math.round(selectedStudentRecord.overallAttendancePercentage ?? 0)}%
                   </span>
                   <span className="text-xs text-slate-500 font-medium">Cumulative Attendance Rate</span>
                 </div>
                 <div className="w-full h-2.5 rounded-full bg-slate-200/80 overflow-hidden mt-3">
                   <div
                     className={`h-full rounded-full transition-all ${
-                      selectedStudentRecord.overallAttendancePercentage >= 85
+                      (selectedStudentRecord.overallAttendancePercentage ?? 0) >= 85
                         ? 'bg-emerald-500'
-                        : selectedStudentRecord.overallAttendancePercentage >= 75
+                        : (selectedStudentRecord.overallAttendancePercentage ?? 0) >= 75
                         ? 'bg-amber-500'
                         : 'bg-rose-500'
                     }`}
-                    style={{ width: `${Math.min(100, Math.max(0, selectedStudentRecord.overallAttendancePercentage))}%` }}
+                    style={{ width: `${Math.min(100, Math.max(0, selectedStudentRecord.overallAttendancePercentage ?? 0))}%` }}
                   />
                 </div>
               </div>
@@ -670,7 +677,7 @@ export function FacultyAttendanceManagementView() {
                       {studentDetailStats.highest.subjectName}
                     </strong>
                     <span className="text-sm font-black text-emerald-700">
-                      {Math.round(studentDetailStats.highest.percentage)}%
+                      {Math.round(studentDetailStats.highest.attendancePercentage ?? (studentDetailStats.highest as any).percentage ?? 0)}%
                     </span>
                   </div>
 
@@ -682,7 +689,7 @@ export function FacultyAttendanceManagementView() {
                       {studentDetailStats.lowest.subjectName}
                     </strong>
                     <span className="text-sm font-black text-rose-700">
-                      {Math.round(studentDetailStats.lowest.percentage)}%
+                      {Math.round(studentDetailStats.lowest.attendancePercentage ?? (studentDetailStats.lowest as any).percentage ?? 0)}%
                     </span>
                   </div>
                 </div>
@@ -699,7 +706,7 @@ export function FacultyAttendanceManagementView() {
                 ) : (
                   <div className="space-y-3">
                     {studentDetailStats.subjects.map(s => {
-                      const pct = Math.round(s.percentage);
+                      const pct = Math.round(s.attendancePercentage ?? (s as any).percentage ?? 0);
                       let subBarColor = 'bg-emerald-500';
                       if (pct < 75) subBarColor = 'bg-rose-500';
                       else if (pct < 85) subBarColor = 'bg-amber-500';

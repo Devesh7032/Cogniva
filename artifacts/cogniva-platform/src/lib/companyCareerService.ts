@@ -948,16 +948,16 @@ export function analyzeResumeMatch(
     'Python', 'Java', 'SQL', 'React', 'Git', 'HTML', 'CSS', 'Data Structures'
   ];
 
-  const studentSkills = rawSkills.map(s => s.toLowerCase().trim());
-  const requiredSkills = role.required_skills.map(s => s.toLowerCase().trim());
-  const preferredSkills = role.preferred_skills.map(s => s.toLowerCase().trim());
+  const studentSkills = rawSkills.map((s: string) => s.toLowerCase().trim());
+  const requiredSkills = role.required_skills.map((s: string) => s.toLowerCase().trim());
+  const preferredSkills = role.preferred_skills.map((s: string) => s.toLowerCase().trim());
 
   // 1. Skills Match Score
   const matchedRequired = requiredSkills.filter(req =>
-    studentSkills.some(st => st.includes(req) || req.includes(st))
+    studentSkills.some((st: string) => st.includes(req) || req.includes(st))
   );
   const matchedPreferred = preferredSkills.filter(pref =>
-    studentSkills.some(st => st.includes(pref) || pref.includes(st))
+    studentSkills.some((st: string) => st.includes(pref) || pref.includes(st))
   );
 
   const skillsMatchScore = requiredSkills.length > 0
@@ -969,8 +969,8 @@ export function analyzeResumeMatch(
   let projectMatchScore = 65;
   if (projects.length >= 2) projectMatchScore += 20;
   if (projects.length >= 1) projectMatchScore += 10;
-  const projectTech = projects.flatMap(p => p.tech_stack || []).map(t => t.toLowerCase());
-  const projectSkillOverlap = requiredSkills.filter(req => projectTech.some(pt => pt.includes(req)));
+  const projectTech = projects.flatMap(p => p.tech_stack || []).map((t: string) => t.toLowerCase());
+  const projectSkillOverlap = requiredSkills.filter(req => projectTech.some((pt: string) => pt.includes(req)));
   if (projectSkillOverlap.length > 0) projectMatchScore = Math.min(98, projectMatchScore + 10);
 
   // 3. Education Match Score
@@ -984,7 +984,7 @@ export function analyzeResumeMatch(
   // 5. Keyword Coverage Score
   const totalKeywords = [...requiredSkills, ...preferredSkills];
   const matchedKeywords = totalKeywords.filter(kw =>
-    studentSkills.some(st => st.includes(kw) || kw.includes(st))
+    studentSkills.some((st: string) => st.includes(kw) || kw.includes(st))
   );
   const keywordCoverageScore = totalKeywords.length > 0
     ? Math.round((matchedKeywords.length / totalKeywords.length) * 100)
@@ -1001,13 +1001,13 @@ export function analyzeResumeMatch(
 
   // Identified Gaps
   const matchedSkillsFormatted = role.required_skills.filter(req =>
-    studentSkills.some(st => st.includes(req.toLowerCase()) || req.toLowerCase().includes(st))
+    studentSkills.some((st: string) => st.includes(req.toLowerCase()) || req.toLowerCase().includes(st))
   );
   const missingSkillsFormatted = role.required_skills.filter(req =>
-    !studentSkills.some(st => st.includes(req.toLowerCase()) || req.toLowerCase().includes(st))
+    !studentSkills.some((st: string) => st.includes(req.toLowerCase()) || req.toLowerCase().includes(st))
   );
   const missingPreferred = role.preferred_skills.filter(pref =>
-    !studentSkills.some(st => st.includes(pref.toLowerCase()) || pref.toLowerCase().includes(st))
+    !studentSkills.some((st: string) => st.includes(pref.toLowerCase()) || pref.toLowerCase().includes(st))
   );
 
   const prioritySkillGaps = [...missingSkillsFormatted, ...missingPreferred].slice(0, 4);

@@ -86,6 +86,9 @@ export async function askStudentAi(
 export interface ComebackPlanResult {
   targetMath: string;
   actionableSteps: string[];
+  targetIa2Score?: number;
+  realisticGoalText?: string;
+  keyFocusTopics?: string[];
 }
 
 export async function generateIa2ComebackPlan(

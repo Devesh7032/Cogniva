@@ -1,3 +1,4 @@
+import { createPortal } from 'react-dom';
 import React, { useState, useEffect, useMemo } from 'react';
 import {
   CalendarCheck,
@@ -583,13 +584,12 @@ export function FacultyAttendanceManagementView() {
       )}
 
       {/* Student Detail Drawer */}
-      {selectedStudentRecord && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-end bg-slate-900/60 backdrop-blur-sm animate-fade-in"
+      {selectedStudentRecord && createPortal(
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in"
           onClick={() => setSelectedStudentRecord(null)}
         >
           <div
-            className="bg-white border-l border-slate-200 shadow-2xl w-full max-w-lg h-full flex flex-col overflow-hidden animate-slide-left"
+            className="bg-white border border-slate-200 rounded-2xl shadow-2xl w-full max-w-lg h-[85vh] max-h-[800px] flex flex-col overflow-hidden"
             onClick={e => e.stopPropagation()}
           >
             {/* Drawer Header */}
@@ -732,10 +732,10 @@ export function FacultyAttendanceManagementView() {
             </div>
           </div>
         </div>
-      )}
+      , document.body)}
 
       {/* Excel Import Modal */}
-      {showImportModal && (
+      {showImportModal && createPortal(
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in" onClick={() => setShowImportModal(false)}>
           <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl w-full max-w-xl overflow-hidden" onClick={e => e.stopPropagation()}>
             <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
@@ -845,10 +845,10 @@ export function FacultyAttendanceManagementView() {
             </div>
           </div>
         </div>
-      )}
+      , document.body)}
 
       {/* Import History Modal */}
-      {showHistoryModal && (
+      {showHistoryModal && createPortal(
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in" onClick={() => setShowHistoryModal(false)}>
           <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl w-full max-w-xl overflow-hidden" onClick={e => e.stopPropagation()}>
             <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
@@ -890,7 +890,8 @@ export function FacultyAttendanceManagementView() {
             </div>
           </div>
         </div>
-      )}
+      , document.body)}
     </div>
   );
 }
+

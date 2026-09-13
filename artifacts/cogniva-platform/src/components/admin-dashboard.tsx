@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { useAuth } from '@/lib/auth-context';
+import { getUserFriendlyError } from '@/lib/error-handler';
 import {
   fetchAcademicYears, fetchDepartments, fetchSections, createDepartment, createSection,
   fetchDatabaseCounts, fetchProfilesByRole, fetchFacultyAssignments, saveFacultyAccessAssignments,
@@ -1331,8 +1332,7 @@ export function StudentManagementView() {
       setStudents(students.filter(s => s.id !== deletingStudent.id));
       setDeletingStudent(null);
     } catch (err) {
-      console.error(err);
-      alert('Failed to delete student');
+      alert(getUserFriendlyError(err, 'DATABASE', 'Unable to delete student record. Please try again.'));
     }
     setActionLoading(false);
   };
@@ -1525,7 +1525,7 @@ export function StudentManagementView() {
               await updateStudentMember(editingStudent.id, updates);
               setStudents(students.map(s => s.id === editingStudent.id ? { ...s, ...updates } : s));
               setEditingStudent(null);
-            } catch(e) { alert('Failed to update'); }
+            } catch(e) { alert(getUserFriendlyError(e, 'DATABASE', 'Unable to update student information. Please try again.')); }
           }}
         />
       )}
@@ -1710,7 +1710,7 @@ export function FacultyManagementView() {
       setFaculty(faculty.filter(f => f.id !== deletingFaculty.id));
       setDeletingFaculty(null);
     } catch (err) {
-      alert('Failed to delete faculty');
+      alert(getUserFriendlyError(err, 'DATABASE', 'Unable to delete faculty record. Please try again.'));
     }
     setActionLoading(false);
   };
@@ -1878,7 +1878,7 @@ export function FacultyManagementView() {
               await updateFacultyMember(editingFaculty.id, updates);
               setFaculty(faculty.map(f => f.id === editingFaculty.id ? { ...f, ...updates } : f));
               setEditingFaculty(null);
-            } catch(e) { alert('Failed to update'); }
+            } catch(e) { alert(getUserFriendlyError(e, 'DATABASE', 'Unable to update faculty information. Please try again.')); }
           }}
         />
       )}

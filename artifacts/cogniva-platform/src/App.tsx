@@ -15,6 +15,7 @@ import { Link, Route, Switch, useLocation, useRoute } from 'wouter';
 import * as XLSX from 'xlsx';
 import { supabase } from '@/lib/supabase';
 import { ErrorBoundary } from '@/components/error-boundary';
+import { getUserFriendlyError } from '@/lib/error-handler';
 import NotFound from '@/pages/not-found';
 import { AuthProvider, useAuth } from '@/lib/auth-context';
 import { LoginPage } from '@/pages/login';
@@ -1659,27 +1660,24 @@ function StudentSection({ section }: { section: string }) {
   const [done, setDone] = useState<string[]>([]);
   const [saved, setSaved] = useState<string[]>([]);
   if (section === 'campus-navigator' || section === 'navigator') return <PageFrame><StudentCampusNavigatorView /></PageFrame>;
-  if (section === 'ask') return <PageFrame><StudentAskCognivaView /></PageFrame>;
-  if (section === 'strategy' || section === 'planner' || section === 'insights') return <StrategyCenter />;
-  if (section === 'simulator') return <SimulatorSection role="student" />;
+  if (section === 'ask' || section === 'ask-cogniva') return <PageFrame><StudentAskCognivaView /></PageFrame>;
+  if (section === 'strategy' || section === 'planner') return <StrategyCenter />;
+  if (section === 'simulator' || section === 'what-if') return <SimulatorSection role="student" />;
   if (section === 'subjects') return <StudentSubjectsView />;
   if (section === 'attendance') return <StudentAttendanceTracker />;
   if (section === 'hackathons' || section === 'opportunities') return <PageFrame><StudentOpportunitiesView /></PageFrame>;
   if (section === 'companies' || section === 'career-lab' || section === 'target-company') return <PageFrame><StudentCompanyCareerLabView /></PageFrame>;
   if (section === 'grades') return <StudentGradesView />;
   if (section === 'priorities' || section === 'assignments') return <StudentAssignmentsView />;
-  if (section === 'examinations') return <ExaminationsPage role="student" />;
-  if (section === 'cgpa') return <StudentCgpaView />;
+  if (section === 'examinations' || section === 'exams') return <ExaminationsPage role="student" />;
+  if (section === 'cgpa' || section === 'performance') return <StudentCgpaView />;
   if (section === 'explain') return <PageFrame><StudentExplainPanel /></PageFrame>;
-  if (section === 'insights') return <PageFrame><div className="welcome-row"><div><div className="eyebrow">Student workspace Â· risk & workload</div><h1>See pressure before it peaks.</h1><p className="lede">Early warnings combine workload, attendance, deadlines, and your own goal rhythm.</p></div><Link className="button button-secondary" href="/student/explain"><BrainCircuit size={15} />Open explain panel</Link></div><div className="insight-banner"><div className="insight-banner-icon"><HeartPulse size={20} /></div><div><strong>Your current risk is recoverable.</strong><p>Probability is the only subject below the comfort line; your workload is high but still inside the sustainable range.</p></div><Chip tone="amber">Monitor</Chip></div><div className="two-column-grid"><section className="panel"><SectionHeading eyebrow="Workload heatmap" title="This week at a glance" detail="Darker cells mean more scheduled academic load." /><div className="heatmap"><div className="heatmap-days"><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span></div><div className="heatmap-grid">{Array.from({ length: 35 }, (_, index) => <button key={index} className={`heat-cell heat-${(index * 3) % 5}`} aria-label={`Workload cell ${index + 1}`} onClick={() => undefined} />)}</div><div className="heatmap-legend"><span>Light</span><i className="heat-cell heat-0" /><i className="heat-cell heat-2" /><i className="heat-cell heat-4" /><span>Heavy</span></div></div></section><section className="panel"><SectionHeading eyebrow="Early warning flags" title="Signals to watch" /><div className="flag-list">{[['Probability attendance', '69%', 'coral'], ['Assessment collision', '2 deadlines', 'amber'], ['Study load', '3.5h / day', 'teal']].map(([label, value, tone]) => <button className="flag-row" key={label} onClick={() => setSelected(subjects.find((subject) => subject.name.includes('Probability')) || subjects[0])}><span className={`flag-icon flag-${tone}`}><AlertTriangle size={15} /></span><span><strong>{label}</strong><small>{value} Â· Tap to understand</small></span><ArrowRight size={15} /></button>)}</div></section></div>{selected && <ExplainDrawer title={`${selected.name} risk signal`} subtitle="Student risk & workload insight" factors={[`Attendance is currently ${selected.attendance}%`, 'Two learning sessions were missed in the last fortnight', 'The next assessment creates a narrow recovery window']} recommendation="Keep the next two sessions protected and add one short practice block before the assessment." onClose={() => setSelected(null)} />}</PageFrame>;
-  if (section === 'analytics') return <AnalyticsPage role="student" />;
+  if (section === 'analytics' || section === 'progress') return <PageFrame><StudentAnalyticsView /></PageFrame>;
   if (section === 'timetable') return <PageFrame><StudentTimetablePage /></PageFrame>;
-  if (section === 'examinations') return <ExaminationsPage role="student" />;
   if (section === 'materials') return <MaterialsPage role="student" saved={saved} setSaved={setSaved} />;
-  if (section === 'alerts') return <StudentAlertsView />;
+  if (section === 'alerts' || section === 'notifications' || section === 'announcements' || section === 'notices') return <StudentAlertsView />;
   if (section === 'help-desk' || section === 'helpdesk') return <StudentHelpDeskView />;
   if (section === 'news' || section === 'intelligence') return <StudentNewsView />;
-
   if (section === 'goals') return <GoalsPage />;
   return <PageFrame><EmptyState title="Student section ready" description="Choose a section from the workspace navigation to continue." /></PageFrame>;
 }
@@ -3404,7 +3402,7 @@ function MaterialsPage({ role, saved, setSaved }: { role: Role; saved: string[];
 
       {errorMessage ? (
         <div className="p-4 bg-rose-500/10 border border-rose-500/30 rounded-xl text-rose-300 text-xs flex items-center justify-between">
-          <span>Database Error: {errorMessage}</span>
+          <span>{getUserFriendlyError(errorMessage, 'DATABASE', "We couldn't load study materials right now. Please try again.")}</span>
           <button onClick={loadMaterials} className="button button-secondary text-xs py-1 px-3">Try Again</button>
         </div>
       ) : loading ? (
@@ -4042,7 +4040,7 @@ function NoticesPage({ role }: { role: Role }) {
     if (imageFile) {
       const uploadRes = await uploadNoticeImage(imageFile, targetSection, user.email);
       if (!uploadRes.success) {
-        setFormError(uploadRes.error || 'Failed to upload notice image.');
+        setFormError(getUserFriendlyError(uploadRes.error, 'STORAGE', 'Unable to upload the notice image right now. Please try again.'));
         setIsSubmitting(false);
         return;
       }
@@ -4075,7 +4073,7 @@ function NoticesPage({ role }: { role: Role }) {
       setExpiryDate('');
       loadNoticesData();
     } else {
-      setFormError(res.error || 'Failed to publish notice.');
+      setFormError(getUserFriendlyError(res.error, 'DATABASE', 'Unable to publish notice right now. Please try again.'));
     }
   };
 

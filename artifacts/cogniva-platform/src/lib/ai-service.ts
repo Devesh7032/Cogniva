@@ -1,3 +1,5 @@
+import { getUserFriendlyError } from './error-handler';
+
 export interface AiResponse {
   success: boolean;
   answer?: string;
@@ -18,12 +20,12 @@ export async function askAdminAi(prompt: string, userEmail?: string): Promise<Ai
     });
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
-      return { success: false, error: err.error || 'Admin AI request forbidden or failed' };
+      return { success: false, error: getUserFriendlyError(err.error, 'AI_SERVICE', 'AI assistance is temporarily unavailable. Please try again.') };
     }
     const data = await res.json();
     return data;
   } catch (err: any) {
-    return { success: false, error: err?.message || 'Admin AI request exception' };
+    return { success: false, error: getUserFriendlyError(err, 'AI_SERVICE', 'AI assistance is temporarily unavailable. Please try again.') };
   }
 }
 
@@ -47,12 +49,12 @@ export async function askFacultyAi(
     });
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
-      return { success: false, error: err.error || 'Faculty AI request forbidden or failed' };
+      return { success: false, error: getUserFriendlyError(err.error, 'AI_SERVICE', 'AI assistance is temporarily unavailable. Please try again.') };
     }
     const data = await res.json();
     return data;
   } catch (err: any) {
-    return { success: false, error: err?.message || 'Faculty AI request exception' };
+    return { success: false, error: getUserFriendlyError(err, 'AI_SERVICE', 'AI assistance is temporarily unavailable. Please try again.') };
   }
 }
 
@@ -74,12 +76,12 @@ export async function askStudentAi(
     });
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
-      return { success: false, error: err.error || 'Student AI request forbidden or failed' };
+      return { success: false, error: getUserFriendlyError(err.error, 'AI_SERVICE', 'AI assistance is temporarily unavailable. Please try again.') };
     }
     const data = await res.json();
     return data;
   } catch (err: any) {
-    return { success: false, error: err?.message || 'Student AI request exception' };
+    return { success: false, error: getUserFriendlyError(err, 'AI_SERVICE', 'AI assistance is temporarily unavailable. Please try again.') };
   }
 }
 

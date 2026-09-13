@@ -3,6 +3,8 @@ import { useLocation } from 'wouter';
 import { Sparkles, AlertCircle, ArrowRight, Lock, Mail, UserCheck, ShieldCheck, X } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
 
+import { getUserFriendlyError } from '@/lib/error-handler';
+
 export function LoginPage() {
   const [, setLocation] = useLocation();
   const { user, role, loading, login, enterGuestMode } = useAuth();
@@ -41,7 +43,7 @@ export function LoginPage() {
         setLocation('/admin');
       }
     } else {
-      setError(res.error || 'Invalid email or password.');
+      setError(getUserFriendlyError(res.error, 'AUTHENTICATION', 'Invalid email or password. Please try again.'));
     }
   };
 

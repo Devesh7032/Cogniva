@@ -1,5 +1,6 @@
 import { supabase } from './supabase';
 import * as XLSX from 'xlsx';
+import { getUserFriendlyError } from './error-handler';
 
 export const COLLEGE_A_ID = 'a0000000-0000-0000-0000-000000000001';
 export const COLLEGE_B_ID = 'b0000000-0000-0000-0000-000000000002';
@@ -2308,21 +2309,24 @@ export async function uploadFileToSupabaseStorage(
         });
 
         if (sRes.ok) {
-          const serverData = await sRes.json();
-          if (serverData.success && serverData.url && serverData.path) {
-            console.log('✅ [SERVER UPLOAD SUCCESS]:', serverData);
-            return {
-              success: true,
-              url: serverData.url,
-              path: serverData.path
-            };
+          const contentType = sRes.headers.get('content-type') || '';
+          if (contentType.includes('application/json')) {
+            const serverData = await sRes.json();
+            if (serverData.success && serverData.url && serverData.path) {
+              console.log('✅ [SERVER UPLOAD SUCCESS]:', serverData);
+              return {
+                success: true,
+                url: serverData.url,
+                path: serverData.path
+              };
+            }
           }
         }
       } catch (sErr) {
         console.error('[SERVER UPLOAD EXCEPTION]:', sErr);
       }
 
-      return { success: false, error: `Storage upload failed: ${error.message}` };
+      return { success: false, error: getUserFriendlyError(error, 'STORAGE', 'Unable to upload the study material right now. Please check the file and try again.') };
     }
 
     if (data) {
@@ -2334,10 +2338,10 @@ export async function uploadFileToSupabaseStorage(
       };
     }
 
-    return { success: false, error: 'Storage upload returned no data.' };
+    return { success: false, error: 'Unable to upload the study material right now. Please try again.' };
   } catch (err: any) {
     console.error('Supabase Storage upload exception:', err);
-    return { success: false, error: err?.message || 'Upload failed due to an unexpected storage exception.' };
+    return { success: false, error: getUserFriendlyError(err, 'STORAGE', 'Unable to upload the study material right now. Please try again.') };
   }
 }
 
@@ -3432,13 +3436,13 @@ export async function uploadNoticeImage(
           path: serverData.path,
         };
       }
-      return { success: false, error: serverData.error || 'Server upload failed' };
+      return { success: false, error: getUserFriendlyError(serverData.error, 'STORAGE', 'Unable to upload the notice image right now. Please try again.') };
     } else {
       const errJson = await res.json().catch(() => ({}));
-      return { success: false, error: errJson.error || 'Notice image upload endpoint returned an error.' };
+      return { success: false, error: getUserFriendlyError(errJson.error, 'STORAGE', 'Unable to upload the notice image right now. Please try again.') };
     }
   } catch (err: any) {
-    return { success: false, error: err?.message || 'Failed to upload notice image.' };
+    return { success: false, error: getUserFriendlyError(err, 'STORAGE', 'Unable to upload the notice image right now. Please try again.') };
   }
 }
 
